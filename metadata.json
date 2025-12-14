@@ -1,0 +1,5 @@
+{
+  "name": "RisoWriter Flow",
+  "description": "A minimal, forward-only typewriter experience. Navigation allowed, deletion disabled, writing restricted to the end.",
+  "requestFramePermissions": []
+}
