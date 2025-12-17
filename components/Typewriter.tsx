@@ -11,10 +11,10 @@ interface TypewriterProps {
   maxWidth: number;
 }
 
-const Typewriter: React.FC<TypewriterProps> = ({ 
-  content, 
-  setContent, 
-  theme, 
+const Typewriter: React.FC<TypewriterProps> = ({
+  content,
+  setContent,
+  theme,
   syntaxData,
   highlightConfig,
   fontSize,
@@ -34,7 +34,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     const target = e.currentTarget;
-    
+
     // 1. Strictly Disable Deletion
     if (e.key === 'Backspace' || e.key === 'Delete') {
       e.preventDefault();
@@ -47,13 +47,13 @@ const Typewriter: React.FC<TypewriterProps> = ({
     // 3. Handle character input (strictly append to end)
     if (e.key.length === 1 || e.key === 'Enter') {
       e.preventDefault(); // Stop default insertion at cursor position
-      
+
       const char = e.key === 'Enter' ? '\n' : e.key;
-      
+
       // Force append to the very end
       const newContent = content + char;
       setContent(newContent);
-      
+
       // Scroll to bottom to follow the "ghost" cursor
       setTimeout(() => {
         if (textareaRef.current) {
@@ -81,13 +81,13 @@ const Typewriter: React.FC<TypewriterProps> = ({
       // If it is a strikethrough block
       if (chunk.startsWith('~~') && chunk.endsWith('~~') && chunk.length >= 4) {
         return (
-          <span 
-            key={`st-${chunkIndex}`} 
-            style={{ 
-              textDecoration: 'line-through', 
+          <span
+            key={`st-${chunkIndex}`}
+            style={{
+              textDecoration: 'line-through',
               opacity: 0.5,
               textDecorationThickness: '2px',
-              textDecorationColor: theme.accent 
+              textDecorationColor: theme.accent
             }}
           >
             {chunk}
@@ -136,14 +136,14 @@ const Typewriter: React.FC<TypewriterProps> = ({
   }, [content, syntaxData, theme, highlightConfig]);
 
   return (
-    <div 
-      className="relative w-full h-full overflow-hidden mx-auto transition-[max-width] duration-300 ease-in-out" 
+    <div
+      className="relative w-full h-full overflow-hidden mx-auto transition-[max-width] duration-300 ease-in-out"
       style={{ maxWidth: maxWidth }}
     >
       {/* Backdrop (Visual Layer) */}
-      <div 
+      <div
         ref={backdropRef}
-        className="absolute inset-0 px-8 py-12 whitespace-pre-wrap break-words pointer-events-none z-0 overflow-hidden"
+        className="absolute inset-0 px-4 py-6 md:px-8 md:py-12 whitespace-pre-wrap break-words pointer-events-none z-0 overflow-hidden"
         style={{
           fontFamily: '"Courier Prime", monospace',
           fontSize: `${fontSize}px`,
@@ -153,9 +153,9 @@ const Typewriter: React.FC<TypewriterProps> = ({
       >
         {renderHighlights()}
         {/* The Ghost Cursor - Always at the end */}
-        <span 
-          style={{ 
-            color: theme.accent, 
+        <span
+          style={{
+            color: theme.accent,
             opacity: ghostVisible ? 1 : 0,
             transition: 'opacity 0.1s',
             marginLeft: '1px',
@@ -172,7 +172,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
       <textarea
         ref={textareaRef}
         value={content}
-        onChange={() => {}} // Handled in onKeyDown
+        onChange={() => { }} // Handled in onKeyDown
         onKeyDown={handleKeyDown}
         onScroll={handleScroll}
         spellCheck={false}
@@ -180,7 +180,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
         autoCapitalize="off"
         autoComplete="off"
         autoFocus
-        className="absolute inset-0 w-full h-full px-8 py-12 bg-transparent resize-none border-none outline-none z-10 whitespace-pre-wrap break-words overflow-y-auto"
+        className="absolute inset-0 w-full h-full px-4 py-6 md:px-8 md:py-12 bg-transparent resize-none border-none outline-none z-10 whitespace-pre-wrap break-words overflow-y-auto"
         style={{
           fontFamily: '"Courier Prime", monospace',
           fontSize: `${fontSize}px`,
