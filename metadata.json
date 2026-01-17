@@ -1,5 +1,5 @@
 {
-  "name": "clean writer",
+  "name": "clean typewriter experience",
   "description": "A minimal, forward-only typewriter experience. Navigation allowed, deletion disabled, writing restricted to the end.",
   "requestFramePermissions": []
 }

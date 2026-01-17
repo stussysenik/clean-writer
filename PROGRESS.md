@@ -1,6 +1,6 @@
 # Progress Log
 
-Changelog and development progress for Clean Writer.
+Changelog and development progress for Clean Typewriter Experience t.
 
 ---
 
@@ -90,7 +90,7 @@ Full Progressive Web App implementation for iOS/Android home screen.
 <meta name="theme-color" content="#FDFBF7" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<meta name="apple-mobile-web-app-title" content="Clean Writer" />
+<meta name="apple-mobile-web-app-title" content="clean typewriter experience" />
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 <link rel="manifest" href="/manifest.webmanifest" />
 ```

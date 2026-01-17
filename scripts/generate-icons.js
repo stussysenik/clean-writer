@@ -31,6 +31,7 @@ const icons = [
   { name: 'apple-touch-icon.png', size: 180 },
   { name: 'pwa-192x192.png', size: 192 },
   { name: 'pwa-512x512.png', size: 512 },
+  { name: 'favicon-48x48.png', size: 48 }, // For .ico fallback
 ];
 
 async function generateIcons() {
@@ -51,6 +52,13 @@ async function generateIcons() {
   const faviconSvg = svgTemplate(512);
   fs.writeFileSync(path.join(publicDir, 'favicon.svg'), faviconSvg);
   console.log('Created: favicon.svg');
+
+  // Copy 48x48 PNG as favicon.ico fallback
+  // Note: This is a PNG file served as .ico - modern browsers handle this
+  const favicon48 = path.join(publicDir, 'favicon-48x48.png');
+  const faviconIco = path.join(publicDir, 'favicon.ico');
+  fs.copyFileSync(favicon48, faviconIco);
+  console.log('Created: favicon.ico (48x48 PNG fallback)');
 
   console.log('\nDone! PWA icons generated successfully.');
 }

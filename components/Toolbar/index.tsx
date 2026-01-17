@@ -1,8 +1,8 @@
 import React from 'react';
-import { RisoTheme, ViewMode, HighlightConfig } from '../../types';
+import { RisoTheme, ViewMode, HighlightConfig, SyntaxAnalysis } from '../../types';
 import SyntaxToggles from './SyntaxToggles';
 import ActionButtons from './ActionButtons';
-import WordCount from './WordCount';
+import WordCountReceipt from './WordCountReceipt';
 
 interface ToolbarProps {
   theme: RisoTheme;
@@ -16,6 +16,12 @@ interface ToolbarProps {
   onClear: () => void;
   onWidthChange: (width: number) => void;
   onToggleHighlight: (key: keyof HighlightConfig) => void;
+  // Solo mode props
+  soloMode?: keyof HighlightConfig | null;
+  onSoloToggle?: (key: keyof HighlightConfig | null) => void;
+  // Receipt word counter props
+  syntaxData?: SyntaxAnalysis;
+  content?: string;
 }
 
 const Toolbar: React.FC<ToolbarProps> = ({
@@ -30,18 +36,33 @@ const Toolbar: React.FC<ToolbarProps> = ({
   onClear,
   onWidthChange,
   onToggleHighlight,
+  soloMode = null,
+  onSoloToggle,
+  syntaxData,
+  content,
 }) => {
   return (
-    <footer className="absolute bottom-0 left-0 right-0 p-4 md:p-8 flex flex-col-reverse md:flex-row justify-between items-start md:items-end gap-4 md:gap-0 z-50 pointer-events-none">
+    <footer
+      className="absolute bottom-0 left-0 right-0 flex flex-col-reverse md:flex-row justify-between items-start md:items-end z-50 pointer-events-none"
+      style={{
+        padding: '16px',
+        paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+        gap: '16px',
+      }}
+    >
       {/* Left: Interactive Tools */}
-      <div className="flex flex-col gap-2 md:gap-4 pointer-events-auto w-full md:w-auto">
-        {/* Syntax Toggles Row */}
-        <SyntaxToggles
-          theme={theme}
-          highlightConfig={highlightConfig}
-          onToggle={onToggleHighlight}
-          visible={viewMode === 'write'}
-        />
+      <div className="flex flex-col gap-4 pointer-events-auto w-full md:w-auto">
+        {/* Syntax Toggles Row - with horizontal scroll */}
+        <div className="px-1">
+          <SyntaxToggles
+            theme={theme}
+            highlightConfig={highlightConfig}
+            onToggle={onToggleHighlight}
+            visible={viewMode === 'write'}
+            soloMode={soloMode}
+            onSoloToggle={onSoloToggle}
+          />
+        </div>
 
         {/* Main Actions Row */}
         <ActionButtons
@@ -56,8 +77,16 @@ const Toolbar: React.FC<ToolbarProps> = ({
         />
       </div>
 
-      {/* Right: Word Count */}
-      <WordCount count={wordCount} theme={theme} />
+      {/* Right: Word Count Receipt */}
+      <div className="pointer-events-auto">
+        <WordCountReceipt
+          count={wordCount}
+          theme={theme}
+          syntaxData={syntaxData}
+          content={content}
+          highlightConfig={highlightConfig}
+        />
+      </div>
     </footer>
   );
 };

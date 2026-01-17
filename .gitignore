@@ -23,3 +23,8 @@ playwright-report/
 
 # PWA dev files
 dev-dist/
+
+# AI Assistant files
+.claude/
+CLAUDE.md
+AGENTS.md

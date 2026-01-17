@@ -3,19 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Clean Writer</title>
+    <title>digital typewriter experience</title>
 
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#FDFBF7" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="Clean Writer" />
+    <meta name="apple-mobile-web-app-title" content="digital typewriter" />
+    <meta name="description" content="A distraction-free writing experience with syntax highlighting for parts of speech" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- Favicon -->
+    <link rel="icon" href="/favicon.ico" sizes="48x48">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
         theme: {
@@ -23,6 +29,8 @@
             fontFamily: {
               mono: ['"Space Mono"', 'monospace'],
               courier: ['"Courier Prime"', 'monospace'],
+              jetbrains: ['"JetBrains Mono"', 'monospace'],
+              inter: ['"Inter"', 'sans-serif'],
             },
             colors: {
               riso: {
@@ -33,7 +41,16 @@
                 black: '#333333',
                 paper: '#FDFBF7',
               }
-            }
+            },
+            animation: {
+              fadeIn: 'fadeIn 0.15s ease-out',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0', transform: 'translateY(4px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+            },
           }
         }
       }
@@ -54,7 +71,18 @@
       ::-webkit-scrollbar-thumb:hover {
         background: #aaa;
       }
-      /* Hide standard cursor if we want, but standard is fine for functionality */
+
+      /* Tooltip animation */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
     </style>
   <script type="importmap">
 {

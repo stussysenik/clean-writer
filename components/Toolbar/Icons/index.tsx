@@ -1,4 +1,26 @@
 import React from 'react';
+import {
+  CubeIcon,
+  PersonIcon,
+  LightningBoltIcon,
+  MixIcon,
+  TimerIcon,
+  MoveIcon,
+  Link2Icon,
+  TextIcon,
+  ChatBubbleIcon,
+} from '@radix-ui/react-icons';
+
+// Icon size constants for consistent sizing across the app
+export const ICON_SIZE = {
+  syntax: { desktop: 20, mobile: 24 },
+  action: { desktop: 24, mobile: 28 },
+};
+
+// Wrapper for syntax icons with responsive sizing
+interface SyntaxIconProps {
+  className?: string;
+}
 
 // Action Icons
 export const IconEyeOpen = () => (
@@ -49,28 +71,66 @@ export const IconTrash = () => (
   </svg>
 );
 
-// Part of Speech Icons
-export const IconNoun = () => (
-  <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
-    <rect x="4" y="4" width="16" height="16" rx="2" />
+// Part of Speech Icons using Radix UI
+// These icons are semantically chosen to represent each word type
+
+// Noun - CubeIcon (objects/things)
+export const IconNoun: React.FC<SyntaxIconProps> = ({ className }) => (
+  <CubeIcon className={className} width={20} height={20} />
+);
+
+// Pronoun - PersonIcon (people reference)
+export const IconPronoun: React.FC<SyntaxIconProps> = ({ className }) => (
+  <PersonIcon className={className} width={20} height={20} />
+);
+
+// Verb - LightningBoltIcon (action)
+export const IconVerb: React.FC<SyntaxIconProps> = ({ className }) => (
+  <LightningBoltIcon className={className} width={20} height={20} />
+);
+
+// Adjective - MixIcon (describes/modifies - like mixing colors)
+export const IconAdj: React.FC<SyntaxIconProps> = ({ className }) => (
+  <MixIcon className={className} width={20} height={20} />
+);
+
+// Adverb - TimerIcon (how/when actions happen)
+export const IconAdverb: React.FC<SyntaxIconProps> = ({ className }) => (
+  <TimerIcon className={className} width={20} height={20} />
+);
+
+// Preposition - MoveIcon (position/relation)
+export const IconPreposition: React.FC<SyntaxIconProps> = ({ className }) => (
+  <MoveIcon className={className} width={20} height={20} />
+);
+
+// Conjunction - Link2Icon (connects words/clauses)
+export const IconConj: React.FC<SyntaxIconProps> = ({ className }) => (
+  <Link2Icon className={className} width={20} height={20} />
+);
+
+// Article - TextIcon (determines nouns)
+export const IconArticle: React.FC<SyntaxIconProps> = ({ className }) => (
+  <TextIcon className={className} width={20} height={20} />
+);
+
+// Interjection - ChatBubbleIcon (expression/exclamation)
+export const IconInterjection: React.FC<SyntaxIconProps> = ({ className }) => (
+  <ChatBubbleIcon className={className} width={20} height={20} />
+);
+
+export const IconSettings = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+    <circle cx="12" cy="12" r="3" />
   </svg>
 );
 
-export const IconVerb = () => (
-  <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
-    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-  </svg>
-);
-
-export const IconAdj = () => (
-  <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
-    <circle cx="12" cy="12" r="8" />
-  </svg>
-);
-
-export const IconConj = () => (
-  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="3">
-    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+// Info icon for legend
+export const IconInfo = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 16v-4" />
+    <path d="M12 8h.01" />
   </svg>
 );

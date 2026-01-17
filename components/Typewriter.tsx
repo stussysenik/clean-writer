@@ -9,6 +9,7 @@ interface TypewriterProps {
   highlightConfig: HighlightConfig;
   fontSize: number;
   maxWidth: number;
+  fontFamily: string;
 }
 
 const Typewriter: React.FC<TypewriterProps> = ({
@@ -18,7 +19,8 @@ const Typewriter: React.FC<TypewriterProps> = ({
   syntaxData,
   highlightConfig,
   fontSize,
-  maxWidth
+  maxWidth,
+  fontFamily,
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
@@ -33,15 +35,13 @@ const Typewriter: React.FC<TypewriterProps> = ({
   }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    const target = e.currentTarget;
-
     // 1. Strictly Disable Deletion
     if (e.key === 'Backspace' || e.key === 'Delete') {
       e.preventDefault();
       return;
     }
 
-    // 2. Allow modifiers
+    // 2. Allow modifiers (for paste, copy, etc.)
     if (e.ctrlKey || e.metaKey || e.altKey) return;
 
     // 3. Handle character input (strictly append to end)
@@ -55,6 +55,22 @@ const Typewriter: React.FC<TypewriterProps> = ({
       setContent(newContent);
 
       // Scroll to bottom to follow the "ghost" cursor
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
+        }
+      }, 0);
+    }
+  };
+
+  // Handle paste - append pasted text to end
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pastedText = e.clipboardData.getData('text');
+    if (pastedText) {
+      setContent(content + pastedText);
+
+      // Scroll to bottom after paste
       setTimeout(() => {
         if (textareaRef.current) {
           textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
@@ -115,18 +131,34 @@ const Typewriter: React.FC<TypewriterProps> = ({
 
             if (!lowerPart) return <span key={index}>{part}</span>;
 
-            // Check highlights based on config
-            if (highlightConfig.verbs && syntaxData.verbs.includes(lowerPart)) {
-              color = theme.highlight.verb;
+            // Check highlights based on config - order matters for priority
+            // More specific types first (articles, interjections, etc.)
+            if (highlightConfig.articles && syntaxData.articles.includes(lowerPart)) {
+              color = theme.highlight.article;
               isMatch = true;
-            } else if (highlightConfig.nouns && syntaxData.nouns.includes(lowerPart)) {
-              color = theme.highlight.noun;
+            } else if (highlightConfig.interjections && syntaxData.interjections.includes(lowerPart)) {
+              color = theme.highlight.interjection;
+              isMatch = true;
+            } else if (highlightConfig.prepositions && syntaxData.prepositions.includes(lowerPart)) {
+              color = theme.highlight.preposition;
+              isMatch = true;
+            } else if (highlightConfig.conjunctions && syntaxData.conjunctions.includes(lowerPart)) {
+              color = theme.highlight.conjunction;
+              isMatch = true;
+            } else if (highlightConfig.pronouns && syntaxData.pronouns.includes(lowerPart)) {
+              color = theme.highlight.pronoun;
+              isMatch = true;
+            } else if (highlightConfig.adverbs && syntaxData.adverbs.includes(lowerPart)) {
+              color = theme.highlight.adverb;
+              isMatch = true;
+            } else if (highlightConfig.verbs && syntaxData.verbs.includes(lowerPart)) {
+              color = theme.highlight.verb;
               isMatch = true;
             } else if (highlightConfig.adjectives && syntaxData.adjectives.includes(lowerPart)) {
               color = theme.highlight.adjective;
               isMatch = true;
-            } else if (highlightConfig.conjunctions && syntaxData.conjunctions.includes(lowerPart)) {
-              color = theme.highlight.conjunction;
+            } else if (highlightConfig.nouns && syntaxData.nouns.includes(lowerPart)) {
+              color = theme.highlight.noun;
               isMatch = true;
             }
 
@@ -153,7 +185,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
         ref={backdropRef}
         className="absolute inset-0 px-4 py-6 md:px-8 md:py-12 whitespace-pre-wrap break-words pointer-events-none z-0 overflow-hidden"
         style={{
-          fontFamily: '"Courier Prime", monospace',
+          fontFamily,
           fontSize: `${fontSize}px`,
           lineHeight: '1.6',
           color: theme.text,
@@ -182,6 +214,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
         value={content}
         onChange={() => { }} // Handled in onKeyDown
         onKeyDown={handleKeyDown}
+        onPaste={handlePaste}
         spellCheck={false}
         autoCorrect="off"
         autoCapitalize="off"
@@ -189,7 +222,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
         autoFocus
         className="absolute inset-0 w-full h-full px-4 py-6 md:px-8 md:py-12 bg-transparent resize-none border-none outline-none z-10 whitespace-pre-wrap break-words overflow-y-auto"
         style={{
-          fontFamily: '"Courier Prime", monospace',
+          fontFamily,
           fontSize: `${fontSize}px`,
           lineHeight: '1.6',
           color: 'transparent',

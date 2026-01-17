@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { THEMES, THEME_STORAGE_KEY } from './constants';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { THEMES, THEME_STORAGE_KEY, FONT_OPTIONS, FONT_STORAGE_KEY, FontId } from './constants';
 import { analyzeSyntax } from './services/localSyntaxService';
 import { SyntaxAnalysis, ViewMode, HighlightConfig } from './types';
 import Typewriter from './components/Typewriter';
@@ -7,6 +7,25 @@ import MarkdownPreview from './components/MarkdownPreview';
 import ConfirmDialog from './components/ConfirmDialog';
 import Toolbar from './components/Toolbar';
 import ThemeSelector from './components/Toolbar/ThemeSelector';
+import ThemeCustomizer from './components/ThemeCustomizer';
+import TouchButton from './components/TouchButton';
+import { IconSettings } from './components/Toolbar/Icons';
+import useCustomTheme from './hooks/useCustomTheme';
+import useCustomPalettes, { SavedPalette } from './hooks/useCustomPalettes';
+import useThemeVisibility from './hooks/useThemeVisibility';
+
+// Keyboard shortcut mapping (1-9 for word types)
+const NUMBER_KEY_MAP: { [key: string]: keyof HighlightConfig } = {
+  '1': 'nouns',
+  '2': 'verbs',
+  '3': 'adjectives',
+  '4': 'adverbs',
+  '5': 'pronouns',
+  '6': 'prepositions',
+  '7': 'conjunctions',
+  '8': 'articles',
+  '9': 'interjections',
+};
 
 const App: React.FC = () => {
   const [content, setContent] = useState<string>(() => {
@@ -36,20 +55,194 @@ const App: React.FC = () => {
     }
   });
 
+  const [fontId, setFontId] = useState<FontId>(() => {
+    try {
+      const saved = localStorage.getItem(FONT_STORAGE_KEY) as FontId | null;
+      return saved && FONT_OPTIONS.some(f => f.id === saved) ? saved : 'courier-prime';
+    } catch {
+      return 'courier-prime';
+    }
+  });
+
   const [viewMode, setViewMode] = useState<ViewMode>('write');
-  const [syntaxData, setSyntaxData] = useState<SyntaxAnalysis>({ nouns: [], verbs: [], adjectives: [], conjunctions: [] });
+  const [syntaxData, setSyntaxData] = useState<SyntaxAnalysis>({
+    nouns: [],
+    pronouns: [],
+    verbs: [],
+    adjectives: [],
+    adverbs: [],
+    prepositions: [],
+    conjunctions: [],
+    articles: [],
+    interjections: [],
+  });
   const [highlightConfig, setHighlightConfig] = useState<HighlightConfig>({
     nouns: true,
+    pronouns: true,
     verbs: true,
     adjectives: true,
-    conjunctions: true
+    adverbs: true,
+    prepositions: true,
+    conjunctions: true,
+    articles: true,
+    interjections: true,
   });
 
   const [fontSize, setFontSize] = useState(24);
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
+  const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
 
-  const currentTheme = THEMES.find(t => t.id === themeId) || THEMES[0];
+  // Solo mode state
+  const [soloMode, setSoloMode] = useState<keyof HighlightConfig | null>(null);
+
+  // Active custom palette state
+  const [activePaletteId, setActivePaletteId] = useState<string | null>(null);
+
+  // Use custom theme hook
+  const {
+    effectiveTheme,
+    hasCustomizations,
+    setColor,
+    resetToPreset,
+  } = useCustomTheme(themeId);
+
+  // Use custom palettes hook
+  const {
+    visiblePalettes,
+    savePalette,
+    applyPalette,
+  } = useCustomPalettes();
+
+  // Use theme visibility hook
+  const {
+    hiddenThemeIds,
+    toggleThemeVisibility,
+  } = useThemeVisibility();
+
+  // Get current theme - either from custom palette or from theme customizer
+  const currentTheme = useMemo(() => {
+    if (activePaletteId) {
+      const palette = visiblePalettes.find(p => p.id === activePaletteId);
+      if (palette) {
+        return applyPalette(palette);
+      }
+    }
+    return effectiveTheme;
+  }, [activePaletteId, visiblePalettes, applyPalette, effectiveTheme]);
+
+  const currentFont = FONT_OPTIONS.find(f => f.id === fontId) || FONT_OPTIONS[0];
   const wordCount = content.trim() === '' ? 0 : content.trim().split(/\s+/).length;
+
+  // Compute effective highlight config when solo mode is active
+  const effectiveHighlightConfig = useMemo((): HighlightConfig => {
+    if (!soloMode) return highlightConfig;
+
+    // When solo mode is active, only the soloed category is enabled
+    return {
+      nouns: soloMode === 'nouns',
+      pronouns: soloMode === 'pronouns',
+      verbs: soloMode === 'verbs',
+      adjectives: soloMode === 'adjectives',
+      adverbs: soloMode === 'adverbs',
+      prepositions: soloMode === 'prepositions',
+      conjunctions: soloMode === 'conjunctions',
+      articles: soloMode === 'articles',
+      interjections: soloMode === 'interjections',
+    };
+  }, [soloMode, highlightConfig]);
+
+  // Toggle highlight handler
+  const toggleHighlight = useCallback((key: keyof HighlightConfig) => {
+    // If in solo mode and clicking the soloed item, exit solo mode
+    if (soloMode === key) {
+      setSoloMode(null);
+      return;
+    }
+    // If in solo mode and clicking a different item, just switch solo
+    if (soloMode) {
+      setSoloMode(key);
+      return;
+    }
+    // Normal toggle behavior
+    setHighlightConfig(prev => ({ ...prev, [key]: !prev[key] }));
+  }, [soloMode]);
+
+  // Handle solo toggle
+  const handleSoloToggle = useCallback((key: keyof HighlightConfig | null) => {
+    setSoloMode(key);
+  }, []);
+
+  // Handle palette selection
+  const handlePaletteSelect = useCallback((palette: SavedPalette) => {
+    setActivePaletteId(palette.id);
+    setThemeId(palette.baseThemeId);
+  }, []);
+
+  // Handle theme change (clears active palette)
+  const handleThemeChange = useCallback((id: string) => {
+    setThemeId(id);
+    setActivePaletteId(null);
+  }, []);
+
+  // Handle saving a palette
+  const handleSavePalette = useCallback((name: string) => {
+    // Get the current overrides from useCustomTheme
+    const baseTheme = THEMES.find(t => t.id === themeId) || THEMES[0];
+    const overrides: SavedPalette['overrides'] = {};
+
+    if (effectiveTheme.background !== baseTheme.background) {
+      overrides.background = effectiveTheme.background;
+    }
+    if (effectiveTheme.text !== baseTheme.text) {
+      overrides.text = effectiveTheme.text;
+    }
+    if (effectiveTheme.cursor !== baseTheme.cursor) {
+      overrides.cursor = effectiveTheme.cursor;
+    }
+    if (effectiveTheme.selection !== baseTheme.selection) {
+      overrides.selection = effectiveTheme.selection;
+    }
+
+    // Check highlight overrides
+    const highlightOverrides: Partial<typeof baseTheme.highlight> = {};
+    (Object.keys(baseTheme.highlight) as (keyof typeof baseTheme.highlight)[]).forEach(key => {
+      if (effectiveTheme.highlight[key] !== baseTheme.highlight[key]) {
+        highlightOverrides[key] = effectiveTheme.highlight[key];
+      }
+    });
+    if (Object.keys(highlightOverrides).length > 0) {
+      overrides.highlight = highlightOverrides;
+    }
+
+    savePalette(name, themeId, overrides);
+  }, [themeId, effectiveTheme, savePalette]);
+
+  // Keyboard shortcuts for word type toggles (1-9)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in an input/textarea or if modifier keys are pressed
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable ||
+        e.metaKey ||
+        e.ctrlKey ||
+        e.altKey
+      ) {
+        return;
+      }
+
+      const key = e.key;
+      if (key in NUMBER_KEY_MAP) {
+        e.preventDefault();
+        toggleHighlight(NUMBER_KEY_MAP[key]);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [toggleHighlight]);
 
   // Responsive Font Size
   useEffect(() => {
@@ -104,13 +297,27 @@ const App: React.FC = () => {
     }
   }, [themeId]);
 
+  // Persist font
+  useEffect(() => {
+    try {
+      localStorage.setItem(FONT_STORAGE_KEY, fontId);
+    } catch (e) {
+      console.warn("Could not save font");
+    }
+  }, [fontId]);
+
   // Helper to merge new syntax data with existing data
   const updateSyntaxData = (newData: SyntaxAnalysis) => {
     setSyntaxData(prev => ({
       nouns: Array.from(new Set([...prev.nouns, ...newData.nouns])),
+      pronouns: Array.from(new Set([...prev.pronouns, ...newData.pronouns])),
       verbs: Array.from(new Set([...prev.verbs, ...newData.verbs])),
       adjectives: Array.from(new Set([...prev.adjectives, ...newData.adjectives])),
+      adverbs: Array.from(new Set([...prev.adverbs, ...newData.adverbs])),
+      prepositions: Array.from(new Set([...prev.prepositions, ...newData.prepositions])),
       conjunctions: Array.from(new Set([...prev.conjunctions, ...newData.conjunctions])),
+      articles: Array.from(new Set([...prev.articles, ...newData.articles])),
+      interjections: Array.from(new Set([...prev.interjections, ...newData.interjections])),
     }));
   };
 
@@ -144,7 +351,17 @@ const App: React.FC = () => {
 
   const handleConfirmClear = () => {
     setContent("");
-    setSyntaxData({ nouns: [], verbs: [], adjectives: [], conjunctions: [] });
+    setSyntaxData({
+      nouns: [],
+      pronouns: [],
+      verbs: [],
+      adjectives: [],
+      adverbs: [],
+      prepositions: [],
+      conjunctions: [],
+      articles: [],
+      interjections: [],
+    });
     setIsClearDialogOpen(false);
   };
 
@@ -161,18 +378,18 @@ const App: React.FC = () => {
     }
   };
 
-  const toggleHighlight = (key: keyof HighlightConfig) => {
-    setHighlightConfig(prev => ({ ...prev, [key]: !prev[key] }));
-  };
-
   const toggleViewMode = () => {
     setViewMode(viewMode === 'write' ? 'preview' : 'write');
   };
 
   return (
     <div
-      className="w-full h-[100dvh] flex flex-col relative overflow-hidden transition-colors duration-500 font-mono"
-      style={{ backgroundColor: currentTheme.background, color: currentTheme.text }}
+      className="w-full h-[100dvh] flex flex-col relative overflow-hidden transition-colors duration-500"
+      style={{
+        backgroundColor: currentTheme.background,
+        color: currentTheme.text,
+        fontFamily: currentFont.family,
+      }}
     >
       {/* Background Texture */}
       <div
@@ -189,24 +406,56 @@ const App: React.FC = () => {
         theme={currentTheme}
       />
 
-      {/* Theme Selector */}
-      <ThemeSelector
-        currentTheme={currentTheme}
-        themeId={themeId}
-        onThemeChange={setThemeId}
+      <ThemeCustomizer
+        isOpen={isCustomizerOpen}
+        onClose={() => setIsCustomizerOpen(false)}
+        theme={currentTheme}
+        hasCustomizations={hasCustomizations}
+        onSetColor={setColor}
+        onResetToPreset={resetToPreset}
+        currentFontId={fontId}
+        onFontChange={setFontId}
+        onSavePalette={handleSavePalette}
+        hiddenThemeIds={hiddenThemeIds}
+        onToggleThemeVisibility={toggleThemeVisibility}
       />
 
+      {/* Top Bar with Theme Selector and Settings */}
+      <div className="absolute top-0 left-0 right-0 flex justify-between items-start p-4 z-30 pointer-events-none">
+        <div className="pointer-events-auto">
+          <ThemeSelector
+            currentTheme={currentTheme}
+            themeId={themeId}
+            onThemeChange={handleThemeChange}
+            hiddenThemeIds={hiddenThemeIds}
+            customPalettes={visiblePalettes}
+            activePaletteId={activePaletteId}
+            onPaletteSelect={handlePaletteSelect}
+          />
+        </div>
+        <div className="pointer-events-auto">
+          <TouchButton
+            onClick={() => setIsCustomizerOpen(true)}
+            className="p-2 rounded-lg hover:bg-black/10 transition-colors"
+            title="Customize Theme"
+          >
+            <IconSettings />
+          </TouchButton>
+        </div>
+      </div>
+
       {/* Main Area */}
-      <main className="flex-1 w-full h-full relative z-10 pt-4 md:pt-10 transition-all duration-300 ease-in-out">
+      <main className="flex-1 w-full h-full relative z-10 pt-16 md:pt-20 transition-all duration-300 ease-in-out">
         {viewMode === 'write' ? (
           <Typewriter
             content={content}
             setContent={setContent}
             theme={currentTheme}
             syntaxData={syntaxData}
-            highlightConfig={highlightConfig}
+            highlightConfig={effectiveHighlightConfig}
             fontSize={fontSize}
             maxWidth={maxWidth}
+            fontFamily={currentFont.family}
           />
         ) : (
           <div
@@ -231,6 +480,10 @@ const App: React.FC = () => {
         onClear={handleClearRequest}
         onWidthChange={setMaxWidth}
         onToggleHighlight={toggleHighlight}
+        soloMode={soloMode}
+        onSoloToggle={handleSoloToggle}
+        syntaxData={syntaxData}
+        content={content}
       />
     </div>
   );

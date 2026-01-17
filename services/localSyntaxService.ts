@@ -1,9 +1,42 @@
 import nlp from 'compromise';
 import { SyntaxAnalysis } from '../types';
 
+// Static lists for high accuracy word detection
+const ARTICLES = ['a', 'an', 'the'];
+
+const PREPOSITIONS = [
+  'in', 'on', 'at', 'to', 'for', 'with', 'by', 'from',
+  'up', 'about', 'into', 'over', 'after', 'under', 'between',
+  'through', 'during', 'before', 'behind', 'above', 'below',
+  'across', 'against', 'along', 'among', 'around', 'beside',
+  'beyond', 'despite', 'down', 'except', 'inside', 'near',
+  'off', 'onto', 'outside', 'past', 'since', 'toward',
+  'towards', 'underneath', 'until', 'upon', 'within', 'without'
+];
+
+const INTERJECTIONS = [
+  'wow', 'oh', 'ah', 'oops', 'ouch', 'yay', 'hey', 'hmm',
+  'ugh', 'phew', 'alas', 'bravo', 'hurray', 'hooray', 'yikes',
+  'ooh', 'aha', 'ahem', 'aww', 'bah', 'boo', 'duh', 'eek',
+  'gee', 'geez', 'gosh', 'ha', 'haha', 'huh', 'hurrah',
+  'jeez', 'meh', 'nah', 'nope', 'okay', 'ok', 'ow', 'psst',
+  'shh', 'shush', 'tsk', 'uh', 'um', 'whoa', 'whoops', 'yep',
+  'yes', 'yeah', 'yup', 'yo'
+];
+
 export const analyzeSyntax = async (text: string): Promise<SyntaxAnalysis> => {
   if (!text.trim()) {
-    return { nouns: [], verbs: [], adjectives: [], conjunctions: [] };
+    return {
+      nouns: [],
+      pronouns: [],
+      verbs: [],
+      adjectives: [],
+      adverbs: [],
+      prepositions: [],
+      conjunctions: [],
+      articles: [],
+      interjections: [],
+    };
   }
 
   // Use compromise for local NLP analysis
@@ -11,17 +44,42 @@ export const analyzeSyntax = async (text: string): Promise<SyntaxAnalysis> => {
 
   // Helper to get unique lowercase words from a tag match
   const getUniqueWords = (tag: string): string[] => {
-    // compromise .out('array') returns an array of strings
     const words = doc.match(tag).out('array');
     return Array.from(new Set((words as string[]).map((w: string) => w.toLowerCase())));
   };
 
-  // Extract parts of speech
-  // compromise uses #HashTags for POS
+  // Extract articles from text using static list (more reliable than NLP)
+  const extractArticles = (text: string): string[] => {
+    const words = text.toLowerCase().split(/\s+/);
+    return Array.from(new Set(words.filter(w => ARTICLES.includes(w))));
+  };
+
+  // Extract prepositions - combine NLP with static list for better coverage
+  const extractPrepositions = (text: string): string[] => {
+    const nlpPrepositions = getUniqueWords('#Preposition');
+    const words = text.toLowerCase().split(/\s+/);
+    const staticPrepositions = words.filter(w => PREPOSITIONS.includes(w));
+    return Array.from(new Set([...nlpPrepositions, ...staticPrepositions]));
+  };
+
+  // Extract interjections from text using static list
+  const extractInterjections = (text: string): string[] => {
+    const lowerText = text.toLowerCase();
+    const words = lowerText.split(/\s+/);
+    return Array.from(new Set(
+      INTERJECTIONS.filter(i => words.includes(i) || lowerText.includes(i + '!'))
+    ));
+  };
+
   return {
     nouns: getUniqueWords('#Noun'),
+    pronouns: getUniqueWords('#Pronoun'),
     verbs: getUniqueWords('#Verb'),
     adjectives: getUniqueWords('#Adjective'),
+    adverbs: getUniqueWords('#Adverb'),
+    prepositions: extractPrepositions(text),
     conjunctions: getUniqueWords('#Conjunction'),
+    articles: extractArticles(text),
+    interjections: extractInterjections(text),
   };
 };
