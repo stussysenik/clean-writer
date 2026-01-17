@@ -14,6 +14,9 @@ export default defineConfig(({ mode }) => {
       react(),
       VitePWA({
         registerType: 'autoUpdate',
+        devOptions: {
+          enabled: true
+        },
         includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
         manifest: {
           name: 'Clean Writer',
