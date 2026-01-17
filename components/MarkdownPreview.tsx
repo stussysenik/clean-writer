@@ -22,7 +22,7 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ content, theme }) => 
         .prose a { color: ${theme.highlight.verb}; }
         .prose strong { color: ${theme.highlight.noun}; }
         .prose em { color: ${theme.highlight.adjective}; }
-        .prose del { color: ${theme.accent}; text-decoration-thickness: 2px; }
+        .prose del { color: ${theme.strikethrough}; text-decoration-color: ${theme.strikethrough}; text-decoration-thickness: 2px; }
         .prose blockquote { border-left-color: ${theme.accent}; color: ${theme.highlight.adjective}; }
       `}</style>
       <ReactMarkdown remarkPlugins={[remarkGfm]}>

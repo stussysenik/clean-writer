@@ -26,6 +26,9 @@ export interface RisoTheme {
     conjunction: string;
   };
   accent: string;
+  cursor: string;        // Blinking cursor color
+  strikethrough: string; // Strikethrough text decoration
+  selection: string;     // Text selection background (rgba)
 }
 
 export type ViewMode = 'write' | 'preview';

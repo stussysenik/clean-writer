@@ -63,12 +63,20 @@ const Typewriter: React.FC<TypewriterProps> = ({
     }
   };
 
-  const handleScroll = (e: React.UIEvent<HTMLTextAreaElement>) => {
-    const scrollTop = e.currentTarget.scrollTop;
-    if (backdropRef.current) {
-      backdropRef.current.scrollTop = scrollTop;
+  const handleScroll = useCallback(() => {
+    if (textareaRef.current && backdropRef.current) {
+      backdropRef.current.scrollTop = textareaRef.current.scrollTop;
     }
-  };
+  }, []);
+
+  // Use passive event listener for scroll performance
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.addEventListener('scroll', handleScroll, { passive: true });
+      return () => textarea.removeEventListener('scroll', handleScroll);
+    }
+  }, [handleScroll]);
 
   const renderHighlights = useCallback(() => {
     if (!content) return null;
@@ -87,7 +95,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
               textDecoration: 'line-through',
               opacity: 0.5,
               textDecorationThickness: '2px',
-              textDecorationColor: theme.accent
+              textDecorationColor: theme.strikethrough
             }}
           >
             {chunk}
@@ -155,11 +163,11 @@ const Typewriter: React.FC<TypewriterProps> = ({
         {/* The Ghost Cursor - Always at the end */}
         <span
           style={{
-            color: theme.accent,
+            color: theme.cursor,
             opacity: ghostVisible ? 1 : 0,
             transition: 'opacity 0.1s',
             marginLeft: '1px',
-            backgroundColor: theme.accent,
+            backgroundColor: theme.cursor,
             display: 'inline-block',
             width: '10px',
             height: '1em',
@@ -174,7 +182,6 @@ const Typewriter: React.FC<TypewriterProps> = ({
         value={content}
         onChange={() => { }} // Handled in onKeyDown
         onKeyDown={handleKeyDown}
-        onScroll={handleScroll}
         spellCheck={false}
         autoCorrect="off"
         autoCapitalize="off"

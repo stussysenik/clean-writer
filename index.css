@@ -1,0 +1,19 @@
+/* Selection styling using CSS custom property */
+::selection {
+  background-color: var(--selection-color);
+}
+
+::-moz-selection {
+  background-color: var(--selection-color);
+}
+
+/* Touch-friendly styles */
+.touch-manipulation {
+  touch-action: manipulation;
+}
+
+/* Ensure minimum tap target sizes */
+.tap-target {
+  min-width: 44px;
+  min-height: 44px;
+}
