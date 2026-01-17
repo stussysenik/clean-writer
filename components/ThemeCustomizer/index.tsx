@@ -5,6 +5,14 @@ import { meetsMinimumContrast, getContrastRatio, formatContrastRatio } from '../
 import ColorPicker from '../ColorPicker';
 import TouchButton from '../TouchButton';
 
+// Reset icon component
+const IconReset: React.FC<{ size?: number }> = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+    <path d="M3 3v5h5" />
+  </svg>
+);
+
 interface ThemeCustomizerProps {
   isOpen: boolean;
   onClose: () => void;
@@ -12,6 +20,8 @@ interface ThemeCustomizerProps {
   hasCustomizations: boolean;
   onSetColor: (path: string, color: string) => void;
   onResetToPreset: () => void;
+  onResetColor?: (path: string) => void;
+  isColorCustomized?: (path: string) => boolean;
   currentFontId: FontId;
   onFontChange: (fontId: FontId) => void;
   // New props for palette saving
@@ -49,7 +59,7 @@ const ContrastWarning: React.FC<ContrastWarningProps> = ({ fg, bg }) => {
 
   return (
     <span
-      className="ml-2 px-1.5 py-0.5 text-xs font-medium rounded"
+      className="px-1.5 py-0.5 text-xs font-medium rounded whitespace-nowrap"
       style={{
         backgroundColor: '#FEF3C7',
         color: '#92400E',
@@ -61,6 +71,53 @@ const ContrastWarning: React.FC<ContrastWarningProps> = ({ fg, bg }) => {
   );
 };
 
+interface ColorRowProps {
+  label: string;
+  color: string;
+  path: string;
+  bgColor: string;
+  showContrast?: boolean;
+  isCustomized?: boolean;
+  onSetColor: (path: string, color: string) => void;
+  onResetColor?: (path: string) => void;
+}
+
+const ColorRow: React.FC<ColorRowProps> = ({
+  label,
+  color,
+  path,
+  bgColor,
+  showContrast = false,
+  isCustomized = false,
+  onSetColor,
+  onResetColor,
+}) => (
+  <div className="flex items-center gap-2">
+    <div className="flex-1">
+      <ColorPicker
+        label={label}
+        color={color}
+        onChange={(c) => onSetColor(path, c)}
+      />
+    </div>
+    {showContrast && <ContrastWarning fg={color} bg={bgColor} />}
+    {onResetColor && (
+      <TouchButton
+        onClick={() => onResetColor(path)}
+        disabled={!isCustomized}
+        className={`p-1.5 rounded transition-all ${
+          isCustomized
+            ? 'opacity-60 hover:opacity-100 hover:bg-black/10'
+            : 'opacity-20 cursor-not-allowed'
+        }`}
+        title={isCustomized ? `Reset ${label.toLowerCase()} to preset` : `${label} is using preset value`}
+      >
+        <IconReset size={14} />
+      </TouchButton>
+    )}
+  </div>
+);
+
 const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
   isOpen,
   onClose,
@@ -68,6 +125,8 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
   hasCustomizations,
   onSetColor,
   onResetToPreset,
+  onResetColor,
+  isColorCustomized,
   currentFontId,
   onFontChange,
   onSavePalette,
@@ -75,15 +134,28 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
   onToggleThemeVisibility,
 }) => {
   const [paletteName, setPaletteName] = useState('');
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+  const [savedPaletteName, setSavedPaletteName] = useState('');
 
   if (!isOpen) return null;
 
+  // Check if there are actual color customizations (not just visibility changes)
+  const hasColorCustomizations = isColorCustomized
+    ? ['background', 'text', 'cursor', 'selection', 'noun', 'verb', 'adjective', 'adverb', 'pronoun', 'preposition', 'conjunction', 'article', 'interjection'].some(path => isColorCustomized(path as any))
+    : hasCustomizations;
+
   const handleSavePalette = () => {
     if (paletteName.trim() && onSavePalette) {
-      onSavePalette(paletteName.trim());
+      const name = paletteName.trim();
+      onSavePalette(name);
+      setSavedPaletteName(name);
       setPaletteName('');
+      setShowSaveSuccess(true);
+      setTimeout(() => setShowSaveSuccess(false), 4000); // Longer timeout so user can read it
     }
   };
+
+  const checkCustomized = (path: string) => isColorCustomized?.(path) ?? false;
 
   return (
     <>
@@ -103,7 +175,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
         }}
       >
         {/* Header */}
-        <div className="sticky top-0 flex items-center justify-between p-4 border-b border-current/10 backdrop-blur-sm"
+        <div className="sticky top-0 flex items-center justify-between p-5 border-b border-current/10 backdrop-blur-sm z-10"
           style={{ backgroundColor: `${theme.background}ee` }}
         >
           <h2 className="text-lg font-bold">Customize Theme</h2>
@@ -118,10 +190,10 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
           </TouchButton>
         </div>
 
-        <div className="p-4 space-y-8">
+        <div className="p-5">
           {/* Font Selection Section */}
-          <section>
-            <h3 className="text-sm font-bold uppercase tracking-wide mb-4 opacity-70">
+          <section className="pb-6 border-b border-current/10">
+            <h3 className="text-sm font-semibold uppercase tracking-wider mb-4 opacity-70">
               Font
             </h3>
             <div className="space-y-2">
@@ -146,59 +218,68 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
           </section>
 
           {/* Base Colors Section */}
-          <section>
-            <h3 className="text-sm font-bold uppercase tracking-wide mb-4 opacity-70">
+          <section className="py-6 border-b border-current/10">
+            <h3 className="text-sm font-semibold uppercase tracking-wider mb-4 opacity-70">
               Base Colors
             </h3>
             <div className="space-y-4">
-              <ColorPicker
+              <ColorRow
                 label="Background"
                 color={theme.background}
-                onChange={(color) => onSetColor('background', color)}
+                path="background"
+                bgColor={theme.background}
+                isCustomized={checkCustomized('background')}
+                onSetColor={onSetColor}
+                onResetColor={onResetColor}
               />
-              <div className="flex items-center">
-                <div className="flex-1">
-                  <ColorPicker
-                    label="Text"
-                    color={theme.text}
-                    onChange={(color) => onSetColor('text', color)}
-                  />
-                </div>
-                <ContrastWarning fg={theme.text} bg={theme.background} />
-              </div>
-              <ColorPicker
+              <ColorRow
+                label="Text"
+                color={theme.text}
+                path="text"
+                bgColor={theme.background}
+                showContrast
+                isCustomized={checkCustomized('text')}
+                onSetColor={onSetColor}
+                onResetColor={onResetColor}
+              />
+              <ColorRow
                 label="Cursor"
                 color={theme.cursor}
-                onChange={(color) => onSetColor('cursor', color)}
+                path="cursor"
+                bgColor={theme.background}
+                isCustomized={checkCustomized('cursor')}
+                onSetColor={onSetColor}
+                onResetColor={onResetColor}
               />
             </div>
           </section>
 
           {/* Word Type Colors Section */}
-          <section>
-            <h3 className="text-sm font-bold uppercase tracking-wide mb-4 opacity-70">
+          <section className="py-6 border-b border-current/10">
+            <h3 className="text-sm font-semibold uppercase tracking-wider mb-4 opacity-70">
               Word Type Colors
             </h3>
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-3">
               {WORD_TYPE_LABELS.map(({ key, label }) => (
-                <div key={key} className="flex items-center">
-                  <div className="flex-1">
-                    <ColorPicker
-                      label={label}
-                      color={theme.highlight[key]}
-                      onChange={(color) => onSetColor(key, color)}
-                    />
-                  </div>
-                  <ContrastWarning fg={theme.highlight[key]} bg={theme.background} />
-                </div>
+                <ColorRow
+                  key={key}
+                  label={label}
+                  color={theme.highlight[key]}
+                  path={key}
+                  bgColor={theme.background}
+                  showContrast
+                  isCustomized={checkCustomized(key)}
+                  onSetColor={onSetColor}
+                  onResetColor={onResetColor}
+                />
               ))}
             </div>
           </section>
 
-          {/* Save as Palette Section - Only show when customizations exist */}
-          {hasCustomizations && onSavePalette && (
-            <section className="pt-4 border-t border-current/10">
-              <h3 className="text-sm font-bold uppercase tracking-wide mb-4 opacity-70">
+          {/* Save as Palette Section - Only show when color customizations exist */}
+          {hasColorCustomizations && onSavePalette && (
+            <section className="py-6 border-b border-current/10">
+              <h3 className="text-sm font-semibold uppercase tracking-wider mb-4 opacity-70">
                 Save as Palette
               </h3>
               <div className="flex gap-2">
@@ -227,16 +308,26 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                   Save
                 </TouchButton>
               </div>
+              {showSaveSuccess && (
+                <div className="mt-3 p-3 rounded-lg bg-green-50 border border-green-200">
+                  <p className="text-sm text-green-700 font-medium">
+                    ✓ "{savedPaletteName}" saved!
+                  </p>
+                  <p className="text-xs text-green-600 mt-1">
+                    Find it in the theme selector (top-left, dashed border)
+                  </p>
+                </div>
+              )}
               <p className="text-xs opacity-50 mt-2">
-                Save your current customizations as a reusable palette
+                Save your current color customizations as a reusable palette
               </p>
             </section>
           )}
 
           {/* Visible Presets Section */}
           {onToggleThemeVisibility && (
-            <section className="pt-4 border-t border-current/10">
-              <h3 className="text-sm font-bold uppercase tracking-wide mb-4 opacity-70">
+            <section className="py-6 border-b border-current/10">
+              <h3 className="text-sm font-semibold uppercase tracking-wider mb-4 opacity-70">
                 Visible Presets
               </h3>
               <div className="grid grid-cols-2 gap-2">
@@ -245,7 +336,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                   return (
                     <label
                       key={t.id}
-                      className="flex items-center gap-2 p-2 rounded-lg hover:bg-black/5 cursor-pointer"
+                      className="flex items-center gap-2 p-2 rounded-lg hover:bg-black/5 cursor-pointer transition-colors"
                     >
                       <input
                         type="checkbox"
@@ -262,24 +353,25 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                   );
                 })}
               </div>
-              <p className="text-xs opacity-50 mt-2">
+              <p className="text-xs opacity-50 mt-3">
                 Uncheck themes to hide them from the theme selector
               </p>
             </section>
           )}
 
           {/* Actions */}
-          <section className="pt-4 border-t border-current/10">
+          <section className="py-6">
             <TouchButton
               onClick={onResetToPreset}
               disabled={!hasCustomizations}
-              className={`w-full py-3 px-4 rounded-lg text-center font-medium transition-all ${
+              className={`w-full py-3 px-4 rounded-lg text-center font-medium transition-all flex items-center justify-center gap-2 ${
                 hasCustomizations
                   ? 'bg-current/10 hover:bg-current/20'
                   : 'opacity-50 cursor-not-allowed'
               }`}
             >
-              Reset to Preset Theme
+              <IconReset size={18} />
+              Reset All to Preset Theme
             </TouchButton>
           </section>
         </div>

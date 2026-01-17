@@ -20,6 +20,7 @@ Thumbs.db
 # Test results
 test-results/
 playwright-report/
+.playwright-mcp/
 
 # PWA dev files
 dev-dist/

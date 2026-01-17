@@ -7,6 +7,7 @@ interface TooltipProps {
   children: React.ReactNode;
   position?: 'top' | 'bottom';
   delay?: number;
+  disabled?: boolean;
 }
 
 interface Position {
@@ -20,6 +21,7 @@ const Tooltip: React.FC<TooltipProps> = ({
   children,
   position = 'top',
   delay = 300,
+  disabled = false,
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState<Position>({ top: 0, left: 0 });
@@ -66,10 +68,11 @@ const Tooltip: React.FC<TooltipProps> = ({
   }, [position]);
 
   const showTooltip = useCallback(() => {
+    if (disabled) return;
     timeoutRef.current = setTimeout(() => {
       setIsVisible(true);
     }, delay);
-  }, [delay]);
+  }, [delay, disabled]);
 
   const hideTooltip = useCallback(() => {
     if (timeoutRef.current) {

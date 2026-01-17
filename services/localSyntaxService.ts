@@ -1,6 +1,33 @@
 import nlp from 'compromise';
 import { SyntaxAnalysis } from '../types';
 
+/**
+ * Centralized word counting function.
+ * Uses whitespace splitting for consistent word counts across the app.
+ */
+export function countWords(content: string): number {
+  if (!content.trim()) return 0;
+  return content.trim().split(/\s+/).length;
+}
+
+/**
+ * Get word type counts from syntax analysis.
+ * Uses the array lengths from analyzed syntax data for accurate type counts.
+ */
+export function getWordTypeCounts(syntaxData: SyntaxAnalysis): Record<string, number> {
+  return {
+    nouns: syntaxData.nouns.length,
+    verbs: syntaxData.verbs.length,
+    adjectives: syntaxData.adjectives.length,
+    adverbs: syntaxData.adverbs.length,
+    pronouns: syntaxData.pronouns.length,
+    prepositions: syntaxData.prepositions.length,
+    conjunctions: syntaxData.conjunctions.length,
+    articles: syntaxData.articles.length,
+    interjections: syntaxData.interjections.length,
+  };
+}
+
 // Static lists for high accuracy word detection
 const ARTICLES = ['a', 'an', 'the'];
 

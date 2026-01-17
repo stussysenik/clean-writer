@@ -127,6 +127,81 @@ export function useCustomTheme(baseThemeId: string) {
     setCustomState(null);
   }, []);
 
+  // Reset a single color to its base theme value
+  const resetColor = useCallback((
+    path: 'background' | 'text' | 'cursor' | 'selection' | keyof RisoTheme['highlight']
+  ) => {
+    setCustomState(prev => {
+      if (!prev) return null;
+
+      const highlightKeys: (keyof RisoTheme['highlight'])[] = [
+        'noun', 'pronoun', 'verb', 'adjective', 'adverb',
+        'preposition', 'conjunction', 'article', 'interjection'
+      ];
+
+      if (highlightKeys.includes(path as keyof RisoTheme['highlight'])) {
+        // Remove the highlight override
+        const newHighlight = { ...prev.overrides?.highlight };
+        delete newHighlight[path as keyof RisoTheme['highlight']];
+
+        const newOverrides = { ...prev.overrides, highlight: newHighlight };
+
+        // If highlight object is empty, remove it
+        if (Object.keys(newHighlight).length === 0) {
+          delete newOverrides.highlight;
+        }
+
+        // If no overrides remain, clear the state
+        if (Object.keys(newOverrides).length === 0 ||
+            (Object.keys(newOverrides).length === 1 && !newOverrides.highlight)) {
+          const remainingOverrides = { ...newOverrides };
+          delete remainingOverrides.highlight;
+          if (Object.keys(remainingOverrides).length === 0) {
+            return prev.wordVisibility === defaultVisibility ? null : {
+              ...prev,
+              overrides: {},
+            };
+          }
+        }
+
+        return { ...prev, overrides: newOverrides };
+      }
+
+      // Remove the base color override
+      const newOverrides = { ...prev.overrides };
+      delete newOverrides[path as 'background' | 'text' | 'cursor' | 'selection'];
+
+      // If no overrides remain, check if we should clear state
+      if (Object.keys(newOverrides).length === 0 ||
+          (Object.keys(newOverrides).length === 1 && newOverrides.highlight && Object.keys(newOverrides.highlight).length === 0)) {
+        return prev.wordVisibility === defaultVisibility ? null : {
+          ...prev,
+          overrides: {},
+        };
+      }
+
+      return { ...prev, overrides: newOverrides };
+    });
+  }, []);
+
+  // Check if a specific color has been customized
+  const isColorCustomized = useCallback((
+    path: 'background' | 'text' | 'cursor' | 'selection' | keyof RisoTheme['highlight']
+  ): boolean => {
+    if (!customState || customState.baseThemeId !== baseThemeId) return false;
+
+    const highlightKeys: (keyof RisoTheme['highlight'])[] = [
+      'noun', 'pronoun', 'verb', 'adjective', 'adverb',
+      'preposition', 'conjunction', 'article', 'interjection'
+    ];
+
+    if (highlightKeys.includes(path as keyof RisoTheme['highlight'])) {
+      return customState.overrides?.highlight?.[path as keyof RisoTheme['highlight']] !== undefined;
+    }
+
+    return customState.overrides?.[path as 'background' | 'text' | 'cursor' | 'selection'] !== undefined;
+  }, [customState, baseThemeId]);
+
   // Check if theme has customizations
   const hasCustomizations = customState !== null && customState.baseThemeId === baseThemeId;
 
@@ -137,6 +212,8 @@ export function useCustomTheme(baseThemeId: string) {
     setColor,
     toggleVisibility,
     resetToPreset,
+    resetColor,
+    isColorCustomized,
   };
 }
 

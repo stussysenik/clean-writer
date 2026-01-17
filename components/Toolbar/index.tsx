@@ -1,14 +1,12 @@
 import React from 'react';
-import { RisoTheme, ViewMode, HighlightConfig, SyntaxAnalysis } from '../../types';
+import { RisoTheme, ViewMode, HighlightConfig } from '../../types';
 import SyntaxToggles from './SyntaxToggles';
 import ActionButtons from './ActionButtons';
-import WordCountReceipt from './WordCountReceipt';
 
 interface ToolbarProps {
   theme: RisoTheme;
   viewMode: ViewMode;
   maxWidth: number;
-  wordCount: number;
   highlightConfig: HighlightConfig;
   onToggleView: () => void;
   onStrikethrough: () => void;
@@ -19,16 +17,12 @@ interface ToolbarProps {
   // Solo mode props
   soloMode?: keyof HighlightConfig | null;
   onSoloToggle?: (key: keyof HighlightConfig | null) => void;
-  // Receipt word counter props
-  syntaxData?: SyntaxAnalysis;
-  content?: string;
 }
 
 const Toolbar: React.FC<ToolbarProps> = ({
   theme,
   viewMode,
   maxWidth,
-  wordCount,
   highlightConfig,
   onToggleView,
   onStrikethrough,
@@ -38,8 +32,6 @@ const Toolbar: React.FC<ToolbarProps> = ({
   onToggleHighlight,
   soloMode = null,
   onSoloToggle,
-  syntaxData,
-  content,
 }) => {
   return (
     <footer
@@ -74,17 +66,6 @@ const Toolbar: React.FC<ToolbarProps> = ({
           onExport={onExport}
           onClear={onClear}
           onWidthChange={onWidthChange}
-        />
-      </div>
-
-      {/* Right: Word Count Receipt */}
-      <div className="pointer-events-auto">
-        <WordCountReceipt
-          count={wordCount}
-          theme={theme}
-          syntaxData={syntaxData}
-          content={content}
-          highlightConfig={highlightConfig}
         />
       </div>
     </footer>

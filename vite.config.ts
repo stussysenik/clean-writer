@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => {
         },
         includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
         manifest: {
-          name: 'digital typewriter experience',
+          name: 'clean typewriter experience',
           short_name: 'Writer',
           description: 'A distraction-free writing app with syntax highlighting',
           theme_color: '#FDFBF7',

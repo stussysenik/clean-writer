@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { RisoTheme, ViewMode } from '../../types';
 import { IconEyeOpen, IconEyeClosed, IconStrike, IconDownload, IconTrash, IconWidth } from './Icons';
 import TouchButton from '../TouchButton';
+import Tooltip from '../Tooltip';
+import { getIconColor } from '../../utils/contrastAwareColor';
 
 interface ActionButtonsProps {
   theme: RisoTheme;
@@ -14,6 +16,44 @@ interface ActionButtonsProps {
   onWidthChange: (width: number) => void;
 }
 
+interface ActionButtonProps {
+  onClick: () => void;
+  onMouseDown?: (e: React.MouseEvent) => void;
+  disabled?: boolean;
+  icon: React.ReactNode;
+  label: string;
+  tooltip: string;
+  className?: string;
+  ariaLabel?: string;
+}
+
+const ActionButton: React.FC<ActionButtonProps> = ({
+  onClick,
+  onMouseDown,
+  disabled = false,
+  icon,
+  label,
+  tooltip,
+  className = '',
+  ariaLabel,
+}) => (
+  <Tooltip content={tooltip} position="top" delay={400}>
+    <TouchButton
+      onClick={onClick}
+      onMouseDown={onMouseDown}
+      disabled={disabled}
+      className={`flex flex-col items-center justify-center gap-0.5 p-2 rounded-lg transition-all hover:bg-black/5 ${
+        disabled ? 'opacity-30 cursor-not-allowed' : 'opacity-70 hover:opacity-100'
+      } ${className}`}
+      title={tooltip}
+      aria-label={ariaLabel || tooltip}
+    >
+      <span className="flex items-center justify-center">{icon}</span>
+      <span className="text-[9px] uppercase tracking-wider font-medium hidden sm:block">{label}</span>
+    </TouchButton>
+  </Tooltip>
+);
+
 const ActionButtons: React.FC<ActionButtonsProps> = ({
   theme,
   viewMode,
@@ -25,68 +65,94 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   onWidthChange,
 }) => {
   const [showWidthControl, setShowWidthControl] = useState(false);
+  const iconColor = getIconColor(theme);
 
   return (
-    <div className="flex flex-wrap gap-2 md:gap-4 items-center">
-      <TouchButton
+    <div className="flex flex-wrap gap-1 md:gap-2 items-center" style={{ color: iconColor }}>
+      <ActionButton
         onClick={onToggleView}
-        className="hover:scale-110 transition-transform opacity-60 hover:opacity-100"
-        title={viewMode === 'write' ? 'Preview' : 'Edit'}
-      >
-        {viewMode === 'write' ? <IconEyeOpen /> : <IconEyeClosed />}
-      </TouchButton>
+        icon={viewMode === 'write' ? <IconEyeOpen /> : <IconEyeClosed />}
+        label={viewMode === 'write' ? 'Preview' : 'Edit'}
+        tooltip={viewMode === 'write' ? 'Preview markdown' : 'Back to editing'}
+        ariaLabel={viewMode === 'write' ? 'Preview markdown' : 'Switch to edit mode'}
+      />
 
-      <TouchButton
+      <ActionButton
         onClick={onStrikethrough}
         onMouseDown={(e) => e.preventDefault()}
         disabled={viewMode === 'preview'}
-        className="hover:scale-110 transition-transform opacity-60 hover:opacity-100 disabled:opacity-20"
-        title="Strikethrough (Select text first)"
-      >
-        <IconStrike />
-      </TouchButton>
+        icon={<IconStrike />}
+        label="Strike"
+        tooltip="Apply strikethrough to selected text"
+        ariaLabel="Strikethrough selected text"
+      />
 
-      <TouchButton
+      <ActionButton
         onClick={onExport}
-        className="hover:scale-110 transition-transform opacity-60 hover:opacity-100"
-        title="Export Markdown"
-      >
-        <IconDownload />
-      </TouchButton>
+        icon={<IconDownload />}
+        label="Export"
+        tooltip="Download as markdown file"
+        ariaLabel="Export markdown file"
+      />
 
-      <TouchButton
+      <ActionButton
         onClick={onClear}
-        className="hover:scale-110 transition-transform opacity-60 hover:opacity-100 hover:text-riso-pink"
-        title="Clear Content"
-      >
-        <IconTrash />
-      </TouchButton>
+        icon={<IconTrash />}
+        label="Clear"
+        tooltip="Clear all content"
+        ariaLabel="Clear all content"
+        className="hover:text-red-500"
+      />
 
       {/* Width Control */}
-      <div className="relative flex items-center group">
-        <TouchButton
-          onClick={() => setShowWidthControl(!showWidthControl)}
-          className={`hover:scale-110 transition-transform opacity-60 hover:opacity-100 ${
-            showWidthControl ? 'opacity-100' : ''
-          }`}
-          title="Adjust Line Width"
-        >
-          <IconWidth />
-        </TouchButton>
+      <div className="relative flex items-center">
+        <Tooltip content="Adjust line width" position="top" delay={400}>
+          <TouchButton
+            onClick={() => setShowWidthControl(!showWidthControl)}
+            className={`flex flex-col items-center justify-center gap-0.5 p-2 rounded-lg transition-all hover:bg-black/5 ${
+              showWidthControl ? 'opacity-100 bg-black/5' : 'opacity-70 hover:opacity-100'
+            }`}
+            title="Adjust line width"
+            aria-label="Adjust line width"
+            aria-expanded={showWidthControl}
+          >
+            <span className="flex items-center justify-center"><IconWidth /></span>
+            <span className="text-[9px] uppercase tracking-wider font-medium hidden sm:block">Width</span>
+          </TouchButton>
+        </Tooltip>
 
         {showWidthControl && (
-          <div className="absolute bottom-full left-0 mb-4 p-2 bg-white/90 shadow-lg rounded-lg backdrop-blur-sm flex items-center border border-black/5 animate-in fade-in slide-in-from-bottom-2 duration-200">
-            <input
-              type="range"
-              min="300"
-              max="1400"
-              step="50"
-              value={maxWidth}
-              onChange={(e) => onWidthChange(Number(e.target.value))}
-              className="w-32 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-current"
-              style={{ accentColor: theme.accent }}
-            />
-            <span className="ml-2 text-xs opacity-50 w-12 text-right">{maxWidth}px</span>
+          <div
+            className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 p-3 shadow-lg rounded-xl backdrop-blur-sm flex flex-col items-center gap-2 animate-in fade-in slide-in-from-bottom-2 duration-200 border"
+            style={{
+              backgroundColor: `${theme.background}f5`,
+              borderColor: `${theme.text}15`,
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-xs opacity-50 w-8 text-center">300</span>
+              <input
+                type="range"
+                min="300"
+                max="1400"
+                step="50"
+                value={maxWidth}
+                onChange={(e) => onWidthChange(Number(e.target.value))}
+                className="w-28 h-1.5 rounded-lg appearance-none cursor-pointer"
+                style={{
+                  accentColor: theme.accent,
+                  background: `linear-gradient(to right, ${theme.accent} 0%, ${theme.accent} ${((maxWidth - 300) / 1100) * 100}%, ${theme.text}20 ${((maxWidth - 300) / 1100) * 100}%, ${theme.text}20 100%)`,
+                }}
+                aria-label="Line width"
+              />
+              <span className="text-xs opacity-50 w-8 text-center">1400</span>
+            </div>
+            <span
+              className="text-xs font-medium px-2 py-0.5 rounded"
+              style={{ backgroundColor: `${theme.text}10` }}
+            >
+              {maxWidth}px
+            </span>
           </div>
         )}
       </div>

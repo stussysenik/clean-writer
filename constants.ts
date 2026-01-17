@@ -99,27 +99,6 @@ export const THEMES: RisoTheme[] = [
     strikethrough: '#a65d3f',
     selection: 'rgba(139,105,20,0.2)'
   },
-  {
-    id: 'ink',
-    name: 'Ink',
-    text: '#f5f5f5',
-    background: '#0d0d0d',
-    highlight: {
-      noun: '#ff6b6b',
-      pronoun: '#a29bfe',
-      verb: '#4ecdc4',
-      adjective: '#ffe66d',
-      adverb: '#fd79a8',
-      preposition: '#74b9ff',
-      conjunction: '#95e1d3',
-      article: '#8A9499', // Fixed: was #636e72 (2.3:1), now lighter for 4:1+
-      interjection: '#e17055',
-    },
-    accent: '#ff6b6b',
-    cursor: '#ff6b6b',
-    strikethrough: '#4ecdc4',
-    selection: 'rgba(255,107,107,0.2)'
-  },
   // NEW THEMES
   {
     id: 'paper',
@@ -225,6 +204,49 @@ export const THEMES: RisoTheme[] = [
     cursor: '#4ADE80',
     strikethrough: '#FCA5A5',
     selection: 'rgba(74,222,128,0.2)'
+  },
+  // FLEXOKI THEMES - Accessible IDE-quality color schemes
+  {
+    id: 'flexoki-light',
+    name: 'Flexoki Light',
+    text: '#100F0F',
+    background: '#FFFCF0',
+    highlight: {
+      noun: '#205EA6',      // Blue 600
+      pronoun: '#5E409D',   // Purple 600
+      verb: '#AF3029',      // Red 600
+      adjective: '#66800B', // Green 600
+      adverb: '#BC5215',    // Orange 600
+      preposition: '#24837B', // Cyan 600
+      conjunction: '#AD8301', // Yellow 600
+      article: '#6F6E69',   // Gray 600
+      interjection: '#A02F6F', // Magenta 600
+    },
+    accent: '#205EA6',
+    cursor: '#100F0F',
+    strikethrough: '#AF3029',
+    selection: 'rgba(32,94,166,0.2)'
+  },
+  {
+    id: 'flexoki-dark',
+    name: 'Flexoki Dark',
+    text: '#FFFCF0',
+    background: '#100F0F',
+    highlight: {
+      noun: '#4385BE',      // Blue 400
+      pronoun: '#8B7EC8',   // Purple 400
+      verb: '#D14D41',      // Red 400
+      adjective: '#879A39', // Green 400
+      adverb: '#DA702C',    // Orange 400
+      preposition: '#3AA99F', // Cyan 400
+      conjunction: '#D0A215', // Yellow 400
+      article: '#878580',   // Gray 400
+      interjection: '#CE5D97', // Magenta 400
+    },
+    accent: '#4385BE',
+    cursor: '#FFFCF0',
+    strikethrough: '#D14D41',
+    selection: 'rgba(67,133,190,0.3)'
   },
 ];
 

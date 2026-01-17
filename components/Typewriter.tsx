@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { RisoTheme, SyntaxAnalysis, HighlightConfig } from '../types';
+import { useIMEComposition } from '../hooks/useIMEComposition';
 
 interface TypewriterProps {
   content: string;
@@ -26,6 +27,14 @@ const Typewriter: React.FC<TypewriterProps> = ({
   const backdropRef = useRef<HTMLDivElement>(null);
   const [ghostVisible, setGhostVisible] = useState(true);
 
+  // IME composition handling for Chinese, Japanese, Korean, and other languages
+  const {
+    isComposing,
+    handleCompositionStart,
+    handleCompositionUpdate,
+    handleCompositionEnd,
+  } = useIMEComposition();
+
   // Blink effect for the ghost cursor
   useEffect(() => {
     const interval = setInterval(() => {
@@ -35,6 +44,11 @@ const Typewriter: React.FC<TypewriterProps> = ({
   }, []);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Skip handling during IME composition (Chinese, Japanese, Korean, etc.)
+    if (isComposing) {
+      return;
+    }
+
     // 1. Strictly Disable Deletion
     if (e.key === 'Backspace' || e.key === 'Delete') {
       e.preventDefault();
@@ -61,6 +75,22 @@ const Typewriter: React.FC<TypewriterProps> = ({
         }
       }, 0);
     }
+  };
+
+  // Handle IME composition end - append the composed text
+  const handleCompositionEndWithAppend = (e: React.CompositionEvent<HTMLTextAreaElement>) => {
+    handleCompositionEnd(e, (composedText: string) => {
+      // Append the composed text to the end of content
+      const newContent = content + composedText;
+      setContent(newContent);
+
+      // Scroll to bottom to follow the "ghost" cursor
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
+        }
+      }, 0);
+    });
   };
 
   // Handle paste - append pasted text to end
@@ -212,9 +242,12 @@ const Typewriter: React.FC<TypewriterProps> = ({
       <textarea
         ref={textareaRef}
         value={content}
-        onChange={() => { }} // Handled in onKeyDown
+        onChange={() => { }} // Handled in onKeyDown and composition events
         onKeyDown={handleKeyDown}
         onPaste={handlePaste}
+        onCompositionStart={handleCompositionStart}
+        onCompositionUpdate={handleCompositionUpdate}
+        onCompositionEnd={handleCompositionEndWithAppend}
         spellCheck={false}
         autoCorrect="off"
         autoCapitalize="off"

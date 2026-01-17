@@ -13,7 +13,6 @@ import {
 } from './Icons';
 import TouchButton from '../TouchButton';
 import Tooltip from '../Tooltip';
-import SyntaxLegend from './SyntaxLegend';
 
 interface SyntaxTogglesProps {
   theme: RisoTheme;
@@ -150,10 +149,6 @@ const SyntaxToggles: React.FC<SyntaxTogglesProps> = ({
           </>
         )}
 
-        {/* Legend Button */}
-        <div className="ml-1">
-          <SyntaxLegend theme={theme} />
-        </div>
       </div>
     </div>
   );
