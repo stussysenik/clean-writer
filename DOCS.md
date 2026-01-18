@@ -408,10 +408,10 @@ All interactive elements have:
 
 ### Responsive Breakpoints
 
-| Breakpoint | Font Size | Layout |
-|------------|-----------|--------|
-| < 768px | 18px | Vertical toolbar |
-| ≥ 768px | 24px | Horizontal toolbar |
+| Breakpoint | Font Size | Syntax Toggles | Side Panel |
+|------------|-----------|----------------|------------|
+| < 768px | 18px | Hidden (use side panel) | Pulsing hint for first-time users |
+| ≥ 768px | 24px | Full toolbar visible | Available |
 
 ### Theme Selector
 
@@ -447,6 +447,7 @@ All interactive elements have:
 | `clean_writer_theme` | Selected theme ID |
 | `clean_writer_font` | Selected font ID |
 | `clean_writer_custom_theme` | Custom theme overrides |
+| `seen_syntax_panel` | First-visit tracking for side panel |
 
 ---
 

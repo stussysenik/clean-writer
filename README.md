@@ -29,6 +29,7 @@ Open [http://localhost:3000](http://localhost:3000)
 | **Export** | Download as `.md` file |
 | **PWA** | Install on iOS/Android home screen |
 | **Offline** | Works without internet |
+| **Responsive** | Mobile-friendly with side panel for syntax controls |
 
 ## Keyboard
 

@@ -138,6 +138,23 @@ npm run test:headed   # With browser
 
 ---
 
+### ✅ Phase 5: Responsive Syntax Toolbar
+
+Made the bottom toolbar responsive with mobile-first side panel.
+
+**Changes:**
+- Hidden SyntaxToggles on mobile (<768px)
+- Added mobile hint indicator ("Syntax panel →")
+- Added first-visit pulse animation on UnifiedSyntaxPanel tab
+- LocalStorage tracking for `seen_syntax_panel`
+
+**Files Modified:**
+- `components/Toolbar/index.tsx` - Responsive visibility, mobile hint
+- `components/UnifiedSyntaxPanel.tsx` - Pulse animation, onPanelSeen callback
+- `App.tsx` - hasSeenSyntaxPanel state & persistence
+
+---
+
 ## File Changes Summary
 
 | File | Action | Description |
