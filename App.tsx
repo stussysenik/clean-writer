@@ -15,6 +15,9 @@ import Toolbar from "./components/Toolbar";
 import ThemeSelector from "./components/Toolbar/ThemeSelector";
 import ThemeCustomizer from "./components/ThemeCustomizer";
 import UnifiedSyntaxPanel from "./components/UnifiedSyntaxPanel";
+import DragGhost from "./components/DragGhost";
+import AnimatedTrashBin, { TrashBinState } from "./components/AnimatedTrashBin";
+import Toast from "./components/Toast";
 import TouchButton from "./components/TouchButton";
 import { IconSettings } from "./components/Toolbar/Icons";
 import useCustomTheme from "./hooks/useCustomTheme";
@@ -192,6 +195,17 @@ const App: React.FC = () => {
                 },
         );
 
+        // First-visit tracking for syntax panel (mobile hint animation)
+        const [hasSeenSyntaxPanel, setHasSeenSyntaxPanel] = useState<boolean>(
+                () => {
+                        try {
+                                return localStorage.getItem("seen_syntax_panel") === "true";
+                        } catch {
+                                return false;
+                        }
+                },
+        );
+
         // Use custom theme hook
         const {
                 effectiveTheme,
@@ -215,23 +229,149 @@ const App: React.FC = () => {
                 reorderThemes,
         } = useThemeVisibility();
 
-        // Drag state for theme selector
-        const [isDragging, setIsDragging] = useState(false);
-        const [isDraggingOverTrash, setIsDraggingOverTrash] = useState(false);
+        // Enhanced drag state with position tracking
+        const [dragState, setDragState] = useState<{
+                isDragging: boolean;
+                draggedTheme: { id: string; color: string; isPreset: boolean } | null;
+                position: { x: number; y: number };
+                originalPosition: { x: number; y: number };
+                isOverTrash: boolean;
+        }>({
+                isDragging: false,
+                draggedTheme: null,
+                position: { x: 0, y: 0 },
+                originalPosition: { x: 0, y: 0 },
+                isOverTrash: false,
+        });
 
-        // Drag handlers
-        const handleDragStart = useCallback(() => {
-                setIsDragging(true);
+        // Trash bin animation state
+        const [trashState, setTrashState] = useState<TrashBinState>('hidden');
+
+        // Toast state for last-theme warning
+        const [showLastThemeToast, setShowLastThemeToast] = useState(false);
+
+        // Animation states for delete sequence
+        const [isDeleting, setIsDeleting] = useState(false);
+        const [isRejected, setIsRejected] = useState(false);
+
+        // Filter visible themes (used for last-theme check)
+        const visibleThemes = useMemo(
+                () => orderedThemes.filter((t) => !hiddenThemeIds.includes(t.id)),
+                [orderedThemes, hiddenThemeIds],
+        );
+
+        // Check if pointer is over trash zone
+        const checkTrashZoneHit = useCallback((clientY: number) => {
+                const screenHeight = window.innerHeight;
+                return clientY > screenHeight - 140;
         }, []);
+
+        // Enhanced drag handlers
+        const handleDragStart = useCallback((
+                themeInfo: { id: string; color: string; isPreset: boolean },
+                position: { x: number; y: number }
+        ) => {
+                setDragState({
+                        isDragging: true,
+                        draggedTheme: themeInfo,
+                        position,
+                        originalPosition: position,
+                        isOverTrash: false,
+                });
+                setTrashState('idle');
+                setIsDeleting(false);
+                setIsRejected(false);
+        }, []);
+
+        const handleDragMove = useCallback((position: { x: number; y: number }) => {
+                const isOverTrash = checkTrashZoneHit(position.y);
+                setDragState(prev => ({
+                        ...prev,
+                        position,
+                        isOverTrash,
+                }));
+                setTrashState(isOverTrash ? 'hover' : 'idle');
+        }, [checkTrashZoneHit]);
 
         const handleDragEnd = useCallback(() => {
-                setIsDragging(false);
-                setIsDraggingOverTrash(false);
-        }, []);
+                const { isDragging, draggedTheme, isOverTrash } = dragState;
 
-        const handleDragOverTrash = useCallback((isOver: boolean) => {
-                setIsDraggingOverTrash(isOver);
-        }, []);
+                if (!isDragging || !draggedTheme) {
+                        setDragState(prev => ({
+                                ...prev,
+                                isDragging: false,
+                                draggedTheme: null,
+                                isOverTrash: false,
+                        }));
+                        setTrashState('hidden');
+                        return;
+                }
+
+                if (isOverTrash) {
+                        // Check if this is the last theme/palette
+                        const canDelete = draggedTheme.isPreset
+                                ? visibleThemes.length > 1
+                                : true; // Custom palettes can always be deleted
+
+                        if (!canDelete) {
+                                // Reject: last theme can't be deleted
+                                setIsRejected(true);
+                                setTrashState('rejecting');
+                                setShowLastThemeToast(true);
+
+                                // Reset after bounce-back animation
+                                setTimeout(() => {
+                                        setDragState(prev => ({
+                                                ...prev,
+                                                isDragging: false,
+                                                draggedTheme: null,
+                                                isOverTrash: false,
+                                        }));
+                                        setTrashState('hidden');
+                                        setIsRejected(false);
+                                }, 600);
+                        } else {
+                                // Accept: trigger swallow animation
+                                setIsDeleting(true);
+                                setTrashState('swallowing');
+                        }
+                } else {
+                        // Not over trash, just end drag
+                        setDragState(prev => ({
+                                ...prev,
+                                isDragging: false,
+                                draggedTheme: null,
+                                isOverTrash: false,
+                        }));
+                        setTrashState('hidden');
+                }
+        }, [dragState, visibleThemes.length]);
+
+        // Handle swallow animation completion - actually delete the item
+        const handleSwallowComplete = useCallback(() => {
+                const { draggedTheme } = dragState;
+
+                if (draggedTheme) {
+                        if (draggedTheme.isPreset) {
+                                hideTheme(draggedTheme.id);
+                        } else {
+                                deletePalette(draggedTheme.id);
+                        }
+                }
+
+                setDragState(prev => ({
+                        ...prev,
+                        isDragging: false,
+                        draggedTheme: null,
+                        isOverTrash: false,
+                }));
+                setTrashState('hidden');
+                setIsDeleting(false);
+        }, [dragState, hideTheme, deletePalette]);
+
+        // Derived values for compatibility with ThemeSelector
+        const isDragging = dragState.isDragging;
+        const isDraggingOverTrash = dragState.isOverTrash;
 
         // Get current theme - either from custom palette or from theme customizer
         const currentTheme = useMemo(() => {
@@ -303,6 +443,18 @@ const App: React.FC = () => {
                 setActivePaletteId(palette.id);
                 setThemeId(palette.baseThemeId);
         }, []);
+
+        // Handle syntax panel first open (marks as seen)
+        const handleSyntaxPanelSeen = useCallback(() => {
+                if (!hasSeenSyntaxPanel) {
+                        setHasSeenSyntaxPanel(true);
+                        try {
+                                localStorage.setItem("seen_syntax_panel", "true");
+                        } catch (e) {
+                                console.warn("Could not save syntax panel seen state");
+                        }
+                }
+        }, [hasSeenSyntaxPanel]);
 
         // Handle theme change (clears active palette)
         const handleThemeChange = useCallback((id: string) => {
@@ -621,87 +773,6 @@ const App: React.FC = () => {
                 setViewMode(viewMode === "write" ? "preview" : "write");
         };
 
-        // TrashZone component for dropping themes to hide/delete
-        const TrashZone = () => {
-                if (!isDragging) return null;
-
-                const handleDragOver = (e: React.DragEvent) => {
-                        e.preventDefault();
-                        handleDragOverTrash(true);
-                };
-
-                const handleDragLeave = () => {
-                        handleDragOverTrash(false);
-                };
-
-                const handleDrop = (e: React.DragEvent) => {
-                        e.preventDefault();
-                        handleDragOverTrash(false);
-                };
-
-                return (
-                        <div
-                                className="fixed top-0 left-0 right-0 h-32 flex items-center justify-center z-40 transition-all duration-200"
-                                style={{
-                                        background: isDraggingOverTrash
-                                                ? `${currentTheme.accent}20`
-                                                : "transparent",
-                                        borderBottom: isDraggingOverTrash
-                                                ? `2px solid ${currentTheme.accent}`
-                                                : "1px dashed rgba(128,128,128,0.3)",
-                                }}
-                                onDragOver={handleDragOver}
-                                onDragLeave={handleDragLeave}
-                                onDrop={handleDrop}
-                        >
-                                <div
-                                        className="flex flex-col items-center gap-2 px-6 py-4 rounded-2xl transition-all duration-200"
-                                        style={{
-                                                backgroundColor:
-                                                        isDraggingOverTrash
-                                                                ? `${currentTheme.accent}30`
-                                                                : `${currentTheme.text}10`,
-                                                transform: isDraggingOverTrash
-                                                        ? "scale(1.1)"
-                                                        : "scale(1)",
-                                                boxShadow: isDraggingOverTrash
-                                                        ? `0 8px 32px ${currentTheme.accent}40`
-                                                        : "none",
-                                        }}
-                                >
-                                        <svg
-                                                width="32"
-                                                height="32"
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                stroke={currentTheme.text}
-                                                strokeWidth="2"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                style={{
-                                                        color: isDraggingOverTrash
-                                                                ? currentTheme.accent
-                                                                : currentTheme.text,
-                                                }}
-                                        >
-                                                <polyline points="3 6 5 6 21 6" />
-                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                        </svg>
-                                        <span
-                                                className="text-sm font-medium"
-                                                style={{
-                                                        color: isDraggingOverTrash
-                                                                ? currentTheme.accent
-                                                                : currentTheme.text,
-                                                }}
-                                        >
-                                                Drop to delete
-                                        </span>
-                                </div>
-                        </div>
-                );
-        };
-
         return (
                 <div
                         className="w-full h-[100dvh] flex flex-col relative overflow-hidden transition-colors duration-500"
@@ -742,8 +813,32 @@ const App: React.FC = () => {
                                 onToggleThemeVisibility={toggleThemeVisibility}
                         />
 
-                        {/* Trash Zone for deleting/hiding themes */}
-                        <TrashZone />
+                        {/* Animated Trash Bin for deleting/hiding themes */}
+                        <AnimatedTrashBin
+                                isVisible={isDragging}
+                                state={trashState}
+                                onAnimationComplete={handleSwallowComplete}
+                                themeColor={dragState.draggedTheme?.color}
+                        />
+
+                        {/* Drag Ghost - floating circle that follows cursor */}
+                        <DragGhost
+                                color={dragState.draggedTheme?.color || '#888'}
+                                position={dragState.position}
+                                isVisible={isDragging}
+                                isOverTrash={isDraggingOverTrash}
+                                isDeleting={isDeleting}
+                                isRejected={isRejected}
+                                originalPosition={dragState.originalPosition}
+                        />
+
+                        {/* Toast for warnings */}
+                        <Toast
+                                message="You need at least one theme"
+                                isVisible={showLastThemeToast}
+                                onDismiss={() => setShowLastThemeToast(false)}
+                                type="warning"
+                        />
 
                         {/* Top Bar with Theme Selector and Settings */}
                         <div className="absolute top-0 left-0 right-0 flex justify-between items-center p-4 z-30 pointer-events-none">
@@ -751,26 +846,17 @@ const App: React.FC = () => {
                                         <ThemeSelector
                                                 currentTheme={currentTheme}
                                                 themeId={themeId}
-                                                onThemeChange={
-                                                        handleThemeChange
-                                                }
+                                                onThemeChange={handleThemeChange}
                                                 hiddenThemeIds={hiddenThemeIds}
-                                                onHideTheme={hideTheme}
                                                 customPalettes={visiblePalettes}
-                                                activePaletteId={
-                                                        activePaletteId
-                                                }
-                                                onPaletteSelect={
-                                                        handlePaletteSelect
-                                                }
-                                                onDeletePalette={deletePalette}
+                                                activePaletteId={activePaletteId}
+                                                onPaletteSelect={handlePaletteSelect}
                                                 orderedThemes={orderedThemes}
                                                 onReorderThemes={reorderThemes}
                                                 onDragStart={handleDragStart}
+                                                onDragMove={handleDragMove}
                                                 onDragEnd={handleDragEnd}
-                                                isDraggingOverTrash={
-                                                        isDraggingOverTrash
-                                                }
+                                                isDraggingOverTrash={isDraggingOverTrash}
                                         />
                                 </div>
                                 <div className="pointer-events-auto flex items-center min-h-[44px]">
@@ -828,6 +914,10 @@ const App: React.FC = () => {
                                 syntaxData={syntaxData}
                                 highlightConfig={effectiveHighlightConfig}
                                 onToggleHighlight={toggleHighlight}
+                                soloMode={soloMode}
+                                onSoloToggle={handleSoloToggle}
+                                hasSeenPanel={hasSeenSyntaxPanel}
+                                onPanelSeen={handleSyntaxPanelSeen}
                         />
 
                         {/* Bottom Toolbar */}
@@ -844,6 +934,7 @@ const App: React.FC = () => {
                                 onToggleHighlight={toggleHighlight}
                                 soloMode={soloMode}
                                 onSoloToggle={handleSoloToggle}
+                                hasSeenSyntaxPanel={hasSeenSyntaxPanel}
                         />
                 </div>
         );

@@ -9,6 +9,11 @@ interface UnifiedSyntaxPanelProps {
   syntaxData: SyntaxAnalysis;
   highlightConfig: HighlightConfig;
   onToggleHighlight: (key: keyof HighlightConfig) => void;
+  soloMode?: keyof HighlightConfig | null;
+  onSoloToggle?: (key: keyof HighlightConfig | null) => void;
+  // First-visit hint props
+  hasSeenPanel?: boolean;
+  onPanelSeen?: () => void;
 }
 
 const DEFAULT_WORD_TYPE_CONFIG = [
@@ -40,6 +45,10 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
   syntaxData,
   highlightConfig,
   onToggleHighlight,
+  soloMode,
+  onSoloToggle,
+  hasSeenPanel = true,
+  onPanelSeen,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -202,6 +211,13 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
+  // Mark panel as seen when opened for the first time
+  useEffect(() => {
+    if (isOpen && !hasSeenPanel && onPanelSeen) {
+      onPanelSeen();
+    }
+  }, [isOpen, hasSeenPanel, onPanelSeen]);
+
   // ===== ITEM REORDER DRAG HANDLING =====
 
   const handleItemDragStart = useCallback((key: WordTypeKey, clientY: number) => {
@@ -280,6 +296,17 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
     });
     setItemPositions(positions);
   }, [wordTypeOrder]);
+
+  // Double-click handler for solo mode toggle
+  const handleDoubleClick = useCallback((key: keyof HighlightConfig) => {
+    if (onSoloToggle) {
+      if (soloMode === key) {
+        onSoloToggle(null); // Exit solo mode
+      } else {
+        onSoloToggle(key); // Enter solo mode for this category
+      }
+    }
+  }, [onSoloToggle, soloMode]);
 
   // Long press for item reorder
   const handleItemMouseDown = useCallback((key: WordTypeKey, e: React.MouseEvent | React.TouchEvent) => {
@@ -376,7 +403,9 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
         onMouseDown={handleMouseDown}
       >
         <div
-          className="rounded-l-2xl shadow-lg flex items-center gap-2 transition-all duration-300"
+          className={`rounded-l-2xl shadow-lg flex items-center gap-2 transition-all duration-300 ${
+            !hasSeenPanel && !isOpen ? 'animate-pulse' : ''
+          }`}
           style={{
             backgroundColor: theme.background,
             color: theme.text,
@@ -455,6 +484,8 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
               const basePosition = index * ITEM_HEIGHT;
               const currentPosition = itemPositions[item.key] ?? basePosition;
               const isActive = highlightConfig[item.key as keyof HighlightConfig];
+              const isSoloed = soloMode === item.key;
+              const isDimmed = soloMode !== null && !isSoloed;
 
               // Calculate collision effects for non-dragged items
               const displacement = currentPosition - basePosition;
@@ -482,9 +513,11 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
                       : isBeingPushed
                       ? '0 2px 8px rgba(0,0,0,0.08)'
                       : 'none',
-                    opacity: !isActive ? 0.4 : 1,
+                    opacity: isDimmed ? 0.4 : !isActive ? 0.4 : 1,
+                    filter: isDimmed ? 'grayscale(0.6)' : 'none',
                     borderRadius: '8px',
                   }}
+                  onDoubleClick={() => handleDoubleClick(item.key as keyof HighlightConfig)}
                   onMouseDown={(e) => {
                     e.stopPropagation();
                     handleItemMouseDown(item.key, e);
@@ -530,7 +563,7 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
                     <TouchButton
                       onClick={() => onToggleHighlight(item.key as keyof HighlightConfig)}
                       className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
-                        isActive ? 'ring-2 ring-offset-1' : ''
+                        isSoloed ? 'ring-2 ring-offset-1' : ''
                       }`}
                       style={{
                         backgroundColor: isActive

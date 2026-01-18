@@ -9,14 +9,16 @@ interface ThemeSelectorProps {
         themeId: string;
         onThemeChange: (id: string) => void;
         hiddenThemeIds?: string[];
-        onHideTheme?: (id: string) => void;
         customPalettes?: SavedPalette[];
         activePaletteId?: string | null;
         onPaletteSelect?: (palette: SavedPalette) => void;
-        onDeletePalette?: (id: string) => void;
         orderedThemes?: typeof THEMES;
         onReorderThemes?: (fromIndex: number, toIndex: number) => void;
-        onDragStart?: () => void;
+        onDragStart?: (
+                themeInfo: { id: string; color: string; isPreset: boolean },
+                position: { x: number; y: number }
+        ) => void;
+        onDragMove?: (position: { x: number; y: number }) => void;
         onDragEnd?: () => void;
         isDraggingOverTrash?: boolean;
 }
@@ -46,14 +48,13 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
         themeId,
         onThemeChange,
         hiddenThemeIds = [],
-        onHideTheme,
         customPalettes = [],
         activePaletteId = null,
         onPaletteSelect,
-        onDeletePalette,
         orderedThemes = THEMES,
         onReorderThemes,
         onDragStart,
+        onDragMove,
         onDragEnd,
         isDraggingOverTrash = false,
 }) => {
@@ -78,6 +79,9 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
         const touchStartPosRef = useRef<{ x: number; y: number } | null>(null);
         const containerRef = useRef<HTMLDivElement>(null);
         const buttonRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
+        // Pointer capture refs
+        const pointerIdRef = useRef<number | null>(null);
+        const captureTargetRef = useRef<HTMLElement | null>(null);
 
         // Clear long-press timer
         const clearLongPressTimer = useCallback(() => {
@@ -94,9 +98,14 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
                         clientX: number,
                         clientY: number,
                         isPreset: boolean,
+                        pointerId: number,
+                        target: HTMLElement,
                 ) => {
                         touchStartPosRef.current = { x: clientX, y: clientY };
                         setPressedIndex(index);
+                        // Store pointer info for capture
+                        pointerIdRef.current = pointerId;
+                        captureTargetRef.current = target;
 
                         longPressTimerRef.current = setTimeout(() => {
                                 // Trigger haptic feedback if available
@@ -104,14 +113,45 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
                                         navigator.vibrate(50);
                                 }
 
+                                // Capture pointer events to this element (works even outside container)
+                                if (captureTargetRef.current && pointerIdRef.current !== null) {
+                                        try {
+                                                captureTargetRef.current.setPointerCapture(pointerIdRef.current);
+                                        } catch (e) {
+                                                // Pointer may have been released already
+                                        }
+                                }
+
                                 // Immediately enter drag mode (no separate delete mode)
                                 setIsDragMode(true);
                                 setDragIndex(index);
                                 setDragItemType(isPreset ? "preset" : "custom");
-                                onDragStart?.(); // Signal to App.tsx to show trash zone
+
+                                // Get theme/palette info for the dragged item
+                                let themeInfo: { id: string; color: string; isPreset: boolean };
+                                if (isPreset) {
+                                        const theme = visibleThemes[index];
+                                        themeInfo = {
+                                                id: theme?.id || '',
+                                                color: theme?.accent || '#888',
+                                                isPreset: true,
+                                        };
+                                } else {
+                                        const paletteIndex = index - visibleThemes.length;
+                                        const palette = customPalettes[paletteIndex];
+                                        const baseTheme = THEMES.find(t => t.id === palette?.baseThemeId);
+                                        themeInfo = {
+                                                id: palette?.id || '',
+                                                color: palette?.overrides?.background || baseTheme?.accent || '#888',
+                                                isPreset: false,
+                                        };
+                                }
+
+                                // Signal to App.tsx with theme info and position
+                                onDragStart?.(themeInfo, { x: clientX, y: clientY });
                         }, LONG_PRESS_THRESHOLD);
                 },
-                [onDragStart],
+                [onDragStart, visibleThemes, customPalettes],
         );
 
         // Handle press move
@@ -126,10 +166,15 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
                                 clientY - touchStartPosRef.current.y,
                         );
 
-                        // Cancel long-press if moved too much
-                        if (deltaX > 10 || deltaY > 10) {
+                        // Cancel long-press if moved too much (before drag mode starts)
+                        if (!isDragMode && (deltaX > 10 || deltaY > 10)) {
                                 clearLongPressTimer();
                                 setPressedIndex(null);
+                        }
+
+                        // Report position to parent for DragGhost
+                        if (isDragMode) {
+                                onDragMove?.({ x: clientX, y: clientY });
                         }
 
                         // Handle drag-over detection during drag mode
@@ -161,7 +206,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
                                 setDragOverIndex(null);
                         }
                 },
-                [isDragMode, dragIndex, clearLongPressTimer],
+                [isDragMode, dragIndex, clearLongPressTimer, onDragMove],
         );
 
         // Handle press end
@@ -170,33 +215,25 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
                 touchStartPosRef.current = null;
                 setPressedIndex(null);
 
-                // If dropped on trash zone, delete/hide the item
-                if (isDragMode && dragIndex !== null && isDraggingOverTrash) {
-                        if (dragItemType === "preset") {
-                                // Hide preset theme (but only if more than 1 visible)
-                                if (visibleThemes.length > 1 && onHideTheme) {
-                                        const themeToHide =
-                                                visibleThemes[dragIndex];
-                                        if (themeToHide) {
-                                                onHideTheme(themeToHide.id);
-                                        }
+                // Release pointer capture if active
+                if (captureTargetRef.current && pointerIdRef.current !== null) {
+                        try {
+                                if (captureTargetRef.current.hasPointerCapture(pointerIdRef.current)) {
+                                        captureTargetRef.current.releasePointerCapture(pointerIdRef.current);
                                 }
-                        } else if (dragItemType === "custom") {
-                                // Delete custom palette
-                                const paletteIndex =
-                                        dragIndex - visibleThemes.length;
-                                const paletteToDelete =
-                                        customPalettes[paletteIndex];
-                                if (paletteToDelete && onDeletePalette) {
-                                        onDeletePalette(paletteToDelete.id);
-                                }
+                        } catch (e) {
+                                // Pointer may have been released already
                         }
                 }
-                // Complete the reorder if in drag mode and dropped on another theme
-                else if (
+                pointerIdRef.current = null;
+                captureTargetRef.current = null;
+
+                // Complete the reorder if in drag mode and dropped on another theme (not on trash)
+                if (
                         isDragMode &&
                         dragIndex !== null &&
                         dragOverIndex !== null &&
+                        !isDraggingOverTrash &&
                         onReorderThemes &&
                         dragItemType === "preset"
                 ) {
@@ -223,7 +260,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
                         }
                 }
 
-                // Signal drag end to parent
+                // Signal drag end to parent (App.tsx handles delete animation)
                 if (isDragMode) {
                         onDragEnd?.();
                 }
@@ -242,85 +279,37 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
                 onReorderThemes,
                 visibleThemes,
                 orderedThemes,
-                customPalettes,
-                onHideTheme,
-                onDeletePalette,
                 onDragEnd,
                 clearLongPressTimer,
         ]);
 
-        // Mouse events
-        const handleMouseDown = useCallback(
-                (index: number, e: React.MouseEvent, isPreset: boolean) => {
-                        handlePressStart(index, e.clientX, e.clientY, isPreset);
+        // Pointer events (unified mouse + touch handling with pointer capture)
+        const handlePointerDown = useCallback(
+                (index: number, e: React.PointerEvent, isPreset: boolean) => {
+                        // Prevent default to avoid text selection during drag
+                        e.preventDefault();
+                        handlePressStart(
+                                index,
+                                e.clientX,
+                                e.clientY,
+                                isPreset,
+                                e.pointerId,
+                                e.currentTarget as HTMLElement,
+                        );
                 },
                 [handlePressStart],
         );
 
-        const handleMouseMove = useCallback(
-                (e: React.MouseEvent) => {
+        const handlePointerMove = useCallback(
+                (e: React.PointerEvent) => {
                         handlePressMove(e.clientX, e.clientY);
                 },
                 [handlePressMove],
         );
 
-        const handleMouseUp = useCallback(() => {
+        const handlePointerUp = useCallback(() => {
                 handlePressEnd();
         }, [handlePressEnd]);
-
-        // Touch events
-        const handleTouchStart = useCallback(
-                (index: number, e: React.TouchEvent, isPreset: boolean) => {
-                        const touch = e.touches[0];
-                        handlePressStart(
-                                index,
-                                touch.clientX,
-                                touch.clientY,
-                                isPreset,
-                        );
-                },
-                [handlePressStart],
-        );
-
-        const handleTouchMove = useCallback(
-                (e: React.TouchEvent) => {
-                        const touch = e.touches[0];
-                        handlePressMove(touch.clientX, touch.clientY);
-                },
-                [handlePressMove],
-        );
-
-        const handleTouchEnd = useCallback(() => {
-                handlePressEnd();
-        }, [handlePressEnd]);
-
-        // Global listeners for drag mode
-        useEffect(() => {
-                if (isDragMode) {
-                        const handleGlobalMouseUp = () => handlePressEnd();
-                        const handleGlobalTouchEnd = () => handlePressEnd();
-
-                        document.addEventListener(
-                                "mouseup",
-                                handleGlobalMouseUp,
-                        );
-                        document.addEventListener(
-                                "touchend",
-                                handleGlobalTouchEnd,
-                        );
-
-                        return () => {
-                                document.removeEventListener(
-                                        "mouseup",
-                                        handleGlobalMouseUp,
-                                );
-                                document.removeEventListener(
-                                        "touchend",
-                                        handleGlobalTouchEnd,
-                                );
-                        };
-                }
-        }, [isDragMode, handlePressEnd]);
 
         // Cleanup timers on unmount
         useEffect(() => {
@@ -353,8 +342,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
                 <div
                         ref={containerRef}
                         className="flex gap-3 flex-wrap max-w-[240px] md:max-w-[320px] items-center"
-                        onMouseMove={isDragMode ? handleMouseMove : undefined}
-                        onTouchMove={isDragMode ? handleTouchMove : undefined}
+                        onPointerMove={isDragMode ? handlePointerMove : undefined}
                 >
                         {/* Preset Themes */}
                         {visibleThemes.map((t, index) => {
@@ -394,30 +382,16 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
                                                                                 index,
                                                                         )
                                                                 }
-                                                                onMouseDown={(
-                                                                        e,
-                                                                ) =>
-                                                                        handleMouseDown(
+                                                                onPointerDown={(e) =>
+                                                                        handlePointerDown(
                                                                                 index,
                                                                                 e,
                                                                                 true,
                                                                         )
                                                                 }
-                                                                onMouseUp={
-                                                                        handleMouseUp
-                                                                }
-                                                                onTouchStart={(
-                                                                        e,
-                                                                ) =>
-                                                                        handleTouchStart(
-                                                                                index,
-                                                                                e,
-                                                                                true,
-                                                                        )
-                                                                }
-                                                                onTouchEnd={
-                                                                        handleTouchEnd
-                                                                }
+                                                                onPointerUp={handlePointerUp}
+                                                                onPointerMove={isDragMode ? handlePointerMove : undefined}
+                                                                onPointerCancel={handlePointerUp}
                                                                 className={`relative w-9 h-9 md:w-8 md:h-8 rounded-full transition-all duration-200 touch-manipulation overflow-hidden ${
                                                                         isSelected
                                                                                 ? "ring-2 ring-offset-2"
@@ -491,30 +465,16 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
                                                                                 palette,
                                                                         )
                                                                 }
-                                                                onMouseDown={(
-                                                                        e,
-                                                                ) =>
-                                                                        handleMouseDown(
+                                                                onPointerDown={(e) =>
+                                                                        handlePointerDown(
                                                                                 paletteIndex,
                                                                                 e,
                                                                                 false,
                                                                         )
                                                                 }
-                                                                onMouseUp={
-                                                                        handleMouseUp
-                                                                }
-                                                                onTouchStart={(
-                                                                        e,
-                                                                ) =>
-                                                                        handleTouchStart(
-                                                                                paletteIndex,
-                                                                                e,
-                                                                                false,
-                                                                        )
-                                                                }
-                                                                onTouchEnd={
-                                                                        handleTouchEnd
-                                                                }
+                                                                onPointerUp={handlePointerUp}
+                                                                onPointerMove={isDragMode ? handlePointerMove : undefined}
+                                                                onPointerCancel={handlePointerUp}
                                                                 className={`relative w-9 h-9 md:w-8 md:h-8 rounded-full transition-all duration-200 touch-manipulation border-2 border-dashed overflow-hidden ${
                                                                         isSelected
                                                                                 ? "ring-2 ring-offset-2"
@@ -554,34 +514,6 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
                                         </div>
                                 );
                         })}
-                        {/* Drag mode hint */}
-                        {isDragMode && (
-                                <div
-                                        className="fixed bottom-20 left-1/2 -translate-x-1/2 px-4 py-2 rounded-full text-sm font-medium shadow-lg z-50"
-                                        style={{
-                                                backgroundColor:
-                                                        currentTheme.background,
-                                                color: currentTheme.text,
-                                                boxShadow: "0 4px 16px rgba(0,0,0,0.2)",
-                                                animation: "fadeInUp 200ms ease-out",
-                                        }}
-                                >
-                                        Drag to reorder
-                                </div>
-                        )}
-
-                        <style>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translate(-50%, 10px);
-          }
-          to {
-            opacity: 1;
-            transform: translate(-50%, 0);
-          }
-        }
-      `}</style>
                 </div>
         );
 };

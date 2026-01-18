@@ -17,6 +17,8 @@ interface ToolbarProps {
   // Solo mode props
   soloMode?: keyof HighlightConfig | null;
   onSoloToggle?: (key: keyof HighlightConfig | null) => void;
+  // First-visit hint for mobile
+  hasSeenSyntaxPanel?: boolean;
 }
 
 const Toolbar: React.FC<ToolbarProps> = ({
@@ -32,6 +34,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
   onToggleHighlight,
   soloMode = null,
   onSoloToggle,
+  hasSeenSyntaxPanel = true,
 }) => {
   return (
     <footer
@@ -44,8 +47,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
     >
       {/* Left: Interactive Tools */}
       <div className="flex flex-col gap-4 pointer-events-auto w-full md:w-auto">
-        {/* Syntax Toggles Row - with horizontal scroll */}
-        <div className="px-1">
+        {/* Syntax Toggles Row - hidden on mobile, shown on desktop */}
+        <div className="hidden md:block px-1">
           <SyntaxToggles
             theme={theme}
             highlightConfig={highlightConfig}
@@ -55,6 +58,21 @@ const Toolbar: React.FC<ToolbarProps> = ({
             onSoloToggle={onSoloToggle}
           />
         </div>
+
+        {/* Mobile Hint - shown on mobile when in write mode */}
+        {viewMode === 'write' && (
+          <div
+            className="flex md:hidden items-center gap-2 px-3 py-2 text-xs rounded-lg"
+            style={{
+              backgroundColor: `${theme.text}08`,
+              color: theme.text,
+              opacity: 0.6,
+            }}
+          >
+            <span>Syntax panel</span>
+            <span className={`${!hasSeenSyntaxPanel ? 'animate-pulse' : ''}`}>→</span>
+          </div>
+        )}
 
         {/* Main Actions Row */}
         <ActionButtons
