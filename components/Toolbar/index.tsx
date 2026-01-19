@@ -59,10 +59,10 @@ const Toolbar: React.FC<ToolbarProps> = ({
           />
         </div>
 
-        {/* Mobile Hint - shown on mobile when in write mode */}
-        {viewMode === 'write' && (
+        {/* Mobile Hint - shown on mobile when in write mode, hidden after panel has been seen */}
+        {viewMode === 'write' && !hasSeenSyntaxPanel && (
           <div
-            className="flex md:hidden items-center gap-2 px-3 py-2 text-xs rounded-lg"
+            className="flex md:hidden items-center gap-2 px-3 py-2 text-xs rounded-lg animate-pulse"
             style={{
               backgroundColor: `${theme.text}08`,
               color: theme.text,
@@ -70,7 +70,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
             }}
           >
             <span>Syntax panel</span>
-            <span className={`${!hasSeenSyntaxPanel ? 'animate-pulse' : ''}`}>→</span>
+            <span>→</span>
           </div>
         )}
 
