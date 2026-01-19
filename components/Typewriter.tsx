@@ -252,6 +252,8 @@ const Typewriter: React.FC<TypewriterProps> = ({
         autoCorrect="off"
         autoCapitalize="off"
         autoComplete="off"
+        inputMode="text"
+        enterKeyHint="enter"
         autoFocus
         className="absolute inset-0 w-full h-full px-4 py-6 md:px-8 md:py-12 bg-transparent resize-none border-none outline-none z-10 whitespace-pre-wrap break-words overflow-y-auto"
         style={{

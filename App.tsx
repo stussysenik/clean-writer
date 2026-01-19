@@ -773,9 +773,22 @@ const App: React.FC = () => {
                 setViewMode(viewMode === "write" ? "preview" : "write");
         };
 
+        // Virtual keyboard detection for mobile
+        const [keyboardOpen, setKeyboardOpen] = useState(false);
+
+        useEffect(() => {
+                if (!window.visualViewport) return;
+                const onResize = () => {
+                        const heightDiff = window.innerHeight - window.visualViewport!.height;
+                        setKeyboardOpen(heightDiff > 150);
+                };
+                window.visualViewport.addEventListener('resize', onResize);
+                return () => window.visualViewport?.removeEventListener('resize', onResize);
+        }, []);
+
         return (
                 <div
-                        className="w-full h-[100dvh] flex flex-col relative overflow-hidden transition-colors duration-500"
+                        className="w-full h-[100dvh] flex flex-col relative overflow-x-hidden transition-colors duration-500"
                         style={{
                                 backgroundColor: currentTheme.background,
                                 color: currentTheme.text,
