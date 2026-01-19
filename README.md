@@ -30,6 +30,8 @@ Open [http://localhost:3000](http://localhost:3000)
 | **PWA** | Install on iOS/Android home screen |
 | **Offline** | Works without internet |
 | **Responsive** | Mobile-friendly with side panel for syntax controls |
+| **UTF-8 Support** | Chinese, Japanese, Korean, and emoji word counting |
+| **Collapsible Breakdown** | Toggle word type list in syntax panel |
 
 ## Keyboard
 

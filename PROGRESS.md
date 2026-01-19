@@ -155,6 +155,39 @@ Made the bottom toolbar responsive with mobile-first side panel.
 
 ---
 
+### ✅ Phase 6: Fix Origami Syntax Panel
+
+Fixed the broken origami paper-fold animation and added UX improvements.
+
+**Issues Fixed:**
+| Issue | Root Cause | Solution |
+|-------|------------|----------|
+| Panel invisible | `rotateY(-90deg)` hides content behind screen | Replace with `translateX` slide-in |
+| Tab/panel disconnected | Separate fixed positioning | Unified flexbox container |
+| Hint always visible | Missing condition check | Hide when `hasSeenPanel` is true |
+| No collapsible UI | Not implemented | Added toggle with max-height animation |
+
+**New Features:**
+- ✅ Smooth slide-in animation with spring easing
+- ✅ Unified tab and panel that slide together
+- ✅ Collapsible word type breakdown (persisted in localStorage)
+- ✅ UTF-8 word counting (CJK characters, emoji)
+- ✅ Proper reduced-motion support (opacity fallback)
+
+**Files Modified:**
+- `components/UnifiedSyntaxPanel/index.tsx` - Simplified to open/close state
+- `components/UnifiedSyntaxPanel/FoldContainer.tsx` - translateX animation
+- `components/UnifiedSyntaxPanel/CornerFoldTab.tsx` - Unified positioning
+- `components/UnifiedSyntaxPanel/PanelBody.tsx` - Collapsible breakdown
+- `components/Toolbar/index.tsx` - Fixed hint visibility
+- `services/localSyntaxService.ts` - UTF-8 word counting
+
+**Files Removed:**
+- `components/UnifiedSyntaxPanel/useFoldAnimation.ts` - No longer needed
+- `components/UnifiedSyntaxPanel/useFoldGestures.ts` - No longer needed
+
+---
+
 ## File Changes Summary
 
 | File | Action | Description |
@@ -182,6 +215,7 @@ Made the bottom toolbar responsive with mobile-first side panel.
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.2.0 | Jan 2025 | Fixed syntax panel, UTF-8 word counting |
 | 1.1.0 | Jan 2025 | Extended themes, mobile UX, PWA |
 | 1.0.0 | Jan 2025 | Initial release |
 

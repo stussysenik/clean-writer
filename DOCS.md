@@ -312,6 +312,30 @@ const {
 
 ---
 
+## Word Counting
+
+### UTF-8 Support
+
+The `countWords()` function handles international text:
+
+| Text Type | Counting Method |
+|-----------|-----------------|
+| Latin/Western | Whitespace-separated words |
+| CJK (Chinese, Japanese, Korean) | Each character = 1 word |
+| Emoji | Each emoji = 1 word |
+| Mixed content | Hybrid counting |
+
+**Examples:**
+- `"Hello world"` → 2 words
+- `"你好世界"` → 4 words (4 CJK characters)
+- `"Hello 你好 😀"` → 4 words (1 English + 2 CJK + 1 emoji)
+
+**Implementation:**
+- Uses `Intl.Segmenter` API when available (modern browsers)
+- Falls back to regex-based counting for older browsers
+
+---
+
 ## PWA Configuration
 
 ### Manifest (vite.config.ts)
@@ -448,6 +472,8 @@ All interactive elements have:
 | `clean_writer_font` | Selected font ID |
 | `clean_writer_custom_theme` | Custom theme overrides |
 | `seen_syntax_panel` | First-visit tracking for side panel |
+| `clean_writer_word_type_order` | Custom word type ordering |
+| `clean_writer_breakdown_collapsed` | Breakdown section collapsed state |
 
 ---
 
