@@ -28,6 +28,7 @@ interface ActionButtonProps {
   tooltip: string;
   className?: string;
   ariaLabel?: string;
+  'data-testid'?: string;
 }
 
 const ActionButton: React.FC<ActionButtonProps> = ({
@@ -41,6 +42,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({
   tooltip,
   className = '',
   ariaLabel,
+  'data-testid': dataTestId,
 }) => (
   <Tooltip content={tooltip} position="top" delay={400}>
     <TouchButton
@@ -54,6 +56,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({
       } ${className}`}
       title={tooltip}
       aria-label={ariaLabel || tooltip}
+      data-testid={dataTestId}
     >
       <span className="flex items-center justify-center">{icon}</span>
       <span className="text-[9px] uppercase tracking-wider font-medium hidden sm:block">{label}</span>
@@ -95,6 +98,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         label="Strike"
         tooltip="Apply strikethrough to selected text"
         ariaLabel="Strikethrough selected text"
+        data-testid="strikethrough-btn"
       />
 
       <ActionButton

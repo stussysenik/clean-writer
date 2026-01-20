@@ -17,6 +17,7 @@ interface TouchButtonProps {
   onTouchStart?: (e: React.TouchEvent) => void;
   'aria-label'?: string;
   'aria-expanded'?: boolean;
+  'data-testid'?: string;
 }
 
 const TouchButton: React.FC<TouchButtonProps> = ({
@@ -35,6 +36,7 @@ const TouchButton: React.FC<TouchButtonProps> = ({
   onTouchStart,
   'aria-label': ariaLabel,
   'aria-expanded': ariaExpanded,
+  'data-testid': dataTestId,
 }) => {
   const touchHandlers = useTouch({
     onTap: disabled ? undefined : onClick,
@@ -54,6 +56,7 @@ const TouchButton: React.FC<TouchButtonProps> = ({
       onTouchStart={onTouchStart}
       aria-label={ariaLabel}
       aria-expanded={ariaExpanded}
+      data-testid={dataTestId}
       {...touchHandlers}
       className={`min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation ${className}`}
       style={{ touchAction: 'manipulation', ...style }}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { gsap } from 'gsap';
 import { RisoTheme, SyntaxAnalysis, HighlightConfig } from '../../types';
 import { getWordTypeCounts } from '../../services/localSyntaxService';
 import TouchButton from '../TouchButton';
@@ -11,6 +12,8 @@ interface PanelBodyProps {
   onToggleHighlight: (key: keyof HighlightConfig) => void;
   soloMode: keyof HighlightConfig | null;
   onSoloToggle: (key: keyof HighlightConfig | null) => void;
+  isOpen?: boolean;
+  onCategoryHover?: (category: keyof HighlightConfig | null) => void;
 }
 
 const DEFAULT_WORD_TYPE_CONFIG = [
@@ -40,8 +43,42 @@ const PanelBody: React.FC<PanelBodyProps> = ({
   onToggleHighlight,
   soloMode,
   onSoloToggle,
+  isOpen = false,
+  onCategoryHover,
 }) => {
   const wordTypeCounts = getWordTypeCounts(syntaxData);
+  const dotsRef = useRef<(HTMLSpanElement | null)[]>([]);
+  const hasAnimated = useRef(false);
+
+  // Check for reduced motion preference
+  const reducedMotion = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }, []);
+
+  // Elastic dot entrance animation using GSAP
+  useEffect(() => {
+    if (isOpen && !hasAnimated.current && !reducedMotion) {
+      hasAnimated.current = true;
+      const dots = dotsRef.current.filter(Boolean);
+
+      // Reset dots to starting position
+      gsap.set(dots, { scale: 0, opacity: 0 });
+
+      // Animate dots with elastic spring and stagger
+      gsap.to(dots, {
+        scale: 1,
+        opacity: 1,
+        duration: 0.6,
+        ease: 'elastic.out(1, 0.3)',
+        stagger: 0.05,
+        delay: 0.1,
+      });
+    } else if (!isOpen) {
+      // Reset for next open
+      hasAnimated.current = false;
+    }
+  }, [isOpen, reducedMotion]);
 
   // Breakdown collapsed state
   const [isBreakdownCollapsed, setIsBreakdownCollapsed] = useState<boolean>(() => {
@@ -353,9 +390,12 @@ const PanelBody: React.FC<PanelBodyProps> = ({
                 onTouchMove={handleItemMouseMove}
                 onMouseUp={handleItemMouseUp}
                 onTouchEnd={handleItemMouseUp}
+                onMouseEnter={() => onCategoryHover?.(item.key as keyof HighlightConfig)}
+                onMouseLeave={() => onCategoryHover?.(null)}
               >
                 <div className="flex items-center gap-3">
                   <span
+                    ref={(el) => { dotsRef.current[index] = el; }}
                     className="w-3 h-3 rounded-full"
                     style={{
                       backgroundColor: theme.highlight[item.colorKey as keyof typeof theme.highlight],

@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback, useState } from 'react';
+import React, { useRef, useEffect, useCallback, useState, useMemo } from 'react';
 import { RisoTheme, SyntaxAnalysis, HighlightConfig } from '../types';
 import { useIMEComposition } from '../hooks/useIMEComposition';
 
@@ -12,7 +12,21 @@ interface TypewriterProps {
   maxWidth: number;
   fontFamily: string;
   textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
+  hoveredCategory?: keyof HighlightConfig | null;
 }
+
+// Map from HighlightConfig key to syntax category key for color lookup
+const HIGHLIGHT_TO_COLOR_KEY: Record<keyof HighlightConfig, keyof RisoTheme['highlight']> = {
+  nouns: 'noun',
+  pronouns: 'pronoun',
+  verbs: 'verb',
+  adjectives: 'adjective',
+  adverbs: 'adverb',
+  prepositions: 'preposition',
+  conjunctions: 'conjunction',
+  articles: 'article',
+  interjections: 'interjection',
+};
 
 const Typewriter: React.FC<TypewriterProps> = ({
   content,
@@ -24,6 +38,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
   maxWidth,
   fontFamily,
   textareaRef: externalTextareaRef,
+  hoveredCategory = null,
 }) => {
   const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
@@ -39,6 +54,49 @@ const Typewriter: React.FC<TypewriterProps> = ({
     handleCompositionUpdate,
     handleCompositionEnd,
   } = useIMEComposition();
+
+  // Garfield cursor: Calculate the color for the last word typed
+  const lastWordColor = useMemo(() => {
+    if (!content) return theme.cursor;
+
+    // Extract the last word from content (ignoring trailing whitespace/punctuation)
+    const trimmed = content.replace(/[\s.,!?;:"'()\-]+$/, '');
+    const words = trimmed.split(/[\s.,!?;:"'()\-]+/);
+    const lastWord = words[words.length - 1]?.toLowerCase().trim();
+
+    if (!lastWord) return theme.cursor;
+
+    // Check which syntax category the last word belongs to
+    if (highlightConfig.articles && syntaxData.articles.includes(lastWord)) {
+      return theme.highlight.article;
+    }
+    if (highlightConfig.interjections && syntaxData.interjections.includes(lastWord)) {
+      return theme.highlight.interjection;
+    }
+    if (highlightConfig.prepositions && syntaxData.prepositions.includes(lastWord)) {
+      return theme.highlight.preposition;
+    }
+    if (highlightConfig.conjunctions && syntaxData.conjunctions.includes(lastWord)) {
+      return theme.highlight.conjunction;
+    }
+    if (highlightConfig.pronouns && syntaxData.pronouns.includes(lastWord)) {
+      return theme.highlight.pronoun;
+    }
+    if (highlightConfig.adverbs && syntaxData.adverbs.includes(lastWord)) {
+      return theme.highlight.adverb;
+    }
+    if (highlightConfig.verbs && syntaxData.verbs.includes(lastWord)) {
+      return theme.highlight.verb;
+    }
+    if (highlightConfig.adjectives && syntaxData.adjectives.includes(lastWord)) {
+      return theme.highlight.adjective;
+    }
+    if (highlightConfig.nouns && syntaxData.nouns.includes(lastWord)) {
+      return theme.highlight.noun;
+    }
+
+    return theme.cursor;
+  }, [content, syntaxData, highlightConfig, theme]);
 
   // Blink effect for the ghost cursor
   useEffect(() => {
@@ -129,6 +187,24 @@ const Typewriter: React.FC<TypewriterProps> = ({
     }
   }, [handleScroll]);
 
+  // Helper to determine which syntax category a word belongs to
+  const getWordCategory = useCallback((word: string): keyof HighlightConfig | null => {
+    const lowerWord = word.toLowerCase().trim();
+    if (!lowerWord) return null;
+
+    if (syntaxData.articles.includes(lowerWord)) return 'articles';
+    if (syntaxData.interjections.includes(lowerWord)) return 'interjections';
+    if (syntaxData.prepositions.includes(lowerWord)) return 'prepositions';
+    if (syntaxData.conjunctions.includes(lowerWord)) return 'conjunctions';
+    if (syntaxData.pronouns.includes(lowerWord)) return 'pronouns';
+    if (syntaxData.adverbs.includes(lowerWord)) return 'adverbs';
+    if (syntaxData.verbs.includes(lowerWord)) return 'verbs';
+    if (syntaxData.adjectives.includes(lowerWord)) return 'adjectives';
+    if (syntaxData.nouns.includes(lowerWord)) return 'nouns';
+
+    return null;
+  }, [syntaxData]);
+
   const renderHighlights = useCallback(() => {
     if (!content) return null;
 
@@ -146,7 +222,8 @@ const Typewriter: React.FC<TypewriterProps> = ({
               textDecoration: 'line-through',
               opacity: 0.5,
               textDecorationThickness: '2px',
-              textDecorationColor: theme.strikethrough
+              textDecorationColor: theme.strikethrough,
+              transition: 'color 0.3s ease, text-shadow 0.3s ease',
             }}
           >
             {chunk}
@@ -163,52 +240,78 @@ const Typewriter: React.FC<TypewriterProps> = ({
             const lowerPart = part.toLowerCase().trim();
             let color = theme.text;
             let isMatch = false;
+            let matchCategory: keyof HighlightConfig | null = null;
 
-            if (!lowerPart) return <span key={index}>{part}</span>;
+            if (!lowerPart) {
+              return (
+                <span
+                  key={index}
+                  style={{ transition: 'color 0.3s ease' }}
+                >
+                  {part}
+                </span>
+              );
+            }
 
             // Check highlights based on config - order matters for priority
             // More specific types first (articles, interjections, etc.)
             if (highlightConfig.articles && syntaxData.articles.includes(lowerPart)) {
               color = theme.highlight.article;
               isMatch = true;
+              matchCategory = 'articles';
             } else if (highlightConfig.interjections && syntaxData.interjections.includes(lowerPart)) {
               color = theme.highlight.interjection;
               isMatch = true;
+              matchCategory = 'interjections';
             } else if (highlightConfig.prepositions && syntaxData.prepositions.includes(lowerPart)) {
               color = theme.highlight.preposition;
               isMatch = true;
+              matchCategory = 'prepositions';
             } else if (highlightConfig.conjunctions && syntaxData.conjunctions.includes(lowerPart)) {
               color = theme.highlight.conjunction;
               isMatch = true;
+              matchCategory = 'conjunctions';
             } else if (highlightConfig.pronouns && syntaxData.pronouns.includes(lowerPart)) {
               color = theme.highlight.pronoun;
               isMatch = true;
+              matchCategory = 'pronouns';
             } else if (highlightConfig.adverbs && syntaxData.adverbs.includes(lowerPart)) {
               color = theme.highlight.adverb;
               isMatch = true;
+              matchCategory = 'adverbs';
             } else if (highlightConfig.verbs && syntaxData.verbs.includes(lowerPart)) {
               color = theme.highlight.verb;
               isMatch = true;
+              matchCategory = 'verbs';
             } else if (highlightConfig.adjectives && syntaxData.adjectives.includes(lowerPart)) {
               color = theme.highlight.adjective;
               isMatch = true;
+              matchCategory = 'adjectives';
             } else if (highlightConfig.nouns && syntaxData.nouns.includes(lowerPart)) {
               color = theme.highlight.noun;
               isMatch = true;
+              matchCategory = 'nouns';
             }
 
-            const style: React.CSSProperties = isMatch ? {
-              color: color,
-              fontWeight: 700,
-              textShadow: theme.id === 'blueprint' && isMatch ? `0 0 1px ${color}` : 'none'
-            } : {};
+            // Check if this word should glow (matching hovered category)
+            const shouldGlow = hoveredCategory && matchCategory === hoveredCategory;
+            const glowColor = shouldGlow ? color : 'transparent';
+
+            const style: React.CSSProperties = {
+              color: isMatch ? color : theme.text,
+              fontWeight: isMatch ? 700 : 'inherit',
+              textShadow: shouldGlow
+                ? `0 0 8px ${glowColor}, 0 0 16px ${glowColor}80`
+                : (theme.id === 'blueprint' && isMatch ? `0 0 1px ${color}` : 'none'),
+              transition: 'color 0.3s ease, text-shadow 0.3s ease, font-weight 0.3s ease',
+            };
 
             return <span key={`${chunkIndex}-${index}`} style={style}>{part}</span>;
           })}
         </React.Fragment>
       );
     });
-  }, [content, syntaxData, theme, highlightConfig]);
+  }, [content, syntaxData, theme, highlightConfig, hoveredCategory]);
 
   return (
     <div
@@ -227,14 +330,15 @@ const Typewriter: React.FC<TypewriterProps> = ({
         }}
       >
         {renderHighlights()}
-        {/* The Ghost Cursor - Always at the end */}
+        {/* The Ghost Cursor - Always at the end, color matches last typed word (Garfield cursor) */}
         <span
+          data-testid="ghost-cursor"
           style={{
-            color: theme.cursor,
+            color: lastWordColor,
             opacity: ghostVisible ? 1 : 0,
-            transition: 'opacity 0.1s',
+            transition: 'opacity 0.1s, background-color 0.3s ease',
             marginLeft: '1px',
-            backgroundColor: theme.cursor,
+            backgroundColor: lastWordColor,
             display: 'inline-block',
             width: '10px',
             height: '1em',
@@ -266,7 +370,8 @@ const Typewriter: React.FC<TypewriterProps> = ({
           fontSize: `${fontSize}px`,
           lineHeight: '1.6',
           color: 'transparent',
-          caretColor: theme.text, // The system cursor is visible to show "navigation" location
+          caretColor: lastWordColor, // Garfield cursor: caret color matches last typed word's syntax
+          transition: 'caret-color 0.3s ease',
           opacity: 1
         }}
         placeholder="Type here..."

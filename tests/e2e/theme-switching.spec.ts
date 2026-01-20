@@ -73,7 +73,8 @@ test.describe('Theme Switching', () => {
 
   test('strikethrough color changes with theme', async ({ page }) => {
     const textarea = page.locator('textarea');
-    await textarea.fill('~~test~~');
+    await textarea.click();
+    await textarea.pressSequentially('~~test~~', { delay: 10 });
 
     // Check strikethrough color on Classic theme
     let strikethroughSpan = page.locator('span[style*="line-through"]').first();

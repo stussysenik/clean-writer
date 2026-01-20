@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { gsap } from 'gsap';
 import { RisoTheme, SyntaxAnalysis, HighlightConfig } from '../../types';
 import { countWords } from '../../services/localSyntaxService';
+import { useResponsiveBreakpoint } from '../../hooks/useResponsiveBreakpoint';
 import CornerFoldTab from './CornerFoldTab';
 import FoldContainer from './FoldContainer';
 import PanelBody from './PanelBody';
+import DesktopSyntaxPanel from './DesktopSyntaxPanel';
 
 interface UnifiedSyntaxPanelProps {
   content: string;
@@ -15,6 +18,7 @@ interface UnifiedSyntaxPanelProps {
   onSoloToggle?: (key: keyof HighlightConfig | null) => void;
   hasSeenPanel?: boolean;
   onPanelSeen?: () => void;
+  onCategoryHover?: (category: keyof HighlightConfig | null) => void;
 }
 
 const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
@@ -27,10 +31,14 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
   onSoloToggle = () => {},
   hasSeenPanel = true,
   onPanelSeen,
+  onCategoryHover,
 }) => {
   const wordCount = countWords(content);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const { isDesktop, isMobile } = useResponsiveBreakpoint();
+  const prevScreenRef = useRef<'mobile' | 'desktop' | null>(null);
+  const transitionRef = useRef<HTMLDivElement>(null);
 
   // Check for reduced motion preference
   const reducedMotion = useMemo(() => {
@@ -38,12 +46,35 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }, []);
 
-  // Toggle panel
+  // Paradigm transition animation when switching between mobile/desktop
+  useEffect(() => {
+    const currentScreen = isDesktop ? 'desktop' : 'mobile';
+
+    if (prevScreenRef.current !== null && prevScreenRef.current !== currentScreen && !reducedMotion) {
+      // Animate the transition between paradigms
+      if (transitionRef.current) {
+        gsap.fromTo(
+          transitionRef.current,
+          { opacity: 0, scale: 0.95 },
+          {
+            opacity: 1,
+            scale: 1,
+            duration: 0.4,
+            ease: 'power2.out'
+          }
+        );
+      }
+    }
+
+    prevScreenRef.current = currentScreen;
+  }, [isDesktop, reducedMotion]);
+
+  // Toggle panel (mobile only)
   const toggle = useCallback(() => {
     setIsOpen(prev => !prev);
   }, []);
 
-  // Close panel
+  // Close panel (mobile only)
   const close = useCallback(() => {
     setIsOpen(false);
   }, []);
@@ -53,8 +84,10 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
     toggle();
   }, [toggle]);
 
-  // Close on outside click
+  // Close on outside click (mobile only)
   useEffect(() => {
+    if (!isMobile) return;
+
     const handleClickOutside = (e: MouseEvent) => {
       if (
         isOpen &&
@@ -67,18 +100,37 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen, close]);
+  }, [isOpen, close, isMobile]);
 
-  // Mark panel as seen when opened
+  // Mark panel as seen when opened (mobile) or when mounted (desktop)
   useEffect(() => {
-    if (isOpen && !hasSeenPanel && onPanelSeen) {
+    if ((isOpen || isDesktop) && !hasSeenPanel && onPanelSeen) {
       onPanelSeen();
     }
-  }, [isOpen, hasSeenPanel, onPanelSeen]);
+  }, [isOpen, isDesktop, hasSeenPanel, onPanelSeen]);
 
   // Don't render if no content
   if (wordCount === 0) return null;
 
+  // Desktop: Always visible, left-positioned panel
+  if (isDesktop) {
+    return (
+      <div ref={transitionRef}>
+        <DesktopSyntaxPanel
+          theme={theme}
+          wordCount={wordCount}
+          syntaxData={syntaxData}
+          highlightConfig={highlightConfig}
+          onToggleHighlight={onToggleHighlight}
+          soloMode={soloMode}
+          onSoloToggle={onSoloToggle}
+          onCategoryHover={onCategoryHover}
+        />
+      </div>
+    );
+  }
+
+  // Mobile: Right fold-tab panel
   return (
     <div
       ref={containerRef}
@@ -108,6 +160,8 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
           onToggleHighlight={onToggleHighlight}
           soloMode={soloMode}
           onSoloToggle={onSoloToggle}
+          isOpen={isOpen}
+          onCategoryHover={onCategoryHover}
         />
       </FoldContainer>
     </div>

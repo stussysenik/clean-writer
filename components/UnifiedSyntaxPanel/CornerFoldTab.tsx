@@ -21,6 +21,7 @@ const CornerFoldTab: React.FC<CornerFoldTabProps> = ({
   return (
     <button
       onClick={onClick}
+      data-testid="mobile-fold-tab"
       className={`
         relative cursor-pointer select-none touch-manipulation
         transition-all duration-300 ease-out

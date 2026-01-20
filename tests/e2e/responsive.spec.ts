@@ -1,8 +1,8 @@
-import { test, expect, devices } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 
 test.describe('Responsive Layout', () => {
   test.describe('Mobile viewport', () => {
-    test.use({ ...devices['iPhone 12'] });
+    test.use({ viewport: { width: 390, height: 844 } }); // iPhone 12 size
 
     test('uses smaller font size on mobile', async ({ page }) => {
       await page.goto('/');
@@ -41,7 +41,7 @@ test.describe('Responsive Layout', () => {
   });
 
   test.describe('Desktop viewport', () => {
-    test.use({ ...devices['Desktop Chrome'] });
+    test.use({ viewport: { width: 1280, height: 720 } });
 
     test('uses larger font size on desktop', async ({ page }) => {
       await page.goto('/');
@@ -63,7 +63,7 @@ test.describe('Responsive Layout', () => {
   });
 
   test.describe('Tablet viewport', () => {
-    test.use({ ...devices['iPad Pro'] });
+    test.use({ viewport: { width: 1024, height: 1366 } }); // iPad Pro size
 
     test('has appropriate layout for tablet', async ({ page }) => {
       await page.goto('/');
@@ -105,7 +105,8 @@ test.describe('Responsive Layout', () => {
 
       const textarea = page.locator('textarea');
       const longText = 'This is a very long sentence that should wrap properly across multiple lines when the viewport is narrow enough to require text wrapping behavior.';
-      await textarea.fill(longText);
+      await textarea.click();
+      await textarea.pressSequentially(longText, { delay: 5 });
 
       // Content should be visible without horizontal scroll
       const main = page.locator('main');

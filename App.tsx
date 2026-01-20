@@ -209,6 +209,9 @@ const App: React.FC = () => {
                 },
         );
 
+        // Hovered category state for word glow effect
+        const [hoveredCategory, setHoveredCategory] = useState<keyof HighlightConfig | null>(null);
+
         // Use custom theme hook
         const {
                 effectiveTheme,
@@ -921,6 +924,7 @@ const App: React.FC = () => {
                                                 maxWidth={maxWidth}
                                                 fontFamily={currentFont.family}
                                                 textareaRef={textareaRef}
+                                                hoveredCategory={hoveredCategory}
                                         />
                                 ) : (
                                         <div
@@ -946,6 +950,7 @@ const App: React.FC = () => {
                                 onSoloToggle={handleSoloToggle}
                                 hasSeenPanel={hasSeenSyntaxPanel}
                                 onPanelSeen={handleSyntaxPanelSeen}
+                                onCategoryHover={setHoveredCategory}
                         />
 
                         {/* Bottom Toolbar */}
