@@ -82,9 +82,10 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
   return (
     <div
       ref={containerRef}
-      className="fixed right-0 top-1/2 -translate-y-1/2 z-50 flex items-center"
+      className="fixed right-0 top-1/2 -translate-y-1/2 z-50 flex flex-row-reverse items-center"
     >
       {/* Corner tab attached to panel - slides together */}
+      {/* Using flex-row-reverse so tab stays on RIGHT edge */}
       <CornerFoldTab
         theme={theme}
         wordCount={wordCount}
