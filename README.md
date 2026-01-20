@@ -45,9 +45,22 @@ Open [http://localhost:3000](http://localhost:3000)
 npm run dev          # Start dev server
 npm run build        # Production build
 npm run preview      # Preview production build
-npm run test         # Run Playwright tests
+npm run test         # Run Playwright tests (151 tests)
 npm run test:ui      # Run tests with UI
 ```
+
+## Test Coverage
+
+| Test Suite | Tests | Coverage |
+|------------|-------|----------|
+| Core Mechanics | 17 | Append-only typing, strikethrough, paste |
+| Syntax Analysis | 20 | NLP accuracy, word counts, categories |
+| Responsive Paradigm | 19 | Desktop/mobile exclusivity at 1024px |
+| State Persistence | 22 | localStorage, themes, recovery |
+| Motion Design | 20 | Glassmorphism, GSAP, cursor effects |
+| Mobile Paradigm | 27 | Touch targets, keyboard, fold-tab |
+| Desktop Paradigm | 26 | Panel visibility, hover effects |
+| **Total** | **151** | Full E2E coverage |
 
 ## Themes
 

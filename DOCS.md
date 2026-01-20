@@ -396,19 +396,81 @@ Generates:
 ### Run Tests
 
 ```bash
-npm run test              # All tests, headless
+npm run test              # All 151 tests, headless
 npm run test:ui           # Interactive UI
 npm run test:headed       # Headed browsers
 ```
 
-### Test Suites
+### Test Suite Overview
 
-| File | Tests |
-|------|-------|
-| `mobile-touch.spec.ts` | 44px tap targets, touch events, no overlap |
-| `theme-switching.spec.ts` | Theme application, persistence, colors |
-| `pwa-install.spec.ts` | Manifest, icons, meta tags |
-| `responsive.spec.ts` | Font sizes, layout at breakpoints |
+| File | Tests | Category |
+|------|-------|----------|
+| `core-mechanics.spec.ts` | 17 | Append-only typing, backspace disabled, strikethrough |
+| `syntax-analysis.spec.ts` | 20 | NLP word detection, category counts, highlighting |
+| `responsive-paradigm.spec.ts` | 19 | Desktop/mobile mutual exclusivity at 1024px |
+| `state-persistence.spec.ts` | 22 | localStorage, content recovery, theme persistence |
+| `motion-design.spec.ts` | 20 | Glassmorphism, GSAP animations, cursor color |
+| `mobile-paradigm.spec.ts` | 27 | Touch targets, virtual keyboard, fold-tab |
+| `desktop-paradigm.spec.ts` | 26 | Always-visible panel, hover effects, toggles |
+| `responsive.spec.ts` | varies | Breakpoint behavior |
+| `theme-switching.spec.ts` | varies | Theme application, persistence |
+| `responsive-syntax-panel.spec.ts` | varies | Panel responsive behavior |
+| `mobile-touch.spec.ts` | varies | Touch interaction |
+
+### Testing Patterns
+
+**Append-Only Textarea:**
+```typescript
+// Don't use fill() - it clears content
+// Use click() + pressSequentially() instead
+await textarea.click();
+await textarea.pressSequentially('hello', { delay: 10 });
+```
+
+**Bypassing Element Interception:**
+```typescript
+// Mobile fold-tab may have overlay blocking clicks
+await foldTab.evaluate(el => el.click());
+```
+
+**Exact Text Matching:**
+```typescript
+// "Nouns" would match both "Nouns" and "Pronouns"
+await panel.getByText('Nouns', { exact: true });
+```
+
+**Data-testid Attributes:**
+- `desktop-syntax-panel` - Desktop left panel (≥1024px)
+- `mobile-fold-tab` - Mobile right fold-tab (<1024px)
+- `ghost-cursor` - Blinking cursor in typewriter
+- `strikethrough-btn` - Strikethrough toolbar button
+
+### Critical Test Assertions
+
+```typescript
+// Desktop: left panel ONLY, no mobile fold-tab
+test('Desktop shows left panel only', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(page.locator('[data-testid="desktop-syntax-panel"]')).toBeVisible();
+  await expect(page.locator('[data-testid="mobile-fold-tab"]')).toHaveCount(0);
+});
+
+// Mobile: right fold-tab ONLY, no desktop panel
+test('Mobile shows fold-tab only', async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await expect(page.locator('[data-testid="mobile-fold-tab"]')).toBeVisible();
+  await expect(page.locator('[data-testid="desktop-syntax-panel"]')).toHaveCount(0);
+});
+
+// Glassmorphism verification
+test('Panel has backdrop blur', async ({ page }) => {
+  const panel = page.locator('[data-testid="desktop-syntax-panel"]');
+  const backdropFilter = await panel.evaluate(el =>
+    getComputedStyle(el).backdropFilter
+  );
+  expect(backdropFilter).toContain('blur(10px)');
+});
+```
 
 ### Device Coverage
 

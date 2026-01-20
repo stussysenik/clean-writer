@@ -109,29 +109,47 @@ Full Progressive Web App implementation for iOS/Android home screen.
 
 ---
 
-### ✅ Phase 4: Playwright Testing
+### ✅ Phase 4: Comprehensive Playwright Test Suite
 
-Comprehensive E2E test suite across devices.
+Test-first development framework with **151 tests** proving application consistency.
 
-**Dependencies Added:**
-- `@playwright/test`
+**Test Files (11 total):**
 
-**Test Files:**
-- `tests/e2e/mobile-touch.spec.ts`
-- `tests/e2e/theme-switching.spec.ts`
-- `tests/e2e/pwa-install.spec.ts`
-- `tests/e2e/responsive.spec.ts`
+| File | Tests | Coverage |
+|------|-------|----------|
+| `core-mechanics.spec.ts` | 17 | Append-only typing, strikethrough, paste |
+| `syntax-analysis.spec.ts` | 20 | NLP accuracy, word counts, categories |
+| `responsive-paradigm.spec.ts` | 19 | Desktop/mobile mutual exclusivity |
+| `state-persistence.spec.ts` | 22 | localStorage, themes, recovery |
+| `motion-design.spec.ts` | 20 | Glassmorphism, GSAP, cursor effects |
+| `mobile-paradigm.spec.ts` | 27 | Touch targets, keyboard, fold-tab |
+| `desktop-paradigm.spec.ts` | 26 | Panel visibility, hover effects |
+| `responsive.spec.ts` | varies | Breakpoint behavior |
+| `theme-switching.spec.ts` | varies | Theme persistence |
+| `responsive-syntax-panel.spec.ts` | varies | Panel responsive behavior |
+| `mobile-touch.spec.ts` | varies | Touch interaction |
 
-**Device Coverage:**
-- Desktop Chrome
-- Desktop Safari
-- Mobile Chrome (Pixel 5)
-- Mobile Safari (iPhone 12)
-- iPad Pro
+**Key Testing Patterns:**
+- `pressSequentially` instead of `fill()` for append-only textarea
+- `el.evaluate(el => el.click())` to bypass element interception
+- `getByText('Nouns', { exact: true })` for strict mode compliance
+- JavaScript click dispatch for mobile fold-tab interactions
+
+**Data-testid Attributes Added:**
+- `data-testid="desktop-syntax-panel"` - Desktop left panel
+- `data-testid="mobile-fold-tab"` - Mobile right fold-tab
+- `data-testid="ghost-cursor"` - Typewriter cursor
+- `data-testid="strikethrough-btn"` - Strikethrough toolbar button
+
+**Critical Assertions:**
+- Desktop (≥1024px): Left panel visible, NO right fold-tab
+- Mobile (<1024px): Right fold-tab visible, NO left panel
+- Backspace/Delete have no effect (append-only mode)
+- Glassmorphism has `backdrop-filter: blur(10px)`
 
 **Test Commands:**
 ```bash
-npm run test          # Headless
+npm run test          # Headless (151 tests)
 npm run test:ui       # Interactive UI
 npm run test:headed   # With browser
 ```
