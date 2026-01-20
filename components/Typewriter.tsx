@@ -11,6 +11,7 @@ interface TypewriterProps {
   fontSize: number;
   maxWidth: number;
   fontFamily: string;
+  textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
 }
 
 const Typewriter: React.FC<TypewriterProps> = ({
@@ -22,10 +23,14 @@ const Typewriter: React.FC<TypewriterProps> = ({
   fontSize,
   maxWidth,
   fontFamily,
+  textareaRef: externalTextareaRef,
 }) => {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
   const [ghostVisible, setGhostVisible] = useState(true);
+
+  // Use the external ref if provided, otherwise use internal ref
+  const textareaRef = externalTextareaRef || internalTextareaRef;
 
   // IME composition handling for Chinese, Japanese, Korean, and other languages
   const {

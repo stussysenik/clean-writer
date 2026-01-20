@@ -11,6 +11,7 @@ interface ActionButtonsProps {
   maxWidth: number;
   onToggleView: () => void;
   onStrikethrough: () => void;
+  onStrikethroughPointerDown?: () => void;
   onExport: () => void;
   onClear: () => void;
   onWidthChange: (width: number) => void;
@@ -19,6 +20,8 @@ interface ActionButtonsProps {
 interface ActionButtonProps {
   onClick: () => void;
   onMouseDown?: (e: React.MouseEvent) => void;
+  onPointerDown?: (e: React.PointerEvent) => void;
+  onTouchStart?: (e: React.TouchEvent) => void;
   disabled?: boolean;
   icon: React.ReactNode;
   label: string;
@@ -30,6 +33,8 @@ interface ActionButtonProps {
 const ActionButton: React.FC<ActionButtonProps> = ({
   onClick,
   onMouseDown,
+  onPointerDown,
+  onTouchStart,
   disabled = false,
   icon,
   label,
@@ -41,6 +46,8 @@ const ActionButton: React.FC<ActionButtonProps> = ({
     <TouchButton
       onClick={onClick}
       onMouseDown={onMouseDown}
+      onPointerDown={onPointerDown}
+      onTouchStart={onTouchStart}
       disabled={disabled}
       className={`flex flex-col items-center justify-center gap-0.5 p-2 rounded-lg transition-all hover:bg-black/5 ${
         disabled ? 'opacity-30 cursor-not-allowed' : 'opacity-70 hover:opacity-100'
@@ -60,6 +67,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   maxWidth,
   onToggleView,
   onStrikethrough,
+  onStrikethroughPointerDown,
   onExport,
   onClear,
   onWidthChange,
@@ -80,6 +88,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
       <ActionButton
         onClick={onStrikethrough}
         onMouseDown={(e) => e.preventDefault()}
+        onPointerDown={onStrikethroughPointerDown}
+        onTouchStart={onStrikethroughPointerDown}
         disabled={viewMode === 'preview'}
         icon={<IconStrike />}
         label="Strike"

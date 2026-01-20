@@ -10,6 +10,7 @@ interface ToolbarProps {
   highlightConfig: HighlightConfig;
   onToggleView: () => void;
   onStrikethrough: () => void;
+  onStrikethroughPointerDown?: () => void;
   onExport: () => void;
   onClear: () => void;
   onWidthChange: (width: number) => void;
@@ -28,6 +29,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
   highlightConfig,
   onToggleView,
   onStrikethrough,
+  onStrikethroughPointerDown,
   onExport,
   onClear,
   onWidthChange,
@@ -81,6 +83,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
           maxWidth={maxWidth}
           onToggleView={onToggleView}
           onStrikethrough={onStrikethrough}
+          onStrikethroughPointerDown={onStrikethroughPointerDown}
           onExport={onExport}
           onClear={onClear}
           onWidthChange={onWidthChange}

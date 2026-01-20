@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
         THEMES,
         THEME_STORAGE_KEY,
@@ -23,7 +23,10 @@ import { IconSettings } from "./components/Toolbar/Icons";
 import useCustomTheme from "./hooks/useCustomTheme";
 import useCustomPalettes, { SavedPalette } from "./hooks/useCustomPalettes";
 import useThemeVisibility from "./hooks/useThemeVisibility";
+import useVirtualKeyboard from "./hooks/useVirtualKeyboard";
+import useSelectionPersistence from "./hooks/useSelectionPersistence";
 import { getIconColor } from "./utils/contrastAwareColor";
+import { applyStrikethrough } from "./utils/strikethroughUtils";
 
 // Keyboard shortcut mapping (1-9 for word types)
 const NUMBER_KEY_MAP: { [key: string]: keyof HighlightConfig } = {
@@ -228,6 +231,15 @@ const App: React.FC = () => {
                 orderedThemes,
                 reorderThemes,
         } = useThemeVisibility();
+
+        // Textarea ref for selection persistence
+        const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+        // Virtual keyboard detection
+        const { isKeyboardOpen: keyboardOpen } = useVirtualKeyboard();
+
+        // Selection persistence for mobile strikethrough
+        const { saveSelection, getSavedSelection, clearSelection } = useSelectionPersistence(textareaRef);
 
         // Enhanced drag state with position tracking
         const [dragState, setDragState] = useState<{
@@ -753,38 +765,40 @@ const App: React.FC = () => {
                 setIsClearDialogOpen(false);
         };
 
-        const handleStrikethrough = () => {
-                const textarea = document.querySelector("textarea");
-                if (textarea) {
-                        const start = textarea.selectionStart;
-                        const end = textarea.selectionEnd;
-                        if (start === end) return;
-                        const selectedText = content.substring(start, end);
-                        const newContent =
-                                content.substring(0, start) +
-                                `~~${selectedText}~~` +
-                                content.substring(end);
-                        setContent(newContent);
-                        setTimeout(() => textarea.focus(), 10);
+        const handleStrikethrough = useCallback(() => {
+                // Try to get selection from ref first, then fallback to DOM query
+                const textarea = textareaRef.current || document.querySelector("textarea");
+                if (!textarea) return;
+
+                // Try saved selection first (for mobile), then live selection
+                const savedSel = getSavedSelection();
+                const start = savedSel ? savedSel.start : textarea.selectionStart;
+                const end = savedSel ? savedSel.end : textarea.selectionEnd;
+
+                // Clear saved selection after use
+                if (savedSel) {
+                        clearSelection();
                 }
-        };
+
+                // No selection = nothing to strike
+                if (start === end) return;
+
+                // Apply strikethrough with merge logic
+                const newContent = applyStrikethrough(content, start, end);
+                setContent(newContent);
+
+                // Refocus the textarea
+                setTimeout(() => textarea.focus(), 10);
+        }, [content, getSavedSelection, clearSelection]);
 
         const toggleViewMode = () => {
                 setViewMode(viewMode === "write" ? "preview" : "write");
         };
 
-        // Virtual keyboard detection for mobile
-        const [keyboardOpen, setKeyboardOpen] = useState(false);
-
-        useEffect(() => {
-                if (!window.visualViewport) return;
-                const onResize = () => {
-                        const heightDiff = window.innerHeight - window.visualViewport!.height;
-                        setKeyboardOpen(heightDiff > 150);
-                };
-                window.visualViewport.addEventListener('resize', onResize);
-                return () => window.visualViewport?.removeEventListener('resize', onResize);
-        }, []);
+        // Save selection on pointer/touch down (for mobile strikethrough)
+        const handleStrikethroughPointerDown = useCallback(() => {
+                saveSelection();
+        }, [saveSelection]);
 
         return (
                 <div
@@ -906,6 +920,7 @@ const App: React.FC = () => {
                                                 fontSize={fontSize}
                                                 maxWidth={maxWidth}
                                                 fontFamily={currentFont.family}
+                                                textareaRef={textareaRef}
                                         />
                                 ) : (
                                         <div
@@ -941,6 +956,7 @@ const App: React.FC = () => {
                                 highlightConfig={highlightConfig}
                                 onToggleView={toggleViewMode}
                                 onStrikethrough={handleStrikethrough}
+                                onStrikethroughPointerDown={handleStrikethroughPointerDown}
                                 onExport={handleExport}
                                 onClear={handleClearRequest}
                                 onWidthChange={setMaxWidth}

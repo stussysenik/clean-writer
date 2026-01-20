@@ -13,6 +13,10 @@ interface TouchButtonProps {
   children: React.ReactNode;
   hapticFeedback?: 'light' | 'medium' | 'heavy';
   onMouseDown?: (e: React.MouseEvent) => void;
+  onPointerDown?: (e: React.PointerEvent) => void;
+  onTouchStart?: (e: React.TouchEvent) => void;
+  'aria-label'?: string;
+  'aria-expanded'?: boolean;
 }
 
 const TouchButton: React.FC<TouchButtonProps> = ({
@@ -27,6 +31,10 @@ const TouchButton: React.FC<TouchButtonProps> = ({
   children,
   hapticFeedback = 'light',
   onMouseDown,
+  onPointerDown,
+  onTouchStart,
+  'aria-label': ariaLabel,
+  'aria-expanded': ariaExpanded,
 }) => {
   const touchHandlers = useTouch({
     onTap: disabled ? undefined : onClick,
@@ -42,6 +50,10 @@ const TouchButton: React.FC<TouchButtonProps> = ({
       disabled={disabled}
       title={title}
       onMouseDown={onMouseDown}
+      onPointerDown={onPointerDown}
+      onTouchStart={onTouchStart}
+      aria-label={ariaLabel}
+      aria-expanded={ariaExpanded}
       {...touchHandlers}
       className={`min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation ${className}`}
       style={{ touchAction: 'manipulation', ...style }}
