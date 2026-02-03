@@ -293,7 +293,14 @@ const PanelBody: React.FC<PanelBodyProps> = ({
   }, []);
 
   return (
-    <div className="w-[320px] font-mono text-sm" style={{ color: theme.text }}>
+    <div
+      className="font-mono text-sm"
+      style={{
+        color: theme.text,
+        width: 'min(320px, calc(100vw - 84px))',
+        minWidth: '260px',
+      }}
+    >
       {/* Word Count Header */}
       <div className="w-full px-6 py-5 flex items-center justify-between">
         <div className="flex items-baseline gap-3">

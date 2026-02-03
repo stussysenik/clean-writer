@@ -35,6 +35,12 @@ const FoldContainer: React.FC<FoldContainerProps> = ({
         boxShadow: isOpen
           ? `-8px 0 32px rgba(0,0,0,0.15), -2px 0 8px rgba(0,0,0,0.08), inset 0 0 0 1px ${theme.text}08`
           : 'none',
+        // Mobile viewport constraints
+        maxHeight: 'calc(100dvh - 100px)',
+        overflowY: 'auto',
+        WebkitOverflowScrolling: 'touch',
+        // Prevent closed panel from intercepting pointer events
+        pointerEvents: isOpen ? 'auto' : 'none',
       }}
     >
       {/* Paper grain texture */}

@@ -38,9 +38,9 @@ const DesktopSyntaxPanel: React.FC<DesktopSyntaxPanelProps> = ({
     if (panelRef.current && !hasAnimated.current && !reducedMotion) {
       hasAnimated.current = true;
 
-      // Start from slightly off-screen and faded
+      // Start from slightly off-screen (right side) and faded
       gsap.set(panelRef.current, {
-        x: -20,
+        x: 20,
         opacity: 0,
       });
 
@@ -58,7 +58,7 @@ const DesktopSyntaxPanel: React.FC<DesktopSyntaxPanelProps> = ({
     <div
       ref={panelRef}
       data-testid="desktop-syntax-panel"
-      className="fixed left-8 bottom-8 z-50 rounded-2xl overflow-hidden"
+      className="fixed right-8 bottom-8 z-50 rounded-2xl overflow-hidden"
       style={{
         // Glassmorphism: semi-transparent background with blur
         backgroundColor: `${theme.background}E6`, // ~90% opacity

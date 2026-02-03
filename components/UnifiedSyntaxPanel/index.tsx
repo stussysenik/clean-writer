@@ -3,8 +3,9 @@ import { gsap } from 'gsap';
 import { RisoTheme, SyntaxAnalysis, HighlightConfig } from '../../types';
 import { countWords } from '../../services/localSyntaxService';
 import { useResponsiveBreakpoint } from '../../hooks/useResponsiveBreakpoint';
+import { useHarmonicaDrag, HarmonicaStage } from '../../hooks/useHarmonicaDrag';
 import CornerFoldTab from './CornerFoldTab';
-import FoldContainer from './FoldContainer';
+import HarmonicaContainer from './HarmonicaContainer';
 import PanelBody from './PanelBody';
 import DesktopSyntaxPanel from './DesktopSyntaxPanel';
 
@@ -46,6 +47,19 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }, []);
 
+  // Harmonica drag system for mobile
+  const {
+    state: harmonicaState,
+    handlers: harmonicaHandlers,
+    close: harmonicaClose,
+  } = useHarmonicaDrag({
+    reducedMotion,
+    onStageChange: (stage: HarmonicaStage) => {
+      // Sync isOpen state with harmonica stage
+      setIsOpen(stage !== 'closed');
+    },
+  });
+
   // Paradigm transition animation when switching between mobile/desktop
   useEffect(() => {
     const currentScreen = isDesktop ? 'desktop' : 'mobile';
@@ -69,20 +83,10 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
     prevScreenRef.current = currentScreen;
   }, [isDesktop, reducedMotion]);
 
-  // Toggle panel (mobile only)
+  // Toggle panel (mobile only - kept for backwards compatibility with onClick prop)
   const toggle = useCallback(() => {
     setIsOpen(prev => !prev);
   }, []);
-
-  // Close panel (mobile only)
-  const close = useCallback(() => {
-    setIsOpen(false);
-  }, []);
-
-  // Handle tab click
-  const handleTabClick = useCallback(() => {
-    toggle();
-  }, [toggle]);
 
   // Close on outside click (mobile only)
   useEffect(() => {
@@ -90,24 +94,24 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
 
     const handleClickOutside = (e: MouseEvent) => {
       if (
-        isOpen &&
+        harmonicaState.stage !== 'closed' &&
         containerRef.current &&
         !containerRef.current.contains(e.target as Node)
       ) {
-        close();
+        harmonicaClose();
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen, close, isMobile]);
+  }, [harmonicaState.stage, harmonicaClose, isMobile]);
 
   // Mark panel as seen when opened (mobile) or when mounted (desktop)
   useEffect(() => {
-    if ((isOpen || isDesktop) && !hasSeenPanel && onPanelSeen) {
+    if ((harmonicaState.stage !== 'closed' || isDesktop) && !hasSeenPanel && onPanelSeen) {
       onPanelSeen();
     }
-  }, [isOpen, isDesktop, hasSeenPanel, onPanelSeen]);
+  }, [harmonicaState.stage, isDesktop, hasSeenPanel, onPanelSeen]);
 
   // Don't render if no content
   if (wordCount === 0) return null;
@@ -130,40 +134,83 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
     );
   }
 
-  // Mobile: Right fold-tab panel
+  // Mobile: Harmonica panel with 3-stage drag gesture
   return (
     <div
       ref={containerRef}
-      className="fixed right-0 top-1/2 -translate-y-1/2 z-50 flex flex-row-reverse items-center"
+      className="fixed right-0 z-[55] flex items-end"
+      style={{
+        bottom: 'max(80px, calc(64px + env(safe-area-inset-bottom)))',
+        paddingRight: 'env(safe-area-inset-right)',
+        maxHeight: 'calc(100dvh - 100px)',
+      }}
     >
-      {/* Corner tab attached to panel - slides together */}
-      {/* Using flex-row-reverse so tab stays on RIGHT edge */}
-      <CornerFoldTab
+      <HarmonicaContainer
         theme={theme}
-        wordCount={wordCount}
-        isOpen={isOpen}
-        hasSeenPanel={hasSeenPanel}
-        onClick={handleTabClick}
-      />
-
-      {/* Panel container with slide animation */}
-      <FoldContainer
-        theme={theme}
-        isOpen={isOpen}
+        stage={harmonicaState.stage}
+        isDragging={harmonicaState.isDragging}
+        dragProgress={harmonicaState.dragProgress}
         reducedMotion={reducedMotion}
       >
-        <PanelBody
-          theme={theme}
-          wordCount={wordCount}
-          syntaxData={syntaxData}
-          highlightConfig={highlightConfig}
-          onToggleHighlight={onToggleHighlight}
-          soloMode={soloMode}
-          onSoloToggle={onSoloToggle}
-          isOpen={isOpen}
-          onCategoryHover={onCategoryHover}
-        />
-      </FoldContainer>
+        {{
+          tab: (
+            <CornerFoldTab
+              theme={theme}
+              wordCount={wordCount}
+              isOpen={harmonicaState.stage !== 'closed'}
+              hasSeenPanel={hasSeenPanel}
+              onClick={toggle}
+              harmonicaMode={true}
+              stage={harmonicaState.stage}
+              dragProgress={harmonicaState.dragProgress}
+              onDragStart={harmonicaHandlers.onDragStart}
+              onDragMove={harmonicaHandlers.onDragMove}
+              onDragEnd={harmonicaHandlers.onDragEnd}
+            />
+          ),
+          peek: (
+            <div className="flex items-center justify-center h-full px-3">
+              <span
+                className="text-3xl font-bold tabular-nums"
+                style={{ color: theme.text }}
+              >
+                {wordCount}
+              </span>
+              <span
+                className="text-xs uppercase tracking-wider opacity-50 ml-2"
+                style={{ color: theme.text }}
+              >
+                words
+              </span>
+            </div>
+          ),
+          expand: (
+            <div className="px-3 py-2">
+              <div
+                className="text-[10px] uppercase tracking-widest opacity-40 flex items-center gap-2"
+                style={{ color: theme.text }}
+              >
+                <span className="flex-1 h-px" style={{ backgroundColor: `${theme.text}20` }} />
+                <span>Breakdown</span>
+                <span className="flex-1 h-px" style={{ backgroundColor: `${theme.text}20` }} />
+              </div>
+            </div>
+          ),
+          full: (
+            <PanelBody
+              theme={theme}
+              wordCount={wordCount}
+              syntaxData={syntaxData}
+              highlightConfig={highlightConfig}
+              onToggleHighlight={onToggleHighlight}
+              soloMode={soloMode}
+              onSoloToggle={onSoloToggle}
+              isOpen={harmonicaState.stage === 'full'}
+              onCategoryHover={onCategoryHover}
+            />
+          ),
+        }}
+      </HarmonicaContainer>
     </div>
   );
 };
