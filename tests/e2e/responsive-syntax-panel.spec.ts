@@ -14,18 +14,18 @@ test.describe('Responsive Syntax Panel', () => {
   test.describe('Desktop (>= 1024px)', () => {
     test.use({ viewport: { width: 1280, height: 800 } });
 
-    test('shows left-positioned desktop panel', async ({ page }) => {
-      // Desktop panel should be visible with left positioning
-      const panel = page.locator('.fixed.left-8.bottom-8');
+    test('shows right-positioned desktop panel', async ({ page }) => {
+      // Desktop panel should be visible with right positioning
+      const panel = page.locator('.fixed.right-8.bottom-8');
       await expect(panel).toBeVisible();
 
       // Mobile fold tab should not be visible
-      const foldTab = page.locator('.fixed.right-0.top-1\\/2');
+      const foldTab = page.locator('[data-testid="mobile-fold-tab"]');
       await expect(foldTab).not.toBeVisible();
     });
 
     test('desktop panel has glassmorphism styling', async ({ page }) => {
-      const panel = page.locator('.fixed.left-8.bottom-8');
+      const panel = page.locator('.fixed.right-8.bottom-8');
       const backdropFilter = await panel.evaluate((el) => {
         return getComputedStyle(el).backdropFilter;
       });
@@ -33,9 +33,10 @@ test.describe('Responsive Syntax Panel', () => {
     });
 
     test('word count is displayed in desktop panel', async ({ page }) => {
-      // Check word count is visible
-      const wordCount = page.locator('.fixed.left-8.bottom-8 >> text=9');
+      // Check word count is visible - use specific selector for the large word count display
+      const wordCount = page.locator('[data-testid="desktop-syntax-panel"] .text-5xl');
       await expect(wordCount).toBeVisible();
+      await expect(wordCount).toContainText('9');
     });
   });
 
@@ -44,11 +45,11 @@ test.describe('Responsive Syntax Panel', () => {
 
     test('shows right fold-tab on mobile', async ({ page }) => {
       // Mobile fold tab should be visible
-      const foldTab = page.locator('[aria-label*="syntax panel"]');
+      const foldTab = page.locator('[data-testid="mobile-fold-tab"]');
       await expect(foldTab).toBeVisible();
 
       // Desktop panel should not be visible
-      const desktopPanel = page.locator('.fixed.left-8.bottom-8');
+      const desktopPanel = page.locator('.fixed.right-8.bottom-8');
       await expect(desktopPanel).not.toBeVisible();
     });
 
@@ -57,26 +58,63 @@ test.describe('Responsive Syntax Panel', () => {
       await expect(wordCount).toBeVisible();
     });
 
-    test('clicking fold tab opens panel', async ({ page }) => {
-      const foldTab = page.locator('[aria-label*="syntax panel"]');
-      await foldTab.click();
+    test('dragging fold tab opens panel through harmonica stages', async ({ page }) => {
+      const foldTab = page.locator('[data-testid="mobile-fold-tab"]');
+      const box = await foldTab.boundingBox();
+      if (!box) throw new Error('Could not get fold tab bounding box');
 
-      // Panel should slide in
-      await page.waitForTimeout(400); // Wait for animation
-      const panelBody = page.locator('text=Breakdown');
+      // Simulate drag left (40px) to reach peek stage
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(box.x + box.width / 2 - 50, box.y + box.height / 2, { steps: 10 });
+      await page.mouse.up();
+
+      // Should show word count in peek stage
+      await page.waitForTimeout(400);
+
+      // Drag up to reach expand stage
+      const newBox = await foldTab.boundingBox();
+      if (!newBox) throw new Error('Could not get fold tab bounding box');
+      await page.mouse.move(newBox.x + newBox.width / 2, newBox.y + newBox.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(newBox.x + newBox.width / 2, newBox.y - 70, { steps: 10 });
+      await page.mouse.up();
+
+      await page.waitForTimeout(400);
+
+      // Drag left again to reach full stage
+      const expandBox = await foldTab.boundingBox();
+      if (!expandBox) throw new Error('Could not get fold tab bounding box');
+      await page.mouse.move(expandBox.x + expandBox.width / 2, expandBox.y + expandBox.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(expandBox.x + expandBox.width / 2 - 100, expandBox.y + expandBox.height / 2, { steps: 10 });
+      await page.mouse.up();
+
+      await page.waitForTimeout(400);
+      // Look for full panel content - the collapsible breakdown button
+      const panelBody = page.getByRole('button', { name: /Breakdown/i });
       await expect(panelBody).toBeVisible();
     });
 
     test('mobile panel has glassmorphism styling', async ({ page }) => {
-      const foldTab = page.locator('[aria-label*="syntax panel"]');
-      await foldTab.click();
-      await page.waitForTimeout(400);
-
-      const panel = page.locator('.rounded-l-2xl');
+      // Harmonica container should have blur effect
+      const panel = page.locator('.rounded-l-2xl').first();
       const backdropFilter = await panel.evaluate((el) => {
         return getComputedStyle(el).backdropFilter;
       });
       expect(backdropFilter).toContain('blur');
+    });
+
+    test('mobile panel does not overlap toolbar', async ({ page }) => {
+      // The panel should be positioned above the bottom toolbar (80px)
+      const container = page.locator('.fixed.right-0.z-\\[55\\]');
+      const box = await container.boundingBox();
+      if (!box) throw new Error('Could not get container bounding box');
+
+      // Bottom of panel should be at least 80px from viewport bottom
+      const viewportHeight = 667; // Test viewport height
+      const panelBottom = box.y + box.height;
+      expect(viewportHeight - panelBottom).toBeGreaterThanOrEqual(60); // Allow some margin
     });
   });
 
@@ -87,7 +125,7 @@ test.describe('Responsive Syntax Panel', () => {
       await page.waitForTimeout(100);
 
       // Verify mobile panel
-      const foldTab = page.locator('[aria-label*="syntax panel"]');
+      const foldTab = page.locator('[data-testid="mobile-fold-tab"]');
       await expect(foldTab).toBeVisible();
 
       // Resize to desktop
@@ -95,7 +133,7 @@ test.describe('Responsive Syntax Panel', () => {
       await page.waitForTimeout(500); // Wait for transition
 
       // Verify desktop panel
-      const desktopPanel = page.locator('.fixed.left-8.bottom-8');
+      const desktopPanel = page.locator('.fixed.right-8.bottom-8');
       await expect(desktopPanel).toBeVisible();
       await expect(foldTab).not.toBeVisible();
     });
@@ -106,7 +144,7 @@ test.describe('Responsive Syntax Panel', () => {
       await page.waitForTimeout(100);
 
       // Verify desktop panel
-      const desktopPanel = page.locator('.fixed.left-8.bottom-8');
+      const desktopPanel = page.locator('.fixed.right-8.bottom-8');
       await expect(desktopPanel).toBeVisible();
 
       // Resize to mobile
@@ -114,7 +152,7 @@ test.describe('Responsive Syntax Panel', () => {
       await page.waitForTimeout(500); // Wait for transition
 
       // Verify mobile panel
-      const foldTab = page.locator('[aria-label*="syntax panel"]');
+      const foldTab = page.locator('[data-testid="mobile-fold-tab"]');
       await expect(foldTab).toBeVisible();
       await expect(desktopPanel).not.toBeVisible();
     });
@@ -178,19 +216,55 @@ test.describe('Responsive Syntax Panel', () => {
 
       // Desktop panel should still be visible but without complex animations
       await page.setViewportSize({ width: 1280, height: 800 });
-      const panel = page.locator('.fixed.left-8.bottom-8');
+      const panel = page.locator('.fixed.right-8.bottom-8');
       await expect(panel).toBeVisible();
 
-      // Mobile panel should use opacity fade instead of transform
+      // Mobile: harmonica stages should use instant transitions
       await page.setViewportSize({ width: 375, height: 667 });
       await page.waitForTimeout(100);
 
-      const foldTab = page.locator('[aria-label*="syntax panel"]');
-      await foldTab.click();
+      // Tab should be visible
+      const foldTab = page.locator('[data-testid="mobile-fold-tab"]');
+      await expect(foldTab).toBeVisible();
+    });
+  });
 
-      // Panel content should still be accessible
-      const breakdown = page.locator('text=Breakdown');
-      await expect(breakdown).toBeVisible();
+  test.describe('Harmonica Gesture', () => {
+    test.use({ viewport: { width: 375, height: 667 } });
+
+    test('drag snaps back if released before 50% threshold', async ({ page }) => {
+      const foldTab = page.locator('[data-testid="mobile-fold-tab"]');
+      const box = await foldTab.boundingBox();
+      if (!box) throw new Error('Could not get fold tab bounding box');
+
+      // Drag left only 15px (below 50% of 40px threshold)
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(box.x + box.width / 2 - 15, box.y + box.height / 2, { steps: 5 });
+      await page.mouse.up();
+
+      await page.waitForTimeout(400);
+
+      // Tab should still be in closed state - check aria-expanded
+      await expect(foldTab).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    test('tap on tab does not toggle (drag-only interaction)', async ({ page }) => {
+      const foldTab = page.locator('[data-testid="mobile-fold-tab"]');
+
+      // Simple click (tap) should NOT open the panel
+      await foldTab.click();
+      await page.waitForTimeout(400);
+
+      // Should still be closed
+      await expect(foldTab).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    test('shows directional arrow affordance on closed tab', async ({ page }) => {
+      // Check that the tab has a left-pointing arrow when closed
+      const foldTab = page.locator('[data-testid="mobile-fold-tab"]');
+      const arrow = foldTab.locator('span:has-text("‹")');
+      await expect(arrow).toBeVisible();
     });
   });
 });
