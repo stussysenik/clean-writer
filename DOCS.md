@@ -70,6 +70,13 @@ clean-writer/
 │   ├── ConfirmDialog.tsx      # Modal dialog
 │   ├── TouchButton.tsx        # Mobile-friendly button
 │   ├── Tooltip.tsx            # Hover/focus tooltip
+│   ├── UnifiedSyntaxPanel/
+│   │   ├── index.tsx          # Panel orchestrator
+│   │   ├── HarmonicaContainer.tsx # 3-stage accordion
+│   │   ├── CornerFoldTab.tsx  # Drag handle with affordances
+│   │   ├── DesktopSyntaxPanel.tsx # Desktop variant
+│   │   ├── PanelBody.tsx      # Full panel content
+│   │   └── FoldContainer.tsx  # Animation wrapper
 │   └── Toolbar/
 │       ├── index.tsx          # Toolbar composition
 │       ├── Icons/index.tsx    # Radix UI icon components
@@ -81,7 +88,9 @@ clean-writer/
 │
 ├── hooks/
 │   ├── useTouch.ts            # Touch/haptic/long-press
-│   └── useCustomTheme.ts      # Theme customization hook
+│   ├── useHarmonicaDrag.ts    # 3-stage drag state machine
+│   ├── useCustomTheme.ts      # Theme customization hook
+│   └── useResponsiveBreakpoint.ts # Desktop/mobile detection
 │
 ├── utils/
 │   └── colorContrast.ts       # WCAG contrast utilities
@@ -275,9 +284,67 @@ Hover tooltip with keyboard shortcut display:
 </Tooltip>
 ```
 
+### HarmonicaContainer
+
+Mobile 3-stage accordion panel with glassmorphism:
+
+```tsx
+<HarmonicaContainer
+  theme={theme}
+  stage={harmonicaState.stage}
+  isDragging={harmonicaState.isDragging}
+  dragProgress={harmonicaState.dragProgress}
+  reducedMotion={false}
+>
+  {{
+    tab: <CornerFoldTab {...} />,
+    peek: <WordCountPreview />,
+    expand: <BreakdownHeader />,
+    full: <PanelBody {...} />,
+  }}
+</HarmonicaContainer>
+```
+
+**Features:**
+- Glassmorphism with `backdrop-filter: blur(10px)`
+- Paper grain texture overlay
+- GSAP spring animations with overshoot
+- Visual resistance feedback during drag
+
 ---
 
 ## Hooks
+
+### useHarmonicaDrag
+
+3-stage drag state machine for mobile panel reveal:
+
+```typescript
+const {
+  state: { stage, isDragging, dragProgress, dragDirection },
+  handlers: { onDragStart, onDragMove, onDragEnd },
+  setStage,
+  close,
+} = useHarmonicaDrag({
+  reducedMotion: false,
+  onStageChange: (stage) => console.log(stage),
+});
+```
+
+**Stages:**
+
+| Stage | Drag Direction | Threshold | Content Revealed |
+|-------|---------------|-----------|------------------|
+| `closed` | - | - | Tab with word count |
+| `peek` | Drag left 40px | 50% commit | Word count preview |
+| `expand` | Drag up 60px | 50% commit | Breakdown header |
+| `full` | Drag left 80px | 50% commit | Complete panel |
+
+**Features:**
+- Resistance effect before 50% threshold
+- GSAP spring animation with overshoot (`back.out(1.2)`)
+- Haptic feedback patterns at snap points
+- Reverse drag to collapse stages
 
 ### useTouch
 
@@ -483,6 +550,21 @@ test('Panel has backdrop blur', async ({ page }) => {
 ---
 
 ## Mobile Support
+
+### Harmonica Gesture (Mobile Panel)
+
+The mobile syntax panel uses a 3-stage "harmonica" drag gesture:
+
+1. **Closed** → Tab visible with word count
+2. **Peek** → Drag left 40px reveals large word count
+3. **Expand** → Drag up 60px reveals breakdown header
+4. **Full** → Drag left 80px reveals complete panel
+
+**Mechanical Feel:**
+- Resistance effect before 50% commit threshold
+- Spring animation with overshoot on snap
+- Haptic feedback at each stage transition
+- Directional arrow affordances guide users
 
 ### Touch Targets
 

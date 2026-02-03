@@ -6,7 +6,15 @@ Changelog and development progress for Clean Typewriter Experience t.
 
 ## Latest Release
 
-### v1.1.0 - Extended Themes, Mobile UX & PWA
+### v1.3.0 - Right Panel Position & Mobile Harmonica UX
+
+**Release Date:** February 2025
+
+Repositioned syntax panel to right edge and added 3-stage "harmonica" drag gesture for mobile.
+
+---
+
+### v1.2.0 - Extended Themes, Mobile UX & PWA
 
 **Release Date:** January 2025
 
@@ -15,6 +23,48 @@ Major update adding extended theme colors, mobile-first touch UX, and full PWA s
 ---
 
 ## Changelog
+
+### ✅ Phase 7: Right Panel Position & Mobile Harmonica UX
+
+Repositioned the UnifiedSyntaxPanel from left to right edge and implemented a sophisticated 3-stage "harmonica" drag gesture for mobile.
+
+**Desktop Changes:**
+- Panel position moved from `left-8` to `right-8`
+- Entrance animation direction reversed (slides in from right)
+
+**Mobile Harmonica Gesture:**
+
+| Stage | Drag Direction | Threshold | Content Revealed |
+|-------|---------------|-----------|------------------|
+| Closed | - | - | Tab with word count |
+| Peek | Drag left 40px | 50% commit | Word count preview |
+| Expand | Drag up 60px | 50% commit | Breakdown header |
+| Full | Drag left 80px | 50% commit | Complete panel |
+
+**Mechanical Feel:**
+- Resistance effect before 50% threshold
+- GSAP spring animation with overshoot (`back.out(1.2)`)
+- Haptic feedback patterns at each snap point
+- Directional arrow affordances guide users
+
+**New Files:**
+- `hooks/useHarmonicaDrag.ts` - State machine for 3-stage drag
+- `components/UnifiedSyntaxPanel/HarmonicaContainer.tsx` - Staged accordion
+
+**Files Modified:**
+- `components/UnifiedSyntaxPanel/DesktopSyntaxPanel.tsx` - Right positioning
+- `components/UnifiedSyntaxPanel/CornerFoldTab.tsx` - Drag handlers, affordances
+- `components/UnifiedSyntaxPanel/index.tsx` - Harmonica integration
+- `tests/e2e/responsive-syntax-panel.spec.ts` - Updated selectors, new tests
+
+**E2E Tests Added:**
+- Harmonica drag gesture progression
+- Drag snap-back on incomplete gesture
+- Tap-does-nothing verification (drag-only)
+- Directional arrow affordance visibility
+- Toolbar overlap prevention
+
+---
 
 ### ✅ Phase 1: Extended Theme Colors
 

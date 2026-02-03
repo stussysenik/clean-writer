@@ -30,6 +30,7 @@ Open [http://localhost:3000](http://localhost:3000)
 | **PWA** | Install on iOS/Android home screen |
 | **Offline** | Works without internet |
 | **Responsive** | Mobile-friendly with side panel for syntax controls |
+| **Harmonica Gesture** | 3-stage drag-to-reveal on mobile (Peek → Expand → Full) |
 | **UTF-8 Support** | Chinese, Japanese, Korean, and emoji word counting |
 | **Collapsible Breakdown** | Toggle word type list in syntax panel |
 
@@ -80,9 +81,14 @@ Click colored circles (top-right) to switch:
 │   ├── Typewriter.tsx   # Editor with syntax highlighting
 │   ├── MarkdownPreview.tsx
 │   ├── Toolbar/         # Extracted toolbar components
+│   ├── UnifiedSyntaxPanel/
+│   │   ├── HarmonicaContainer.tsx  # 3-stage accordion
+│   │   ├── CornerFoldTab.tsx       # Drag handle
+│   │   └── DesktopSyntaxPanel.tsx  # Desktop variant
 │   └── TouchButton.tsx  # Mobile-friendly button
 ├── hooks/
-│   └── useTouch.ts      # Touch/haptic feedback hook
+│   ├── useTouch.ts          # Touch/haptic feedback hook
+│   └── useHarmonicaDrag.ts  # 3-stage drag state machine
 ├── constants.ts         # Theme definitions
 ├── types.ts             # TypeScript interfaces
 └── tests/e2e/           # Playwright tests
