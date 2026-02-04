@@ -1,93 +1,6 @@
 import nlp from 'compromise';
 import { SyntaxAnalysis } from '../types';
 
-/**
- * Centralized word counting function with UTF-8 support.
- * Handles CJK (Chinese, Japanese, Korean) characters and emoji properly.
- * - For Latin/Western text: counts whitespace-separated words
- * - For CJK characters: counts each character as a word (since CJK doesn't use spaces)
- * - For emoji: counts each emoji as a word
- */
-export function countWords(content: string): number {
-  if (!content.trim()) return 0;
-
-  // Try to use Intl.Segmenter for proper word segmentation (modern browsers)
-  if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
-    try {
-      const segmenter = new Intl.Segmenter(undefined, { granularity: 'word' });
-      const segments = Array.from(segmenter.segment(content.trim()));
-      // Count only segments that are actual words (not whitespace/punctuation)
-      return segments.filter(segment => segment.isWordLike).length;
-    } catch {
-      // Fall back to manual counting if Segmenter fails
-    }
-  }
-
-  // Fallback: Manual word counting with CJK and emoji support
-  const text = content.trim();
-  let count = 0;
-
-  // Regex patterns
-  // CJK characters (Chinese, Japanese Kanji, Korean Hanja)
-  const cjkPattern = /[\u4E00-\u9FFF\u3400-\u4DBF\uF900-\uFAFF]/g;
-  // Japanese Hiragana and Katakana
-  const japaneseKanaPattern = /[\u3040-\u309F\u30A0-\u30FF]/g;
-  // Korean Hangul
-  const koreanPattern = /[\uAC00-\uD7AF\u1100-\u11FF]/g;
-  // Emoji (simplified pattern covering common emoji ranges)
-  const emojiPattern = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu;
-
-  // Count CJK characters (each character = 1 word)
-  const cjkMatches = text.match(cjkPattern) || [];
-  count += cjkMatches.length;
-
-  // Count Japanese kana (each character = 1 word, though this is approximate)
-  const kanaMatches = text.match(japaneseKanaPattern) || [];
-  count += kanaMatches.length;
-
-  // Count Korean characters
-  const koreanMatches = text.match(koreanPattern) || [];
-  count += koreanMatches.length;
-
-  // Count emoji
-  const emojiMatches = text.match(emojiPattern) || [];
-  count += emojiMatches.length;
-
-  // Remove CJK, Japanese, Korean, and emoji from text before counting Western words
-  const westernText = text
-    .replace(cjkPattern, ' ')
-    .replace(japaneseKanaPattern, ' ')
-    .replace(koreanPattern, ' ')
-    .replace(emojiPattern, ' ')
-    .trim();
-
-  // Count Western words (whitespace-separated)
-  if (westernText) {
-    const westernWords = westernText.split(/\s+/).filter(word => word.length > 0);
-    count += westernWords.length;
-  }
-
-  return count;
-}
-
-/**
- * Get word type counts from syntax analysis.
- * Uses the array lengths from analyzed syntax data for accurate type counts.
- */
-export function getWordTypeCounts(syntaxData: SyntaxAnalysis): Record<string, number> {
-  return {
-    nouns: syntaxData.nouns.length,
-    verbs: syntaxData.verbs.length,
-    adjectives: syntaxData.adjectives.length,
-    adverbs: syntaxData.adverbs.length,
-    pronouns: syntaxData.pronouns.length,
-    prepositions: syntaxData.prepositions.length,
-    conjunctions: syntaxData.conjunctions.length,
-    articles: syntaxData.articles.length,
-    interjections: syntaxData.interjections.length,
-  };
-}
-
 // Static lists for high accuracy word detection
 const ARTICLES = ['a', 'an', 'the'];
 
@@ -111,8 +24,7 @@ const INTERJECTIONS = [
   'yes', 'yeah', 'yup', 'yo', 'hello'
 ];
 
-// Comprehensive contraction map for proper categorization
-// The primary type is used for highlighting (first in the types array)
+// Comprehensive contraction map
 const CONTRACTIONS: Record<string, { types: (keyof SyntaxAnalysis)[] }> = {
   // Pronoun + verb (be)
   "i'm": { types: ["pronouns", "verbs"] },
@@ -194,12 +106,10 @@ function extractContractions(text: string, result: SyntaxAnalysis): void {
   const normalizedText = normalizeApostrophes(text.toLowerCase());
 
   for (const [contraction, info] of Object.entries(CONTRACTIONS)) {
-    // Create regex that matches word boundaries and handles both straight and curly apostrophes
     const escapedContraction = contraction.replace("'", "['']");
     const regex = new RegExp(`\\b${escapedContraction}\\b`, 'gi');
 
     if (regex.test(normalizedText)) {
-      // Add the contraction to its primary category (first in types array)
       const primaryType = info.types[0];
       if (!result[primaryType].includes(contraction)) {
         result[primaryType].push(contraction);
@@ -208,7 +118,7 @@ function extractContractions(text: string, result: SyntaxAnalysis): void {
   }
 }
 
-export const analyzeSyntax = async (text: string): Promise<SyntaxAnalysis> => {
+function analyzeSyntax(text: string): SyntaxAnalysis {
   if (!text.trim()) {
     return {
       nouns: [],
@@ -223,22 +133,18 @@ export const analyzeSyntax = async (text: string): Promise<SyntaxAnalysis> => {
     };
   }
 
-  // Use compromise for local NLP analysis
   const doc = nlp(text);
 
-  // Helper to get unique lowercase words from a tag match
   const getUniqueWords = (tag: string): string[] => {
     const words = doc.match(tag).out('array');
     return Array.from(new Set((words as string[]).map((w: string) => w.toLowerCase())));
   };
 
-  // Extract articles from text using static list (more reliable than NLP)
   const extractArticles = (text: string): string[] => {
     const words = text.toLowerCase().split(/\s+/);
     return Array.from(new Set(words.filter(w => ARTICLES.includes(w))));
   };
 
-  // Extract prepositions - combine NLP with static list for better coverage
   const extractPrepositions = (text: string): string[] => {
     const nlpPrepositions = getUniqueWords('#Preposition');
     const words = text.toLowerCase().split(/\s+/);
@@ -246,7 +152,6 @@ export const analyzeSyntax = async (text: string): Promise<SyntaxAnalysis> => {
     return Array.from(new Set([...nlpPrepositions, ...staticPrepositions]));
   };
 
-  // Extract interjections from text using static list
   const extractInterjections = (text: string): string[] => {
     const lowerText = text.toLowerCase();
     const words = lowerText.split(/\s+/);
@@ -267,8 +172,14 @@ export const analyzeSyntax = async (text: string): Promise<SyntaxAnalysis> => {
     interjections: extractInterjections(text),
   };
 
-  // Add contractions to appropriate categories
   extractContractions(text, result);
 
   return result;
+}
+
+// Worker message handler
+self.onmessage = (e: MessageEvent<{ text: string; id: number }>) => {
+  const { text, id } = e.data;
+  const result = analyzeSyntax(text);
+  self.postMessage({ result, id });
 };

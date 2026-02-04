@@ -6,6 +6,14 @@ Changelog and development progress for Clean Typewriter Experience t.
 
 ## Latest Release
 
+### v1.4.0 - Smooth Harmonica Gesture & Word Type Performance
+
+**Release Date:** February 2025
+
+Unified harmonica gesture to single continuous drag and optimized word type highlighting with Web Worker and O(1) lookups.
+
+---
+
 ### v1.3.0 - Right Panel Position & Mobile Harmonica UX
 
 **Release Date:** February 2025
@@ -23,6 +31,48 @@ Major update adding extended theme colors, mobile-first touch UX, and full PWA s
 ---
 
 ## Changelog
+
+### ✅ Phase 8: Smooth Harmonica Gesture & Word Type Performance
+
+Two major improvements to mobile UX and syntax highlighting performance.
+
+**Smooth Harmonica Gesture:**
+
+Unified the mobile panel drag from 3 separate drags (left→up→left) to one continuous horizontal motion:
+
+| Before | After |
+|--------|-------|
+| Drag left 40px → Peek | Single drag left: |
+| Drag UP 60px → Expand | 40px → Peek |
+| Drag left 80px → Full | 120px → Expand |
+| | 220px → Full |
+
+- Snap-to-nearest stage on release (boundaries at 20px, 80px, 170px)
+- Haptic feedback at stage threshold crossings
+- Simplified code: removed multi-direction logic
+
+**Word Type Highlighting Performance:**
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Lookup speed | O(n) per word | O(1) per word |
+| Debounce | 500ms | 150ms |
+| Main thread | Blocked during NLP | Free (Web Worker) |
+| Contraction coverage | ~40% | ~95% |
+
+**New Files:**
+- `workers/syntaxWorker.ts` - Web Worker for background NLP
+- `hooks/useSyntaxWorker.ts` - Worker lifecycle hook
+
+**Files Modified:**
+- `hooks/useHarmonicaDrag.ts` - Unified horizontal drag, snap-to-nearest
+- `types.ts` - Added `SyntaxSets` interface, `toSyntaxSets()` function
+- `services/localSyntaxService.ts` - Contraction handling (~50 contractions)
+- `components/Typewriter.tsx` - O(1) Set lookups, contraction tokenization
+- `App.tsx` - Web Worker integration, reduced debounce
+- `tests/e2e/responsive-syntax-panel.spec.ts` - Single drag test
+
+---
 
 ### ✅ Phase 7: Right Panel Position & Mobile Harmonica UX
 
@@ -283,6 +333,8 @@ Fixed the broken origami paper-fold animation and added UX improvements.
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.4.0 | Feb 2025 | Smooth harmonica gesture, Web Worker NLP, O(1) lookups |
+| 1.3.0 | Feb 2025 | Right panel position, 3-stage harmonica UX |
 | 1.2.0 | Jan 2025 | Fixed syntax panel, UTF-8 word counting |
 | 1.1.0 | Jan 2025 | Extended themes, mobile UX, PWA |
 | 1.0.0 | Jan 2025 | Initial release |

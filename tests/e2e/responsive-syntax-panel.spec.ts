@@ -63,31 +63,12 @@ test.describe('Responsive Syntax Panel', () => {
       const box = await foldTab.boundingBox();
       if (!box) throw new Error('Could not get fold tab bounding box');
 
-      // Simulate drag left (40px) to reach peek stage
+      // Single continuous horizontal drag to full stage (220px+)
+      // Unified gesture: one satisfying drag left opens the panel completely
       await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
       await page.mouse.down();
-      await page.mouse.move(box.x + box.width / 2 - 50, box.y + box.height / 2, { steps: 10 });
-      await page.mouse.up();
-
-      // Should show word count in peek stage
-      await page.waitForTimeout(400);
-
-      // Drag up to reach expand stage
-      const newBox = await foldTab.boundingBox();
-      if (!newBox) throw new Error('Could not get fold tab bounding box');
-      await page.mouse.move(newBox.x + newBox.width / 2, newBox.y + newBox.height / 2);
-      await page.mouse.down();
-      await page.mouse.move(newBox.x + newBox.width / 2, newBox.y - 70, { steps: 10 });
-      await page.mouse.up();
-
-      await page.waitForTimeout(400);
-
-      // Drag left again to reach full stage
-      const expandBox = await foldTab.boundingBox();
-      if (!expandBox) throw new Error('Could not get fold tab bounding box');
-      await page.mouse.move(expandBox.x + expandBox.width / 2, expandBox.y + expandBox.height / 2);
-      await page.mouse.down();
-      await page.mouse.move(expandBox.x + expandBox.width / 2 - 100, expandBox.y + expandBox.height / 2, { steps: 10 });
+      // Drag 250px left in smooth steps to reach full stage
+      await page.mouse.move(box.x + box.width / 2 - 250, box.y + box.height / 2, { steps: 25 });
       await page.mouse.up();
 
       await page.waitForTimeout(400);

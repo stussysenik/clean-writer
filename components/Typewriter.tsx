@@ -1,12 +1,12 @@
 import React, { useRef, useEffect, useCallback, useState, useMemo } from 'react';
-import { RisoTheme, SyntaxAnalysis, HighlightConfig } from '../types';
+import { RisoTheme, SyntaxSets, HighlightConfig } from '../types';
 import { useIMEComposition } from '../hooks/useIMEComposition';
 
 interface TypewriterProps {
   content: string;
   setContent: (s: string) => void;
   theme: RisoTheme;
-  syntaxData: SyntaxAnalysis;
+  syntaxSets: SyntaxSets;
   highlightConfig: HighlightConfig;
   fontSize: number;
   maxWidth: number;
@@ -28,11 +28,16 @@ const HIGHLIGHT_TO_COLOR_KEY: Record<keyof HighlightConfig, keyof RisoTheme['hig
   interjections: 'interjection',
 };
 
+// Normalize apostrophe variants for consistent contraction matching
+function normalizeApostrophes(text: string): string {
+  return text.replace(/['']/g, "'");
+}
+
 const Typewriter: React.FC<TypewriterProps> = ({
   content,
   setContent,
   theme,
-  syntaxData,
+  syntaxSets,
   highlightConfig,
   fontSize,
   maxWidth,
@@ -60,43 +65,45 @@ const Typewriter: React.FC<TypewriterProps> = ({
     if (!content) return theme.cursor;
 
     // Extract the last word from content (ignoring trailing whitespace/punctuation)
-    const trimmed = content.replace(/[\s.,!?;:"'()\-]+$/, '');
-    const words = trimmed.split(/[\s.,!?;:"'()\-]+/);
-    const lastWord = words[words.length - 1]?.toLowerCase().trim();
+    // Preserve contractions by not splitting on apostrophes within words
+    const trimmed = content.replace(/[\s.,!?;:"()\-]+$/, '');
+    // Split on whitespace and punctuation, but keep contractions together
+    const words = trimmed.split(/[\s.,!?;:"()\-]+/);
+    const lastWord = normalizeApostrophes(words[words.length - 1]?.toLowerCase().trim() || '');
 
     if (!lastWord) return theme.cursor;
 
-    // Check which syntax category the last word belongs to
-    if (highlightConfig.articles && syntaxData.articles.includes(lastWord)) {
+    // Check which syntax category the last word belongs to (O(1) lookups with Sets)
+    if (highlightConfig.articles && syntaxSets.articles.has(lastWord)) {
       return theme.highlight.article;
     }
-    if (highlightConfig.interjections && syntaxData.interjections.includes(lastWord)) {
+    if (highlightConfig.interjections && syntaxSets.interjections.has(lastWord)) {
       return theme.highlight.interjection;
     }
-    if (highlightConfig.prepositions && syntaxData.prepositions.includes(lastWord)) {
+    if (highlightConfig.prepositions && syntaxSets.prepositions.has(lastWord)) {
       return theme.highlight.preposition;
     }
-    if (highlightConfig.conjunctions && syntaxData.conjunctions.includes(lastWord)) {
+    if (highlightConfig.conjunctions && syntaxSets.conjunctions.has(lastWord)) {
       return theme.highlight.conjunction;
     }
-    if (highlightConfig.pronouns && syntaxData.pronouns.includes(lastWord)) {
+    if (highlightConfig.pronouns && syntaxSets.pronouns.has(lastWord)) {
       return theme.highlight.pronoun;
     }
-    if (highlightConfig.adverbs && syntaxData.adverbs.includes(lastWord)) {
+    if (highlightConfig.adverbs && syntaxSets.adverbs.has(lastWord)) {
       return theme.highlight.adverb;
     }
-    if (highlightConfig.verbs && syntaxData.verbs.includes(lastWord)) {
+    if (highlightConfig.verbs && syntaxSets.verbs.has(lastWord)) {
       return theme.highlight.verb;
     }
-    if (highlightConfig.adjectives && syntaxData.adjectives.includes(lastWord)) {
+    if (highlightConfig.adjectives && syntaxSets.adjectives.has(lastWord)) {
       return theme.highlight.adjective;
     }
-    if (highlightConfig.nouns && syntaxData.nouns.includes(lastWord)) {
+    if (highlightConfig.nouns && syntaxSets.nouns.has(lastWord)) {
       return theme.highlight.noun;
     }
 
     return theme.cursor;
-  }, [content, syntaxData, highlightConfig, theme]);
+  }, [content, syntaxSets, highlightConfig, theme]);
 
   // Blink effect for the ghost cursor
   useEffect(() => {
@@ -187,23 +194,23 @@ const Typewriter: React.FC<TypewriterProps> = ({
     }
   }, [handleScroll]);
 
-  // Helper to determine which syntax category a word belongs to
+  // Helper to determine which syntax category a word belongs to (O(1) lookups)
   const getWordCategory = useCallback((word: string): keyof HighlightConfig | null => {
-    const lowerWord = word.toLowerCase().trim();
+    const lowerWord = normalizeApostrophes(word.toLowerCase().trim());
     if (!lowerWord) return null;
 
-    if (syntaxData.articles.includes(lowerWord)) return 'articles';
-    if (syntaxData.interjections.includes(lowerWord)) return 'interjections';
-    if (syntaxData.prepositions.includes(lowerWord)) return 'prepositions';
-    if (syntaxData.conjunctions.includes(lowerWord)) return 'conjunctions';
-    if (syntaxData.pronouns.includes(lowerWord)) return 'pronouns';
-    if (syntaxData.adverbs.includes(lowerWord)) return 'adverbs';
-    if (syntaxData.verbs.includes(lowerWord)) return 'verbs';
-    if (syntaxData.adjectives.includes(lowerWord)) return 'adjectives';
-    if (syntaxData.nouns.includes(lowerWord)) return 'nouns';
+    if (syntaxSets.articles.has(lowerWord)) return 'articles';
+    if (syntaxSets.interjections.has(lowerWord)) return 'interjections';
+    if (syntaxSets.prepositions.has(lowerWord)) return 'prepositions';
+    if (syntaxSets.conjunctions.has(lowerWord)) return 'conjunctions';
+    if (syntaxSets.pronouns.has(lowerWord)) return 'pronouns';
+    if (syntaxSets.adverbs.has(lowerWord)) return 'adverbs';
+    if (syntaxSets.verbs.has(lowerWord)) return 'verbs';
+    if (syntaxSets.adjectives.has(lowerWord)) return 'adjectives';
+    if (syntaxSets.nouns.has(lowerWord)) return 'nouns';
 
     return null;
-  }, [syntaxData]);
+  }, [syntaxSets]);
 
   const renderHighlights = useCallback(() => {
     if (!content) return null;
@@ -232,17 +239,20 @@ const Typewriter: React.FC<TypewriterProps> = ({
       }
 
       // If it is normal text, process syntax highlighting
-      const parts = chunk.split(/(\s+|[.,!?;:"'()\-]+)/g);
+      // Tokenize preserving contractions: split on whitespace and punctuation,
+      // but keep apostrophes within words (for contractions like "where's", "let's")
+      const parts = chunk.split(/(\s+|[.,!?;:"()\-]+|(?<!\w)['']|[''](?!\w))/g);
 
       return (
         <React.Fragment key={`chunk-${chunkIndex}`}>
           {parts.map((part, index) => {
-            const lowerPart = part.toLowerCase().trim();
+            // Normalize apostrophes for consistent matching
+            const normalizedPart = normalizeApostrophes(part.toLowerCase().trim());
             let color = theme.text;
             let isMatch = false;
             let matchCategory: keyof HighlightConfig | null = null;
 
-            if (!lowerPart) {
+            if (!normalizedPart) {
               return (
                 <span
                   key={index}
@@ -255,39 +265,40 @@ const Typewriter: React.FC<TypewriterProps> = ({
 
             // Check highlights based on config - order matters for priority
             // More specific types first (articles, interjections, etc.)
-            if (highlightConfig.articles && syntaxData.articles.includes(lowerPart)) {
+            // Using O(1) Set.has() instead of O(n) Array.includes()
+            if (highlightConfig.articles && syntaxSets.articles.has(normalizedPart)) {
               color = theme.highlight.article;
               isMatch = true;
               matchCategory = 'articles';
-            } else if (highlightConfig.interjections && syntaxData.interjections.includes(lowerPart)) {
+            } else if (highlightConfig.interjections && syntaxSets.interjections.has(normalizedPart)) {
               color = theme.highlight.interjection;
               isMatch = true;
               matchCategory = 'interjections';
-            } else if (highlightConfig.prepositions && syntaxData.prepositions.includes(lowerPart)) {
+            } else if (highlightConfig.prepositions && syntaxSets.prepositions.has(normalizedPart)) {
               color = theme.highlight.preposition;
               isMatch = true;
               matchCategory = 'prepositions';
-            } else if (highlightConfig.conjunctions && syntaxData.conjunctions.includes(lowerPart)) {
+            } else if (highlightConfig.conjunctions && syntaxSets.conjunctions.has(normalizedPart)) {
               color = theme.highlight.conjunction;
               isMatch = true;
               matchCategory = 'conjunctions';
-            } else if (highlightConfig.pronouns && syntaxData.pronouns.includes(lowerPart)) {
+            } else if (highlightConfig.pronouns && syntaxSets.pronouns.has(normalizedPart)) {
               color = theme.highlight.pronoun;
               isMatch = true;
               matchCategory = 'pronouns';
-            } else if (highlightConfig.adverbs && syntaxData.adverbs.includes(lowerPart)) {
+            } else if (highlightConfig.adverbs && syntaxSets.adverbs.has(normalizedPart)) {
               color = theme.highlight.adverb;
               isMatch = true;
               matchCategory = 'adverbs';
-            } else if (highlightConfig.verbs && syntaxData.verbs.includes(lowerPart)) {
+            } else if (highlightConfig.verbs && syntaxSets.verbs.has(normalizedPart)) {
               color = theme.highlight.verb;
               isMatch = true;
               matchCategory = 'verbs';
-            } else if (highlightConfig.adjectives && syntaxData.adjectives.includes(lowerPart)) {
+            } else if (highlightConfig.adjectives && syntaxSets.adjectives.has(normalizedPart)) {
               color = theme.highlight.adjective;
               isMatch = true;
               matchCategory = 'adjectives';
-            } else if (highlightConfig.nouns && syntaxData.nouns.includes(lowerPart)) {
+            } else if (highlightConfig.nouns && syntaxSets.nouns.has(normalizedPart)) {
               color = theme.highlight.noun;
               isMatch = true;
               matchCategory = 'nouns';
@@ -311,7 +322,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
         </React.Fragment>
       );
     });
-  }, [content, syntaxData, theme, highlightConfig, hoveredCategory]);
+  }, [content, syntaxSets, theme, highlightConfig, hoveredCategory]);
 
   return (
     <div

@@ -21,6 +21,32 @@ export interface SyntaxAnalysis {
   interjections: string[];
 }
 
+export interface SyntaxSets {
+  nouns: Set<string>;
+  pronouns: Set<string>;
+  verbs: Set<string>;
+  adjectives: Set<string>;
+  adverbs: Set<string>;
+  prepositions: Set<string>;
+  conjunctions: Set<string>;
+  articles: Set<string>;
+  interjections: Set<string>;
+}
+
+export function toSyntaxSets(analysis: SyntaxAnalysis): SyntaxSets {
+  return {
+    nouns: new Set(analysis.nouns),
+    pronouns: new Set(analysis.pronouns),
+    verbs: new Set(analysis.verbs),
+    adjectives: new Set(analysis.adjectives),
+    adverbs: new Set(analysis.adverbs),
+    prepositions: new Set(analysis.prepositions),
+    conjunctions: new Set(analysis.conjunctions),
+    articles: new Set(analysis.articles),
+    interjections: new Set(analysis.interjections),
+  };
+}
+
 export interface HighlightConfig {
   nouns: boolean;
   pronouns: boolean;

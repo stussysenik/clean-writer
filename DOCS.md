@@ -317,7 +317,7 @@ Mobile 3-stage accordion panel with glassmorphism:
 
 ### useHarmonicaDrag
 
-3-stage drag state machine for mobile panel reveal:
+Unified horizontal drag state machine for mobile panel reveal:
 
 ```typescript
 const {
@@ -331,20 +331,21 @@ const {
 });
 ```
 
-**Stages:**
+**Stages (Single Continuous Drag):**
 
-| Stage | Drag Direction | Threshold | Content Revealed |
-|-------|---------------|-----------|------------------|
-| `closed` | - | - | Tab with word count |
-| `peek` | Drag left 40px | 50% commit | Word count preview |
-| `expand` | Drag up 60px | 50% commit | Breakdown header |
-| `full` | Drag left 80px | 50% commit | Complete panel |
+| Stage | Cumulative Distance | Snap Boundary | Content Revealed |
+|-------|---------------------|---------------|------------------|
+| `closed` | 0px | <20px | Tab with word count |
+| `peek` | 40px | 20-80px | Word count preview |
+| `expand` | 120px | 80-170px | Breakdown header |
+| `full` | 220px | >170px | Complete panel |
 
 **Features:**
-- Resistance effect before 50% threshold
+- Unified horizontal drag direction (always left)
+- One continuous motion from closed to full
+- Snap-to-nearest stage on release
 - GSAP spring animation with overshoot (`back.out(1.2)`)
-- Haptic feedback patterns at snap points
-- Reverse drag to collapse stages
+- Haptic feedback at stage boundaries
 
 ### useTouch
 
@@ -553,18 +554,19 @@ test('Panel has backdrop blur', async ({ page }) => {
 
 ### Harmonica Gesture (Mobile Panel)
 
-The mobile syntax panel uses a 3-stage "harmonica" drag gesture:
+The mobile syntax panel uses a unified horizontal drag gesture - one satisfying continuous motion:
 
-1. **Closed** → Tab visible with word count
-2. **Peek** → Drag left 40px reveals large word count
-3. **Expand** → Drag up 60px reveals breakdown header
-4. **Full** → Drag left 80px reveals complete panel
+| Distance | Stage | Content |
+|----------|-------|---------|
+| 0-40px | Peek | Word count preview |
+| 40-120px | Expand | Breakdown header |
+| 120-220px | Full | Complete panel |
 
-**Mechanical Feel:**
-- Resistance effect before 50% commit threshold
+**Features:**
+- Single drag direction (always left) - no direction changes
+- Snap-to-nearest stage on release (boundaries at 20px, 80px, 170px)
 - Spring animation with overshoot on snap
-- Haptic feedback at each stage transition
-- Directional arrow affordances guide users
+- Haptic feedback at stage boundaries
 
 ### Touch Targets
 

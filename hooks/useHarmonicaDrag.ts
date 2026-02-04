@@ -27,27 +27,19 @@ interface UseHarmonicaDragReturn {
   close: () => void;
 }
 
-// Drag thresholds for each stage transition
-const THRESHOLDS = {
-  PEEK: 40,    // Drag left from closed → peek
-  EXPAND: 60,  // Drag up from peek → expand
-  FULL: 80,    // Drag left from expand → full
+// Cumulative distance thresholds for unified horizontal drag
+// All stages use leftward drag - one continuous motion from closed to full
+const STAGE_THRESHOLDS = {
+  peek: 40,     // 0-40px → peek (word count preview)
+  expand: 120,  // 40-120px → expand (breakdown header)
+  full: 220,    // 120-220px → full (complete panel)
 };
 
-// Commit ratio: if drag exceeds this percentage of threshold, commit to next stage
-const COMMIT_RATIO = 0.5;
-
-// Stage transitions mapping
-const STAGE_TRANSITIONS: Record<HarmonicaStage, {
-  nextStage: HarmonicaStage | null;
-  prevStage: HarmonicaStage | null;
-  dragDirection: 'left' | 'up';
-  threshold: number;
-}> = {
-  closed: { nextStage: 'peek', prevStage: null, dragDirection: 'left', threshold: THRESHOLDS.PEEK },
-  peek: { nextStage: 'expand', prevStage: 'closed', dragDirection: 'up', threshold: THRESHOLDS.EXPAND },
-  expand: { nextStage: 'full', prevStage: 'peek', dragDirection: 'left', threshold: THRESHOLDS.FULL },
-  full: { nextStage: null, prevStage: 'expand', dragDirection: 'left', threshold: THRESHOLDS.FULL },
+// Snap boundaries (midpoints between thresholds)
+const SNAP_BOUNDARIES = {
+  toPeek: 20,      // < 20px → closed, >= 20px → peek
+  toExpand: 80,    // < 80px → peek, >= 80px → expand
+  toFull: 170,     // < 170px → expand, >= 170px → full
 };
 
 // Haptic feedback patterns
@@ -114,53 +106,52 @@ export function useHarmonicaDrag(options: UseHarmonicaDragOptions = {}): UseHarm
 
     const coords = getClientCoords(e);
     const deltaX = dragStartRef.current.x - coords.x; // Positive = dragging left
-    const deltaY = dragStartRef.current.y - coords.y; // Positive = dragging up
 
-    const transition = STAGE_TRANSITIONS[stage];
-
-    // Determine primary drag direction based on current stage expectation
-    const expectedDirection = transition.dragDirection;
-    const primaryDelta = expectedDirection === 'left' ? deltaX : deltaY;
-
-    // Calculate progress (0-1) towards threshold
-    const progress = Math.max(0, Math.min(1, primaryDelta / transition.threshold));
+    // Unified horizontal drag - calculate progress towards full (0-1)
+    const progress = Math.max(0, Math.min(1, deltaX / STAGE_THRESHOLDS.full));
 
     setDragProgress(progress);
-    setDragDirection(primaryDelta > 0 ? expectedDirection : null);
+    setDragDirection(deltaX > 0 ? 'left' : null);
 
-    // Trigger resistance haptic at certain thresholds
-    if (!prefersReducedMotion && progress > 0.3 && progress < 0.5) {
+    // Trigger haptic feedback at stage boundaries during drag
+    if (!prefersReducedMotion) {
       const now = Date.now();
-      if (now - lastHapticRef.current > 100) {
-        triggerHaptic('resistance');
-        lastHapticRef.current = now;
-      }
-    }
-
-    // Handle reverse drag (collapsing)
-    if (primaryDelta < 0 && transition.prevStage) {
-      const reverseProgress = Math.abs(primaryDelta) / transition.threshold;
-      if (reverseProgress > COMMIT_RATIO) {
-        setStage(transition.prevStage);
-        dragStartRef.current = coords; // Reset drag start for new stage
-        setDragProgress(0);
-        if (!prefersReducedMotion) {
-          triggerHaptic('snap');
+      if (now - lastHapticRef.current > 150) {
+        // Haptic at each threshold crossing
+        if (deltaX >= STAGE_THRESHOLDS.peek - 5 && deltaX <= STAGE_THRESHOLDS.peek + 5) {
+          triggerHaptic('resistance');
+          lastHapticRef.current = now;
+        } else if (deltaX >= STAGE_THRESHOLDS.expand - 5 && deltaX <= STAGE_THRESHOLDS.expand + 5) {
+          triggerHaptic('resistance');
+          lastHapticRef.current = now;
         }
       }
     }
-  }, [isDragging, stage, prefersReducedMotion, setStage]);
+  }, [isDragging, prefersReducedMotion]);
 
   const onDragEnd = useCallback(() => {
-    if (!isDragging) return;
+    if (!isDragging || !dragStartRef.current) return;
 
-    const transition = STAGE_TRANSITIONS[stage];
+    // Calculate total drag distance
+    const dragDistance = dragProgress * STAGE_THRESHOLDS.full;
 
-    // If progress exceeds commit ratio, advance to next stage
-    if (dragProgress >= COMMIT_RATIO && transition.nextStage) {
-      setStage(transition.nextStage);
+    // Snap to nearest stage based on drag distance
+    let newStage: HarmonicaStage;
+    if (dragDistance >= SNAP_BOUNDARIES.toFull) {
+      newStage = 'full';
+    } else if (dragDistance >= SNAP_BOUNDARIES.toExpand) {
+      newStage = 'expand';
+    } else if (dragDistance >= SNAP_BOUNDARIES.toPeek) {
+      newStage = 'peek';
+    } else {
+      newStage = 'closed';
+    }
+
+    // Only trigger haptic and update if stage changed
+    if (newStage !== stage) {
+      setStage(newStage);
       if (!prefersReducedMotion) {
-        if (transition.nextStage === 'full') {
+        if (newStage === 'full') {
           triggerHaptic('fullOpen');
         } else {
           triggerHaptic('snap');
@@ -173,7 +164,7 @@ export function useHarmonicaDrag(options: UseHarmonicaDragOptions = {}): UseHarm
     setDragProgress(0);
     setDragDirection(null);
     dragStartRef.current = null;
-  }, [isDragging, stage, dragProgress, prefersReducedMotion, setStage]);
+  }, [isDragging, dragProgress, stage, prefersReducedMotion, setStage]);
 
   // Global event listeners for drag continuation outside element
   useEffect(() => {
@@ -186,16 +177,12 @@ export function useHarmonicaDrag(options: UseHarmonicaDragOptions = {}): UseHarm
 
       if (!dragStartRef.current) return;
 
-      const deltaX = dragStartRef.current.x - coords.x;
-      const deltaY = dragStartRef.current.y - coords.y;
+      const deltaX = dragStartRef.current.x - coords.x; // Positive = dragging left
 
-      const transition = STAGE_TRANSITIONS[stage];
-      const expectedDirection = transition.dragDirection;
-      const primaryDelta = expectedDirection === 'left' ? deltaX : deltaY;
-
-      const progress = Math.max(0, Math.min(1, primaryDelta / transition.threshold));
+      // Unified horizontal drag - progress towards full (0-1)
+      const progress = Math.max(0, Math.min(1, deltaX / STAGE_THRESHOLDS.full));
       setDragProgress(progress);
-      setDragDirection(primaryDelta > 0 ? expectedDirection : null);
+      setDragDirection(deltaX > 0 ? 'left' : null);
     };
 
     const handleGlobalEnd = () => {
@@ -213,7 +200,7 @@ export function useHarmonicaDrag(options: UseHarmonicaDragOptions = {}): UseHarm
       document.removeEventListener('touchmove', handleGlobalMove);
       document.removeEventListener('touchend', handleGlobalEnd);
     };
-  }, [isDragging, stage, onDragEnd]);
+  }, [isDragging, onDragEnd]);
 
   return {
     state: {

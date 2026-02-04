@@ -6,8 +6,9 @@ import {
         FONT_STORAGE_KEY,
         FontId,
 } from "./constants";
-import { analyzeSyntax, countWords } from "./services/localSyntaxService";
-import { SyntaxAnalysis, ViewMode, HighlightConfig } from "./types";
+import { countWords } from "./services/localSyntaxService";
+import { SyntaxAnalysis, SyntaxSets, ViewMode, HighlightConfig, toSyntaxSets } from "./types";
+import { useSyntaxWorker } from "./hooks/useSyntaxWorker";
 import Typewriter from "./components/Typewriter";
 import MarkdownPreview from "./components/MarkdownPreview";
 import ConfirmDialog from "./components/ConfirmDialog";
@@ -238,6 +239,9 @@ const App: React.FC = () => {
         // Textarea ref for selection persistence
         const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
+        // Web Worker for background NLP processing
+        const { analyze: analyzeInWorker } = useSyntaxWorker();
+
         // Virtual keyboard detection
         const { isKeyboardOpen: keyboardOpen } = useVirtualKeyboard();
 
@@ -422,6 +426,12 @@ const App: React.FC = () => {
                         interjections: soloMode === "interjections",
                 };
         }, [soloMode, highlightConfig]);
+
+        // Convert syntaxData arrays to Sets for O(1) lookup performance
+        const syntaxSets = useMemo(
+                () => toSyntaxSets(syntaxData),
+                [syntaxData]
+        );
 
         // Toggle highlight handler
         const toggleHighlight = useCallback(
@@ -724,17 +734,21 @@ const App: React.FC = () => {
                 }));
         };
 
-        // Syntax analysis
+        // Syntax analysis (runs in Web Worker for better performance)
         useEffect(() => {
                 const handler = setTimeout(async () => {
                         if (content.length > 0) {
-                                const result = await analyzeSyntax(content);
-                                updateSyntaxData(result);
+                                try {
+                                        const result = await analyzeInWorker(content);
+                                        updateSyntaxData(result);
+                                } catch (error) {
+                                        console.warn('Syntax analysis failed:', error);
+                                }
                         }
-                }, 500);
+                }, 150); // Reduced from 500ms for faster feedback
 
                 return () => clearTimeout(handler);
-        }, [content]);
+        }, [content, analyzeInWorker]);
 
         const handleExport = () => {
                 const blob = new Blob([content], { type: "text/markdown" });
@@ -916,7 +930,7 @@ const App: React.FC = () => {
                                                 content={content}
                                                 setContent={setContent}
                                                 theme={currentTheme}
-                                                syntaxData={syntaxData}
+                                                syntaxSets={syntaxSets}
                                                 highlightConfig={
                                                         effectiveHighlightConfig
                                                 }

@@ -22,7 +22,7 @@ Open [http://localhost:3000](http://localhost:3000)
 | Feature | Description |
 |---------|-------------|
 | **Typewriter Mode** | Forward-only typing (no backspace) for focused writing |
-| **Syntax Highlighting** | Nouns, verbs, adjectives, conjunctions colored |
+| **Syntax Highlighting** | Nouns, verbs, adjectives, contractions colored (Web Worker, O(1) lookups) |
 | **5 Themes** | Classic, Blueprint, Midnight, Sepia, Ink |
 | **Markdown Preview** | Toggle with eye icon |
 | **Strikethrough** | Select text → click ~~S~~ button |
@@ -30,7 +30,7 @@ Open [http://localhost:3000](http://localhost:3000)
 | **PWA** | Install on iOS/Android home screen |
 | **Offline** | Works without internet |
 | **Responsive** | Mobile-friendly with side panel for syntax controls |
-| **Harmonica Gesture** | 3-stage drag-to-reveal on mobile (Peek → Expand → Full) |
+| **Harmonica Gesture** | Single continuous drag on mobile (40px→Peek→120px→Expand→220px→Full) |
 | **UTF-8 Support** | Chinese, Japanese, Korean, and emoji word counting |
 | **Collapsible Breakdown** | Toggle word type list in syntax panel |
 
