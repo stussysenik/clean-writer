@@ -51,8 +51,8 @@ const ActionButton: React.FC<ActionButtonProps> = ({
       onPointerDown={onPointerDown}
       onTouchStart={onTouchStart}
       disabled={disabled}
-      className={`flex flex-col items-center justify-center gap-0.5 p-2 rounded-lg transition-all hover:bg-black/5 ${
-        disabled ? 'opacity-30 cursor-not-allowed' : 'opacity-70 hover:opacity-100'
+      className={`flex flex-col items-center justify-center gap-0.5 p-2 rounded-xl transition-all duration-150 hover:bg-current/5 ${
+        disabled ? 'opacity-30 cursor-not-allowed' : 'opacity-60 hover:opacity-100'
       } ${className}`}
       title={tooltip}
       aria-label={ariaLabel || tooltip}
@@ -123,8 +123,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         <Tooltip content="Adjust line width" position="top" delay={400}>
           <TouchButton
             onClick={() => setShowWidthControl(!showWidthControl)}
-            className={`flex flex-col items-center justify-center gap-0.5 p-2 rounded-lg transition-all hover:bg-black/5 ${
-              showWidthControl ? 'opacity-100 bg-black/5' : 'opacity-70 hover:opacity-100'
+            className={`flex flex-col items-center justify-center gap-0.5 p-2 rounded-xl transition-all duration-150 hover:bg-current/5 ${
+              showWidthControl ? 'opacity-100 bg-current/5' : 'opacity-60 hover:opacity-100'
             }`}
             title="Adjust line width"
             aria-label="Adjust line width"

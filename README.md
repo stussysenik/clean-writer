@@ -32,7 +32,9 @@ Open [http://localhost:3000](http://localhost:3000)
 | **Responsive** | Mobile-friendly with side panel for syntax controls |
 | **Harmonica Gesture** | Single continuous drag on mobile (40px→Peek→120px→Expand→220px→Full) |
 | **UTF-8 Support** | Chinese, Japanese, Korean, and emoji word counting |
-| **Collapsible Breakdown** | Toggle word type list in syntax panel |
+| **Collapsible Breakdown** | Toggle word type list with colored indicator |
+| **Golden Ratio Spacing** | φ-based spacing (8→13→21→34→55→89px) for harmonious layouts |
+| **Theme-Aware UI** | All buttons/controls adapt to light/dark themes |
 
 ## Keyboard
 
@@ -89,7 +91,10 @@ Click colored circles (top-right) to switch:
 ├── hooks/
 │   ├── useTouch.ts          # Touch/haptic feedback hook
 │   └── useHarmonicaDrag.ts  # 3-stage drag state machine
-├── constants.ts         # Theme definitions
+├── constants/
+│   ├── index.ts             # Theme definitions
+│   └── spacing.ts           # Golden ratio spacing system
+├── constants.ts         # Theme definitions (legacy)
 ├── types.ts             # TypeScript interfaces
 └── tests/e2e/           # Playwright tests
 ```

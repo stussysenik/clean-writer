@@ -332,7 +332,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
       {/* Backdrop (Visual Layer) */}
       <div
         ref={backdropRef}
-        className="absolute inset-0 px-4 py-6 md:px-8 md:py-12 whitespace-pre-wrap break-words pointer-events-none z-0 overflow-hidden"
+        className="absolute inset-0 px-[13px] py-[21px] md:px-[21px] md:py-[34px] lg:px-[34px] lg:py-[55px] whitespace-pre-wrap break-words pointer-events-none z-0 overflow-hidden"
         style={{
           fontFamily,
           fontSize: `${fontSize}px`,
@@ -375,7 +375,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
         inputMode="text"
         enterKeyHint="enter"
         autoFocus
-        className="absolute inset-0 w-full h-full px-4 py-6 md:px-8 md:py-12 bg-transparent resize-none border-none outline-none z-10 whitespace-pre-wrap break-words overflow-y-auto"
+        className="absolute inset-0 w-full h-full px-[13px] py-[21px] md:px-[21px] md:py-[34px] lg:px-[34px] lg:py-[55px] bg-transparent resize-none border-none outline-none z-10 whitespace-pre-wrap break-words overflow-y-auto"
         style={{
           fontFamily,
           fontSize: `${fontSize}px`,

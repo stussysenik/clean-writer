@@ -98,9 +98,9 @@ const HarmonicaContainer: React.FC<HarmonicaContainerProps> = ({
     });
   }, [dimensions, isDragging]);
 
-  // Determine which content sections to show
-  const showPeek = stage !== 'closed';
-  const showExpand = stage === 'expand' || stage === 'full';
+  // Determine which content sections to show (mutually exclusive to prevent overlaps)
+  const showPeek = stage === 'peek';
+  const showExpand = stage === 'expand';
   const showFull = stage === 'full';
 
   return (
@@ -169,6 +169,7 @@ const HarmonicaContainer: React.FC<HarmonicaContainerProps> = ({
             right: STAGE_DIMENSIONS.closed.width,
             height: STAGE_DIMENSIONS.peek.height,
             opacity: showPeek ? 1 : 0,
+            visibility: showPeek ? 'visible' : 'hidden',
             pointerEvents: showPeek ? 'auto' : 'none',
           }}
         >
@@ -182,8 +183,9 @@ const HarmonicaContainer: React.FC<HarmonicaContainerProps> = ({
             left: 0,
             right: STAGE_DIMENSIONS.closed.width,
             top: STAGE_DIMENSIONS.peek.height,
-            height: STAGE_DIMENSIONS.expand.height - STAGE_DIMENSIONS.peek.height,
+            height: (STAGE_DIMENSIONS.expand.height as number) - (STAGE_DIMENSIONS.peek.height as number),
             opacity: showExpand ? 1 : 0,
+            visibility: showExpand ? 'visible' : 'hidden',
             pointerEvents: showExpand ? 'auto' : 'none',
           }}
         >
@@ -199,6 +201,7 @@ const HarmonicaContainer: React.FC<HarmonicaContainerProps> = ({
             top: 0,
             bottom: 0,
             opacity: showFull ? 1 : 0,
+            visibility: showFull ? 'visible' : 'hidden',
             pointerEvents: showFull ? 'auto' : 'none',
           }}
         >

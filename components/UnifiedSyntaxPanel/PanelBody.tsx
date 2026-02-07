@@ -46,7 +46,8 @@ const PanelBody: React.FC<PanelBodyProps> = ({
   isOpen = false,
   onCategoryHover,
 }) => {
-  const wordTypeCounts = getWordTypeCounts(syntaxData);
+  // Memoize word type counts for O(1) re-renders
+  const wordTypeCounts = useMemo(() => getWordTypeCounts(syntaxData), [syntaxData]);
   const dotsRef = useRef<(HTMLSpanElement | null)[]>([]);
   const hasAnimated = useRef(false);
 
@@ -302,8 +303,8 @@ const PanelBody: React.FC<PanelBodyProps> = ({
       }}
     >
       {/* Word Count Header */}
-      <div className="w-full px-6 py-5 flex items-center justify-between">
-        <div className="flex items-baseline gap-3">
+      <div className="w-full px-[21px] py-[21px] flex items-center justify-between">
+        <div className="flex items-baseline gap-[13px]">
           <span
             className="text-5xl font-bold tracking-tighter tabular-nums"
             style={{ color: theme.text }}
@@ -317,19 +318,23 @@ const PanelBody: React.FC<PanelBodyProps> = ({
       </div>
 
       {/* Word Type Breakdown */}
-      <div className="px-6 pb-4">
+      <div className="px-[21px] pb-[13px]">
         {/* Collapsible header with toggle */}
         <button
           onClick={toggleBreakdown}
-          className="w-full text-[10px] uppercase tracking-widest opacity-40 mb-3 flex items-center gap-2 cursor-pointer hover:opacity-60 transition-opacity focus:outline-none"
+          className="w-full text-[10px] uppercase tracking-widest mb-[13px] flex items-center gap-2 cursor-pointer hover:opacity-80 transition-all focus:outline-none"
+          style={{ color: theme.text, opacity: 0.5 }}
         >
           <span className="flex-1 h-px" style={{ backgroundColor: `${theme.text}20` }} />
-          <span className="flex items-center gap-1.5">
+          <span className="flex items-center gap-2">
+            {/* Colored indicator pill */}
             <span
-              className="transition-transform duration-200"
+              className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] transition-all duration-200"
               style={{
-                display: 'inline-block',
+                backgroundColor: isBreakdownCollapsed ? `${theme.accent}25` : `${theme.accent}40`,
+                color: theme.accent,
                 transform: isBreakdownCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)',
+                boxShadow: isBreakdownCollapsed ? 'none' : `0 0 8px ${theme.accent}30`,
               }}
             >
               ▼

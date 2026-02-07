@@ -6,6 +6,14 @@ Changelog and development progress for Clean Typewriter Experience t.
 
 ## Latest Release
 
+### v1.5.0 - Golden Ratio Spacing & UI Polish
+
+**Release Date:** February 2025
+
+Golden ratio-based spacing system (φ = 1.618), theme-aware UI components, colored collapse indicator, and performance optimizations.
+
+---
+
 ### v1.4.0 - Smooth Harmonica Gesture & Word Type Performance
 
 **Release Date:** February 2025
@@ -31,6 +39,51 @@ Major update adding extended theme colors, mobile-first touch UX, and full PWA s
 ---
 
 ## Changelog
+
+### ✅ Phase 9: Golden Ratio Spacing & UI Polish
+
+Implemented golden ratio-based spacing system and comprehensive UI polish for industrial design quality.
+
+**Golden Ratio Spacing (φ = 1.618):**
+
+| Scale | Pixels | Usage |
+|-------|--------|-------|
+| xs | 8px | Base unit |
+| sm | 13px | Mobile padding |
+| md | 21px | Tablet padding |
+| lg | 34px | Desktop padding |
+| xl | 55px | Top margins |
+| xxl | 89px | Large desktop |
+
+**Device-Specific Values:**
+
+| Device | Padding | Top Margin | Panel Offset |
+|--------|---------|------------|--------------|
+| Mobile (<768px) | 13px | 55px | 13px |
+| Tablet (768-1023px) | 21px | 55px | 21px |
+| Desktop (≥1024px) | 34px | 89px | 34px |
+
+**UI Polish:**
+- Theme-aware button hover states (`hover:bg-current/5` instead of `bg-black/5`)
+- Colored collapse indicator pill with accent glow
+- Success toast type with green color and checkmark icon
+- Memoized word type counts for O(1) re-renders
+- Softer rounded corners (`rounded-xl`)
+
+**New Files:**
+- `constants/spacing.ts` - Golden ratio constants
+
+**Files Modified:**
+- `App.tsx` - z-index fix, golden top margin, export toast
+- `components/Typewriter.tsx` - Golden ratio padding
+- `components/Toolbar/index.tsx` - Golden ratio spacing
+- `components/Toolbar/ActionButtons.tsx` - Theme-aware styling
+- `components/UnifiedSyntaxPanel/PanelBody.tsx` - Colored toggle, memoization
+- `components/UnifiedSyntaxPanel/DesktopSyntaxPanel.tsx` - Golden positioning
+- `components/ThemeCustomizer/index.tsx` - Theme-aware colors
+- `components/Toast.tsx` - Success type added
+
+---
 
 ### ✅ Phase 8: Smooth Harmonica Gesture & Word Type Performance
 
@@ -333,6 +386,7 @@ Fixed the broken origami paper-fold animation and added UX improvements.
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.5.0 | Feb 2025 | Golden ratio spacing, theme-aware UI, colored toggle |
 | 1.4.0 | Feb 2025 | Smooth harmonica gesture, Web Worker NLP, O(1) lookups |
 | 1.3.0 | Feb 2025 | Right panel position, 3-stage harmonica UX |
 | 1.2.0 | Jan 2025 | Fixed syntax panel, UTF-8 word counting |

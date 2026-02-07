@@ -5,7 +5,7 @@ interface ToastProps {
   isVisible: boolean;
   onDismiss: () => void;
   duration?: number;
-  type?: 'info' | 'warning' | 'error';
+  type?: 'info' | 'warning' | 'error' | 'success';
 }
 
 const Toast: React.FC<ToastProps> = ({
@@ -30,6 +30,8 @@ const Toast: React.FC<ToastProps> = ({
         return '#ef4444';
       case 'warning':
         return '#f59e0b';
+      case 'success':
+        return '#22c55e';
       case 'info':
       default:
         return '#3b82f6';
@@ -52,6 +54,13 @@ const Toast: React.FC<ToastProps> = ({
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
             <line x1="12" y1="9" x2="12" y2="13" />
             <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+        );
+      case 'success':
+        return (
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M9 12l2 2 4-4" />
           </svg>
         );
       case 'info':

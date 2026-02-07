@@ -16,7 +16,8 @@ Complete documentation for Clean Typewriter Experience - a distraction-free writ
 8. [PWA Configuration](#pwa-configuration)
 9. [Testing](#testing)
 10. [Mobile Support](#mobile-support)
-11. [Keyboard Shortcuts](#keyboard-shortcuts)
+11. [Golden Ratio Spacing](#golden-ratio-spacing)
+12. [Keyboard Shortcuts](#keyboard-shortcuts)
 
 ---
 
@@ -587,6 +588,58 @@ All interactive elements have:
 
 - Mobile: 24x24px circles (wraps to 2 rows)
 - Desktop: 20x20px circles
+
+---
+
+## Golden Ratio Spacing
+
+The app uses golden ratio (φ = 1.618) based spacing for harmonious proportions across all device sizes.
+
+### Fibonacci-like Scale
+
+| Name | Pixels | Calculation |
+|------|--------|-------------|
+| xs | 8px | Base unit |
+| sm | 13px | 8 × 1.618 ≈ 13 |
+| md | 21px | 13 × 1.618 ≈ 21 |
+| lg | 34px | 21 × 1.618 ≈ 34 |
+| xl | 55px | 34 × 1.618 ≈ 55 |
+| xxl | 89px | 55 × 1.618 ≈ 89 |
+
+### Device-Specific Spacing
+
+| Device | Horizontal Padding | Top Margin |
+|--------|-------------------|------------|
+| Mobile (<768px) | 13px | 55px |
+| Tablet (768-1023px) | 21px | 55px |
+| Desktop (≥1024px) | 34px | 89px |
+
+### Usage in Tailwind
+
+```tsx
+// Typewriter padding
+className="px-[13px] py-[21px] md:px-[21px] md:py-[34px] lg:px-[34px] lg:py-[55px]"
+
+// Top bar padding
+className="p-[13px] md:p-[21px]"
+
+// Main content top margin
+className="pt-[55px] md:pt-[55px] lg:pt-[89px]"
+```
+
+### Constants File
+
+```typescript
+// constants/spacing.ts
+export const GOLDEN_SCALE = {
+  xs: 8,    // Base
+  sm: 13,   // 8 × 1.618
+  md: 21,   // 13 × 1.618
+  lg: 34,   // 21 × 1.618
+  xl: 55,   // 34 × 1.618
+  xxl: 89,  // 55 × 1.618
+} as const;
+```
 
 ---
 

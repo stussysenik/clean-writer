@@ -169,15 +169,15 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
             />
           ),
           peek: (
-            <div className="flex items-center justify-center h-full px-3">
+            <div className="flex flex-col items-center justify-center h-full">
               <span
-                className="text-3xl font-bold tabular-nums"
+                className="text-4xl font-bold tabular-nums leading-none"
                 style={{ color: theme.text }}
               >
                 {wordCount}
               </span>
               <span
-                className="text-xs uppercase tracking-wider opacity-50 ml-2"
+                className="text-[10px] uppercase tracking-widest opacity-40 mt-1.5"
                 style={{ color: theme.text }}
               >
                 words

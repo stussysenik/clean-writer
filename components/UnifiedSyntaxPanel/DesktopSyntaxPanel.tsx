@@ -58,7 +58,7 @@ const DesktopSyntaxPanel: React.FC<DesktopSyntaxPanelProps> = ({
     <div
       ref={panelRef}
       data-testid="desktop-syntax-panel"
-      className="fixed right-8 bottom-8 z-50 rounded-2xl overflow-hidden"
+      className="fixed right-[34px] bottom-[34px] z-50 rounded-2xl overflow-hidden"
       style={{
         // Glassmorphism: semi-transparent background with blur
         backgroundColor: `${theme.background}E6`, // ~90% opacity

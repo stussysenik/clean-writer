@@ -107,7 +107,7 @@ const ColorRow: React.FC<ColorRowProps> = ({
         disabled={!isCustomized}
         className={`p-1.5 rounded transition-all ${
           isCustomized
-            ? 'opacity-60 hover:opacity-100 hover:bg-black/10'
+            ? 'opacity-60 hover:opacity-100 hover:bg-current/10'
             : 'opacity-20 cursor-not-allowed'
         }`}
         title={isCustomized ? `Reset ${label.toLowerCase()} to preset` : `${label} is using preset value`}
@@ -161,7 +161,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 z-[100]"
+        className="fixed inset-0 bg-current/50 z-[100]"
         onClick={onClose}
       />
 
@@ -181,7 +181,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
           <h2 className="text-lg font-bold">Customize Theme</h2>
           <TouchButton
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-black/10 transition-colors"
+            className="p-2 rounded-lg hover:bg-current/10 transition-colors"
             title="Close"
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -190,10 +190,10 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
           </TouchButton>
         </div>
 
-        <div className="p-5">
+        <div className="px-6 py-2">
           {/* Font Selection Section */}
-          <section className="pb-6 border-b border-current/10">
-            <h3 className="text-sm font-semibold uppercase tracking-wider mb-4 opacity-70">
+          <section className="py-6 border-b border-current/10">
+            <h3 className="text-xs font-medium uppercase tracking-widest mb-5 opacity-50">
               Font
             </h3>
             <div className="space-y-2">
@@ -203,8 +203,8 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                   onClick={() => onFontChange(font.id)}
                   className={`w-full text-left px-4 py-3 rounded-lg transition-all ${
                     currentFontId === font.id
-                      ? 'ring-2 ring-current bg-black/5'
-                      : 'hover:bg-black/5'
+                      ? 'ring-2 ring-current bg-current/5'
+                      : 'hover:bg-current/5'
                   }`}
                   style={{ fontFamily: font.family }}
                 >
@@ -219,7 +219,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
 
           {/* Base Colors Section */}
           <section className="py-6 border-b border-current/10">
-            <h3 className="text-sm font-semibold uppercase tracking-wider mb-4 opacity-70">
+            <h3 className="text-xs font-medium uppercase tracking-widest mb-5 opacity-50">
               Base Colors
             </h3>
             <div className="space-y-4">
@@ -256,7 +256,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
 
           {/* Word Type Colors Section */}
           <section className="py-6 border-b border-current/10">
-            <h3 className="text-sm font-semibold uppercase tracking-wider mb-4 opacity-70">
+            <h3 className="text-xs font-medium uppercase tracking-widest mb-5 opacity-50">
               Word Type Colors
             </h3>
             <div className="grid grid-cols-1 gap-3">
@@ -279,7 +279,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
           {/* Save as Palette Section - Only show when color customizations exist */}
           {hasColorCustomizations && onSavePalette && (
             <section className="py-6 border-b border-current/10">
-              <h3 className="text-sm font-semibold uppercase tracking-wider mb-4 opacity-70">
+              <h3 className="text-xs font-medium uppercase tracking-widest mb-5 opacity-50">
                 Save as Palette
               </h3>
               <div className="flex gap-2">
@@ -309,12 +309,18 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                 </TouchButton>
               </div>
               {showSaveSuccess && (
-                <div className="mt-3 p-3 rounded-lg bg-green-50 border border-green-200">
-                  <p className="text-sm text-green-700 font-medium">
-                    ✓ "{savedPaletteName}" saved!
+                <div
+                  className="mt-4 p-4 rounded-xl border"
+                  style={{
+                    backgroundColor: `${theme.text}08`,
+                    borderColor: `${theme.text}15`,
+                  }}
+                >
+                  <p className="text-sm font-medium" style={{ color: theme.text }}>
+                    Saved "{savedPaletteName}"
                   </p>
-                  <p className="text-xs text-green-600 mt-1">
-                    Find it in the theme selector (top-left, dashed border)
+                  <p className="text-xs mt-1 opacity-60">
+                    Find it in the theme selector (dashed border)
                   </p>
                 </div>
               )}
@@ -327,7 +333,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
           {/* Visible Presets Section */}
           {onToggleThemeVisibility && (
             <section className="py-6 border-b border-current/10">
-              <h3 className="text-sm font-semibold uppercase tracking-wider mb-4 opacity-70">
+              <h3 className="text-xs font-medium uppercase tracking-widest mb-5 opacity-50">
                 Visible Presets
               </h3>
               <div className="grid grid-cols-2 gap-2">
@@ -336,7 +342,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                   return (
                     <label
                       key={t.id}
-                      className="flex items-center gap-2 p-2 rounded-lg hover:bg-black/5 cursor-pointer transition-colors"
+                      className="flex items-center gap-2 p-2 rounded-lg hover:bg-current/5 cursor-pointer transition-colors"
                     >
                       <input
                         type="checkbox"

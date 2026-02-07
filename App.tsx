@@ -268,6 +268,8 @@ const App: React.FC = () => {
 
         // Toast state for last-theme warning
         const [showLastThemeToast, setShowLastThemeToast] = useState(false);
+        // Toast state for export success
+        const [showExportToast, setShowExportToast] = useState(false);
 
         // Animation states for delete sequence
         const [isDeleting, setIsDeleting] = useState(false);
@@ -760,6 +762,7 @@ const App: React.FC = () => {
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
+                setShowExportToast(true);
         };
 
         const handleClearRequest = () => {
@@ -884,8 +887,16 @@ const App: React.FC = () => {
                                 type="warning"
                         />
 
+                        {/* Toast for export success */}
+                        <Toast
+                                message="Exported clean-writer.md"
+                                isVisible={showExportToast}
+                                onDismiss={() => setShowExportToast(false)}
+                                type="success"
+                        />
+
                         {/* Top Bar with Theme Selector and Settings */}
-                        <div className="absolute top-0 left-0 right-0 flex justify-between items-center p-4 z-30 pointer-events-none">
+                        <div className="absolute top-0 left-0 right-0 flex justify-between items-center p-[13px] md:p-[21px] z-[60] pointer-events-none">
                                 <div className="pointer-events-auto flex items-center min-h-[44px]">
                                         <ThemeSelector
                                                 currentTheme={currentTheme}
@@ -910,7 +921,7 @@ const App: React.FC = () => {
                                                                 true,
                                                         )
                                                 }
-                                                className="p-2 rounded-lg hover:bg-black/10 transition-colors"
+                                                className="p-2 rounded-xl hover:bg-current/5 transition-all duration-150"
                                                 title="Customize Theme"
                                                 style={{
                                                         color: getIconColor(
@@ -924,7 +935,7 @@ const App: React.FC = () => {
                         </div>
 
                         {/* Main Area */}
-                        <main className="flex-1 w-full h-full relative z-10 pt-16 md:pt-20 transition-all duration-300 ease-in-out">
+                        <main className="flex-1 w-full h-full relative z-10 pt-[55px] md:pt-[55px] lg:pt-[89px] transition-all duration-300 ease-in-out">
                                 {viewMode === "write" ? (
                                         <Typewriter
                                                 content={content}

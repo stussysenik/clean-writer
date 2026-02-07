@@ -42,15 +42,15 @@ const Toolbar: React.FC<ToolbarProps> = ({
     <footer
       className="absolute bottom-0 left-0 right-0 flex flex-col-reverse md:flex-row justify-between items-start md:items-end z-50 pointer-events-none"
       style={{
-        padding: '16px',
-        paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
-        gap: '16px',
+        padding: '13px',
+        paddingBottom: 'max(13px, env(safe-area-inset-bottom))',
+        gap: '13px',
       }}
     >
       {/* Left: Interactive Tools */}
       <div className="flex flex-col gap-4 pointer-events-auto w-full md:w-auto">
-        {/* Syntax Toggles Row - hidden on mobile, shown on desktop */}
-        <div className="hidden md:block px-1">
+        {/* Syntax Toggles Row - shown only on tablet (768-1023px), hidden on mobile and desktop */}
+        <div data-testid="toolbar-syntax-toggles" className="hidden md:block lg:hidden px-1">
           <SyntaxToggles
             theme={theme}
             highlightConfig={highlightConfig}
