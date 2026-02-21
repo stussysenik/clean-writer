@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { gsap } from 'gsap';
-import { RisoTheme, SyntaxAnalysis, HighlightConfig } from '../../types';
-import { getWordTypeCounts } from '../../services/localSyntaxService';
+import { RisoTheme, SyntaxAnalysis, SyntaxSets, HighlightConfig } from '../../types';
+import { getWordTypeOccurrences } from '../../services/localSyntaxService';
 import TouchButton from '../TouchButton';
 
 interface PanelBodyProps {
   theme: RisoTheme;
   wordCount: number;
+  content: string;
+  syntaxSets: SyntaxSets;
   syntaxData: SyntaxAnalysis;
   highlightConfig: HighlightConfig;
   onToggleHighlight: (key: keyof HighlightConfig) => void;
@@ -38,6 +40,8 @@ const BREAKDOWN_COLLAPSED_KEY = 'clean_writer_breakdown_collapsed';
 const PanelBody: React.FC<PanelBodyProps> = ({
   theme,
   wordCount,
+  content,
+  syntaxSets,
   syntaxData,
   highlightConfig,
   onToggleHighlight,
@@ -46,8 +50,11 @@ const PanelBody: React.FC<PanelBodyProps> = ({
   isOpen = false,
   onCategoryHover,
 }) => {
-  // Memoize word type counts for O(1) re-renders
-  const wordTypeCounts = useMemo(() => getWordTypeCounts(syntaxData), [syntaxData]);
+  // Count actual word occurrences per type using O(1) Set lookups
+  const wordTypeCounts = useMemo(
+    () => getWordTypeOccurrences(content, syntaxSets),
+    [content, syntaxSets]
+  );
   const dotsRef = useRef<(HTMLSpanElement | null)[]>([]);
   const hasAnimated = useRef(false);
 

@@ -1,8 +1,9 @@
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { RisoTheme } from "../../types";
 import { THEMES } from "../../constants";
 import Tooltip from "../Tooltip";
 import { SavedPalette } from "../../hooks/useCustomPalettes";
+import { averageHighlightColor } from "../../utils/colorContrast";
 
 interface ThemeSelectorProps {
         currentTheme: RisoTheme;
@@ -449,6 +450,14 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
                                 const paletteIndex =
                                         visibleThemes.length + index;
 
+                                // Resolve the full highlight colors for this palette
+                                const baseTheme = THEMES.find(t => t.id === palette.baseThemeId) || THEMES[0];
+                                const resolvedHighlight = {
+                                        ...baseTheme.highlight,
+                                        ...palette.overrides.highlight,
+                                };
+                                const swatchColor = averageHighlightColor(resolvedHighlight);
+
                                 return (
                                         <div
                                                 key={palette.id}
@@ -482,19 +491,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
                                                                 }`}
                                                                 style={
                                                                         {
-                                                                                backgroundColor:
-                                                                                        palette
-                                                                                                .overrides
-                                                                                                .background ||
-                                                                                        THEMES.find(
-                                                                                                (
-                                                                                                        t,
-                                                                                                ) =>
-                                                                                                        t.id ===
-                                                                                                        palette.baseThemeId,
-                                                                                        )
-                                                                                                ?.accent ||
-                                                                                        "#888",
+                                                                                backgroundColor: swatchColor,
                                                                                 borderColor: `${currentTheme.text}50`,
                                                                                 "--tw-ring-color":
                                                                                         currentTheme.text,

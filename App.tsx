@@ -148,7 +148,7 @@ const App: React.FC = () => {
                 },
         );
 
-        const [fontSize, setFontSize] = useState(24);
+        const fluidFontSize = 'clamp(18px, 10px + 1.1vw, 24px)';
         const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
         const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
 
@@ -569,18 +569,7 @@ const App: React.FC = () => {
                         window.removeEventListener("keydown", handleKeyDown);
         }, [toggleHighlight]);
 
-        // Responsive Font Size
-        useEffect(() => {
-                const handleResize = () => {
-                        const isMobile = window.innerWidth < 768;
-                        setFontSize(isMobile ? 18 : 24);
-                };
-
-                window.addEventListener("resize", handleResize);
-                handleResize();
-
-                return () => window.removeEventListener("resize", handleResize);
-        }, []);
+        // Font size now uses CSS clamp() — no JS resize handler needed
 
         // Sync selection color CSS custom property
         useEffect(() => {
@@ -685,69 +674,19 @@ const App: React.FC = () => {
                 }
         }, [activePaletteId]);
 
-        // Helper to merge new syntax data with existing data
-        const updateSyntaxData = (newData: SyntaxAnalysis) => {
-                setSyntaxData((prev) => ({
-                        nouns: Array.from(
-                                new Set([...prev.nouns, ...newData.nouns]),
-                        ),
-                        pronouns: Array.from(
-                                new Set([
-                                        ...prev.pronouns,
-                                        ...newData.pronouns,
-                                ]),
-                        ),
-                        verbs: Array.from(
-                                new Set([...prev.verbs, ...newData.verbs]),
-                        ),
-                        adjectives: Array.from(
-                                new Set([
-                                        ...prev.adjectives,
-                                        ...newData.adjectives,
-                                ]),
-                        ),
-                        adverbs: Array.from(
-                                new Set([...prev.adverbs, ...newData.adverbs]),
-                        ),
-                        prepositions: Array.from(
-                                new Set([
-                                        ...prev.prepositions,
-                                        ...newData.prepositions,
-                                ]),
-                        ),
-                        conjunctions: Array.from(
-                                new Set([
-                                        ...prev.conjunctions,
-                                        ...newData.conjunctions,
-                                ]),
-                        ),
-                        articles: Array.from(
-                                new Set([
-                                        ...prev.articles,
-                                        ...newData.articles,
-                                ]),
-                        ),
-                        interjections: Array.from(
-                                new Set([
-                                        ...prev.interjections,
-                                        ...newData.interjections,
-                                ]),
-                        ),
-                }));
-        };
-
         // Syntax analysis (runs in Web Worker for better performance)
+        // Replaces data entirely on each analysis - no accumulation of stale words
         useEffect(() => {
                 const handler = setTimeout(async () => {
                         if (content.length > 0) {
                                 try {
                                         const result = await analyzeInWorker(content);
-                                        updateSyntaxData(result);
+                                        setSyntaxData(result);
                                 } catch (error) {
                                         console.warn('Syntax analysis failed:', error);
                                 }
                         }
-                }, 150); // Reduced from 500ms for faster feedback
+                }, 150);
 
                 return () => clearTimeout(handler);
         }, [content, analyzeInWorker]);
@@ -914,24 +853,23 @@ const App: React.FC = () => {
                                                 isDraggingOverTrash={isDraggingOverTrash}
                                         />
                                 </div>
-                                <div className="pointer-events-auto flex items-center min-h-[44px]">
-                                        <TouchButton
-                                                onClick={() =>
-                                                        setIsCustomizerOpen(
-                                                                true,
-                                                        )
-                                                }
-                                                className="p-2 rounded-xl hover:bg-current/5 transition-all duration-150"
-                                                title="Customize Theme"
-                                                style={{
-                                                        color: getIconColor(
-                                                                currentTheme,
-                                                        ),
-                                                }}
-                                        >
-                                                <IconSettings />
-                                        </TouchButton>
-                                </div>
+                                {/* Hidden when customizer open — customizer has its own close (X) button */}
+                                {!isCustomizerOpen && (
+                                        <div className="pointer-events-auto flex items-center min-h-[44px]">
+                                                <TouchButton
+                                                        onClick={() => setIsCustomizerOpen(true)}
+                                                        className="p-2 rounded-xl hover:bg-current/5 transition-all duration-200"
+                                                        title="Customize Theme"
+                                                        style={{
+                                                                color: getIconColor(
+                                                                        currentTheme,
+                                                                ),
+                                                        }}
+                                                >
+                                                        <IconSettings />
+                                                </TouchButton>
+                                        </div>
+                                )}
                         </div>
 
                         {/* Main Area */}
@@ -945,7 +883,7 @@ const App: React.FC = () => {
                                                 highlightConfig={
                                                         effectiveHighlightConfig
                                                 }
-                                                fontSize={fontSize}
+                                                fontSize={fluidFontSize}
                                                 maxWidth={maxWidth}
                                                 fontFamily={currentFont.family}
                                                 textareaRef={textareaRef}
@@ -969,6 +907,7 @@ const App: React.FC = () => {
                                 content={content}
                                 theme={currentTheme}
                                 syntaxData={syntaxData}
+                                syntaxSets={syntaxSets}
                                 highlightConfig={effectiveHighlightConfig}
                                 onToggleHighlight={toggleHighlight}
                                 soloMode={soloMode}

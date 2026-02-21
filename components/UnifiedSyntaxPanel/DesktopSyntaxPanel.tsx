@@ -1,11 +1,13 @@
 import React, { useRef, useEffect, useMemo } from 'react';
 import { gsap } from 'gsap';
-import { RisoTheme, SyntaxAnalysis, HighlightConfig } from '../../types';
+import { RisoTheme, SyntaxAnalysis, SyntaxSets, HighlightConfig } from '../../types';
 import PanelBody from './PanelBody';
 
 interface DesktopSyntaxPanelProps {
   theme: RisoTheme;
   wordCount: number;
+  content: string;
+  syntaxSets: SyntaxSets;
   syntaxData: SyntaxAnalysis;
   highlightConfig: HighlightConfig;
   onToggleHighlight: (key: keyof HighlightConfig) => void;
@@ -17,6 +19,8 @@ interface DesktopSyntaxPanelProps {
 const DesktopSyntaxPanel: React.FC<DesktopSyntaxPanelProps> = ({
   theme,
   wordCount,
+  content,
+  syntaxSets,
   syntaxData,
   highlightConfig,
   onToggleHighlight,
@@ -58,7 +62,7 @@ const DesktopSyntaxPanel: React.FC<DesktopSyntaxPanelProps> = ({
     <div
       ref={panelRef}
       data-testid="desktop-syntax-panel"
-      className="fixed right-[34px] bottom-[34px] z-50 rounded-2xl overflow-hidden"
+      className="fixed right-[21px] bottom-[21px] lg:right-[34px] lg:bottom-[34px] z-50 rounded-2xl overflow-hidden"
       style={{
         // Glassmorphism: semi-transparent background with blur
         backgroundColor: `${theme.background}E6`, // ~90% opacity
@@ -96,6 +100,8 @@ const DesktopSyntaxPanel: React.FC<DesktopSyntaxPanelProps> = ({
       <PanelBody
         theme={theme}
         wordCount={wordCount}
+        content={content}
+        syntaxSets={syntaxSets}
         syntaxData={syntaxData}
         highlightConfig={highlightConfig}
         onToggleHighlight={onToggleHighlight}

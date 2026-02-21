@@ -83,3 +83,53 @@ export function meetsMinimumContrast(
 export function formatContrastRatio(ratio: number): string {
   return `${ratio.toFixed(2)}:1`;
 }
+
+/**
+ * Compute the average color of all 9 highlight colors in a theme.
+ * Returns a hex string representing the RGB average.
+ * Used for custom palette swatch display.
+ */
+export function averageHighlightColor(highlight: {
+  noun: string;
+  pronoun: string;
+  verb: string;
+  adjective: string;
+  adverb: string;
+  preposition: string;
+  conjunction: string;
+  article: string;
+  interjection: string;
+}): string {
+  const colors = [
+    highlight.noun,
+    highlight.pronoun,
+    highlight.verb,
+    highlight.adjective,
+    highlight.adverb,
+    highlight.preposition,
+    highlight.conjunction,
+    highlight.article,
+    highlight.interjection,
+  ];
+
+  let totalR = 0, totalG = 0, totalB = 0;
+  let count = 0;
+
+  for (const hex of colors) {
+    const rgb = hexToRgb(hex);
+    if (rgb) {
+      totalR += rgb.r;
+      totalG += rgb.g;
+      totalB += rgb.b;
+      count++;
+    }
+  }
+
+  if (count === 0) return '#888888';
+
+  const avgR = Math.round(totalR / count);
+  const avgG = Math.round(totalG / count);
+  const avgB = Math.round(totalB / count);
+
+  return `#${avgR.toString(16).padStart(2, '0')}${avgG.toString(16).padStart(2, '0')}${avgB.toString(16).padStart(2, '0')}`;
+}

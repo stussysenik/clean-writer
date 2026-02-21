@@ -254,6 +254,90 @@ test.describe('Syntax Analysis', () => {
     });
   });
 
+  test.describe('Occurrence Counting', () => {
+    test.use({ viewport: { width: 1280, height: 800 } });
+
+    test('word type counts reflect occurrences not unique types', async ({ page }) => {
+      // Clear any existing content first
+      await page.reload();
+      await page.waitForSelector('textarea');
+
+      await page.locator('textarea').click();
+      // "the cat and the dog" -> articles: 2 (the, the), nouns: 2 (cat, dog), conjunctions: 1 (and)
+      await page.locator('textarea').pressSequentially('the cat and the dog', { delay: 10 });
+      await page.waitForTimeout(800);
+
+      const panel = page.locator('[data-testid="desktop-syntax-panel"]');
+      await expect(panel).toBeVisible();
+
+      // Find the Articles row and verify count is 2 (two occurrences of "the")
+      // Use .text-lg.tabular-nums to target row counts (not the header's .text-5xl.tabular-nums)
+      const articlesRow = panel.locator('div.absolute').filter({ has: page.locator('span.font-medium:has-text("Articles")') });
+      const articlesCount = articlesRow.locator('.text-lg.tabular-nums');
+      await expect(articlesCount).toHaveText('2');
+    });
+
+    test('syntax data replaces on each analysis - no stale words', async ({ page }) => {
+      // Clear any existing content first
+      await page.reload();
+      await page.waitForSelector('textarea');
+
+      const textarea = page.locator('textarea');
+      await textarea.click();
+
+      // Type initial text with a noun
+      await textarea.pressSequentially('the big cat', { delay: 10 });
+      await page.waitForTimeout(800);
+
+      // Verify "cat" is counted as a noun
+      const panel = page.locator('[data-testid="desktop-syntax-panel"]');
+      const nounsRow = panel.locator('div.absolute').filter({ has: page.getByText('Nouns', { exact: true }) });
+      const nounsCount = nounsRow.locator('.text-lg.tabular-nums').first();
+      await expect(nounsCount).toHaveText('1');
+
+      // Now clear and type completely different text
+      await textarea.fill('');
+      await page.waitForTimeout(300);
+      await textarea.fill('I run fast');
+      await page.waitForTimeout(800);
+
+      // Verify the word count reflects only current text (3 words)
+      const wordCountEl = panel.locator('.text-5xl').first();
+      await expect(wordCountEl).toHaveText('3');
+    });
+  });
+
+  test.describe('Settings Gear Toggle', () => {
+    test('gear icon opens and closes the customizer', async ({ page }) => {
+      await page.locator('textarea').click();
+      await page.locator('textarea').pressSequentially('hello world', { delay: 10 });
+      await page.waitForTimeout(300);
+
+      // Find gear button
+      const gearBtn = page.locator('button[title="Customize Theme"]');
+      await expect(gearBtn).toBeVisible();
+
+      // Click to open
+      await gearBtn.click();
+      await page.waitForTimeout(300);
+
+      // Customizer should be open - look for "Customize Theme" h2 heading
+      const heading = page.locator('h2:has-text("Customize Theme")');
+      await expect(heading).toBeVisible();
+
+      // Gear hides when customizer open; close via customizer's own X button
+      await expect(gearBtn).not.toBeVisible();
+      const closeBtn = page.locator('button[title="Close"]');
+      await expect(closeBtn).toBeVisible();
+      await closeBtn.click();
+      await page.waitForTimeout(300);
+
+      // Customizer should be closed, gear should reappear
+      await expect(heading).not.toBeVisible();
+      await expect(gearBtn).toBeVisible();
+    });
+  });
+
   test.describe('Edge Cases', () => {
     test('handles very long text', async ({ page }) => {
       const longText = 'The quick brown fox jumps over the lazy dog. '.repeat(100);

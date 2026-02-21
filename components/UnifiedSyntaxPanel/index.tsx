@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { gsap } from 'gsap';
-import { RisoTheme, SyntaxAnalysis, HighlightConfig } from '../../types';
+import { RisoTheme, SyntaxAnalysis, SyntaxSets, HighlightConfig } from '../../types';
 import { countWords } from '../../services/localSyntaxService';
 import { useResponsiveBreakpoint } from '../../hooks/useResponsiveBreakpoint';
 import { useHarmonicaDrag, HarmonicaStage } from '../../hooks/useHarmonicaDrag';
@@ -13,6 +13,7 @@ interface UnifiedSyntaxPanelProps {
   content: string;
   theme: RisoTheme;
   syntaxData: SyntaxAnalysis;
+  syntaxSets: SyntaxSets;
   highlightConfig: HighlightConfig;
   onToggleHighlight: (key: keyof HighlightConfig) => void;
   soloMode?: keyof HighlightConfig | null;
@@ -26,6 +27,7 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
   content,
   theme,
   syntaxData,
+  syntaxSets,
   highlightConfig,
   onToggleHighlight,
   soloMode = null,
@@ -123,6 +125,8 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
         <DesktopSyntaxPanel
           theme={theme}
           wordCount={wordCount}
+          content={content}
+          syntaxSets={syntaxSets}
           syntaxData={syntaxData}
           highlightConfig={highlightConfig}
           onToggleHighlight={onToggleHighlight}
@@ -200,6 +204,8 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
             <PanelBody
               theme={theme}
               wordCount={wordCount}
+              content={content}
+              syntaxSets={syntaxSets}
               syntaxData={syntaxData}
               highlightConfig={highlightConfig}
               onToggleHighlight={onToggleHighlight}

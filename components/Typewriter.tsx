@@ -8,7 +8,7 @@ interface TypewriterProps {
   theme: RisoTheme;
   syntaxSets: SyntaxSets;
   highlightConfig: HighlightConfig;
-  fontSize: number;
+  fontSize: string;
   maxWidth: number;
   fontFamily: string;
   textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
@@ -335,7 +335,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
         className="absolute inset-0 px-[13px] py-[21px] md:px-[21px] md:py-[34px] lg:px-[34px] lg:py-[55px] whitespace-pre-wrap break-words pointer-events-none z-0 overflow-hidden"
         style={{
           fontFamily,
-          fontSize: `${fontSize}px`,
+          fontSize,
           lineHeight: '1.6',
           color: theme.text,
         }}
@@ -378,7 +378,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
         className="absolute inset-0 w-full h-full px-[13px] py-[21px] md:px-[21px] md:py-[34px] lg:px-[34px] lg:py-[55px] bg-transparent resize-none border-none outline-none z-10 whitespace-pre-wrap break-words overflow-y-auto"
         style={{
           fontFamily,
-          fontSize: `${fontSize}px`,
+          fontSize,
           lineHeight: '1.6',
           color: 'transparent',
           caretColor: lastWordColor, // Garfield cursor: caret color matches last typed word's syntax

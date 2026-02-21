@@ -71,10 +71,12 @@ test.describe('Responsive Layout', () => {
       const main = page.locator('main');
       await expect(main).toBeVisible();
 
-      // Tablet should use desktop font size
+      // Tablet uses fluid clamp() — intermediate between 18px and 24px
       const backdrop = page.locator('div[class*="whitespace-pre-wrap"]').first();
       const fontSize = await backdrop.evaluate((el) => getComputedStyle(el).fontSize);
-      expect(parseInt(fontSize)).toBe(24);
+      const size = parseInt(fontSize);
+      expect(size).toBeGreaterThanOrEqual(20);
+      expect(size).toBeLessThanOrEqual(23);
     });
   });
 

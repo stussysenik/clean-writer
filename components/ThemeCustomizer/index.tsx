@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { RisoTheme } from '../../types';
 import { FONT_OPTIONS, FontId, THEMES } from '../../constants';
 import { meetsMinimumContrast, getContrastRatio, formatContrastRatio } from '../../utils/colorContrast';
-import ColorPicker from '../ColorPicker';
+import HexInput from '../ColorPicker/HexInput';
 import TouchButton from '../TouchButton';
 
 // Reset icon component
@@ -10,6 +10,26 @@ const IconReset: React.FC<{ size?: number }> = ({ size = 16 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
     <path d="M3 3v5h5" />
+  </svg>
+);
+
+// Chevron icon
+const IconChevron: React.FC<{ expanded: boolean; size?: number }> = ({ expanded, size = 16 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    style={{
+      transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)',
+      transition: 'transform 200ms ease',
+    }}
+  >
+    <path d="M6 9l6 6 6-6" />
   </svg>
 );
 
@@ -24,54 +44,27 @@ interface ThemeCustomizerProps {
   isColorCustomized?: (path: string) => boolean;
   currentFontId: FontId;
   onFontChange: (fontId: FontId) => void;
-  // New props for palette saving
   onSavePalette?: (name: string) => void;
-  // New props for theme visibility
   hiddenThemeIds?: string[];
   onToggleThemeVisibility?: (id: string) => void;
 }
 
-const WORD_TYPE_LABELS: { key: keyof RisoTheme['highlight']; label: string }[] = [
-  { key: 'noun', label: 'Nouns' },
-  { key: 'verb', label: 'Verbs' },
-  { key: 'adjective', label: 'Adjectives' },
-  { key: 'adverb', label: 'Adverbs' },
-  { key: 'pronoun', label: 'Pronouns' },
-  { key: 'preposition', label: 'Prepositions' },
-  { key: 'conjunction', label: 'Conjunctions' },
-  { key: 'article', label: 'Articles' },
-  { key: 'interjection', label: 'Interjections' },
+const WORD_TYPE_LABELS: { key: keyof RisoTheme['highlight']; label: string; short: string }[] = [
+  { key: 'noun', label: 'Nouns', short: 'Noun' },
+  { key: 'verb', label: 'Verbs', short: 'Verb' },
+  { key: 'adjective', label: 'Adjectives', short: 'Adj' },
+  { key: 'adverb', label: 'Adverbs', short: 'Adv' },
+  { key: 'pronoun', label: 'Pronouns', short: 'Pron' },
+  { key: 'preposition', label: 'Prepositions', short: 'Prep' },
+  { key: 'conjunction', label: 'Conjunctions', short: 'Conj' },
+  { key: 'article', label: 'Articles', short: 'Art' },
+  { key: 'interjection', label: 'Interjections', short: 'Intj' },
 ];
 
-// Minimum contrast ratio (2.08:1 as per plan)
 const MIN_CONTRAST_RATIO = 2.08;
 
-interface ContrastWarningProps {
-  fg: string;
-  bg: string;
-}
-
-const ContrastWarning: React.FC<ContrastWarningProps> = ({ fg, bg }) => {
-  const ratio = getContrastRatio(fg, bg);
-  const passes = ratio >= MIN_CONTRAST_RATIO;
-
-  if (passes) return null;
-
-  return (
-    <span
-      className="px-1.5 py-0.5 text-xs font-medium rounded whitespace-nowrap"
-      style={{
-        backgroundColor: '#FEF3C7',
-        color: '#92400E',
-      }}
-      title={`Contrast ratio ${formatContrastRatio(ratio)} is below minimum ${MIN_CONTRAST_RATIO}:1`}
-    >
-      Low contrast
-    </span>
-  );
-};
-
-interface ColorRowProps {
+/** Compact single-row color editor: [LABEL] [color-well 32×32] [hex-input] [reset] */
+const CompactColorRow: React.FC<{
   label: string;
   color: string;
   path: string;
@@ -80,43 +73,47 @@ interface ColorRowProps {
   isCustomized?: boolean;
   onSetColor: (path: string, color: string) => void;
   onResetColor?: (path: string) => void;
-}
+}> = ({ label, color, path, bgColor, showContrast = false, isCustomized = false, onSetColor, onResetColor }) => {
+  const ratio = showContrast ? getContrastRatio(color, bgColor) : null;
+  const lowContrast = ratio !== null && ratio < MIN_CONTRAST_RATIO;
 
-const ColorRow: React.FC<ColorRowProps> = ({
-  label,
-  color,
-  path,
-  bgColor,
-  showContrast = false,
-  isCustomized = false,
-  onSetColor,
-  onResetColor,
-}) => (
-  <div className="flex items-center gap-2">
-    <div className="flex-1">
-      <ColorPicker
-        label={label}
-        color={color}
-        onChange={(c) => onSetColor(path, c)}
+  return (
+    <div className="flex items-center gap-2 h-[40px]">
+      <span className="text-xs uppercase tracking-wide opacity-70 w-[72px] flex-shrink-0 truncate">
+        {label}
+      </span>
+      <input
+        type="color"
+        value={color}
+        onChange={(e) => onSetColor(path, e.target.value)}
+        className="w-8 h-8 cursor-pointer rounded border-0 p-0 bg-transparent flex-shrink-0"
+        style={{ minWidth: '32px', minHeight: '32px' }}
       />
+      <HexInput value={color} onChange={(c) => onSetColor(path, c)} />
+      {lowContrast && (
+        <span
+          className="px-1 py-0.5 text-[9px] font-medium rounded whitespace-nowrap flex-shrink-0"
+          style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}
+          title={`Contrast ${formatContrastRatio(ratio!)} below ${MIN_CONTRAST_RATIO}:1`}
+        >
+          !
+        </span>
+      )}
+      {onResetColor && (
+        <TouchButton
+          onClick={() => onResetColor(path)}
+          disabled={!isCustomized}
+          className={`p-1 rounded transition-all flex-shrink-0 ${
+            isCustomized ? 'opacity-60 hover:opacity-100' : 'opacity-20 cursor-not-allowed'
+          }`}
+          title={isCustomized ? `Reset ${label.toLowerCase()}` : `${label} is using preset value`}
+        >
+          <IconReset size={12} />
+        </TouchButton>
+      )}
     </div>
-    {showContrast && <ContrastWarning fg={color} bg={bgColor} />}
-    {onResetColor && (
-      <TouchButton
-        onClick={() => onResetColor(path)}
-        disabled={!isCustomized}
-        className={`p-1.5 rounded transition-all ${
-          isCustomized
-            ? 'opacity-60 hover:opacity-100 hover:bg-current/10'
-            : 'opacity-20 cursor-not-allowed'
-        }`}
-        title={isCustomized ? `Reset ${label.toLowerCase()} to preset` : `${label} is using preset value`}
-      >
-        <IconReset size={14} />
-      </TouchButton>
-    )}
-  </div>
-);
+  );
+};
 
 const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
   isOpen,
@@ -136,10 +133,10 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
   const [paletteName, setPaletteName] = useState('');
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const [savedPaletteName, setSavedPaletteName] = useState('');
+  const [isFontExpanded, setIsFontExpanded] = useState(false);
 
   if (!isOpen) return null;
 
-  // Check if there are actual color customizations (not just visibility changes)
   const hasColorCustomizations = isColorCustomized
     ? ['background', 'text', 'cursor', 'selection', 'noun', 'verb', 'adjective', 'adverb', 'pronoun', 'preposition', 'conjunction', 'article', 'interjection'].some(path => isColorCustomized(path as any))
     : hasCustomizations;
@@ -151,11 +148,13 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
       setSavedPaletteName(name);
       setPaletteName('');
       setShowSaveSuccess(true);
-      setTimeout(() => setShowSaveSuccess(false), 4000); // Longer timeout so user can read it
+      setTimeout(() => setShowSaveSuccess(false), 4000);
     }
   };
 
   const checkCustomized = (path: string) => isColorCustomized?.(path) ?? false;
+
+  const selectedFont = FONT_OPTIONS.find(f => f.id === currentFontId) || FONT_OPTIONS[0];
 
   return (
     <>
@@ -175,7 +174,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
         }}
       >
         {/* Header */}
-        <div className="sticky top-0 flex items-center justify-between p-5 border-b border-current/10 backdrop-blur-sm z-10"
+        <div className="sticky top-0 flex items-center justify-between p-4 border-b border-current/10 backdrop-blur-sm z-10"
           style={{ backgroundColor: `${theme.background}ee` }}
         >
           <h2 className="text-lg font-bold">Customize Theme</h2>
@@ -190,40 +189,97 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
           </TouchButton>
         </div>
 
-        <div className="px-6 py-2">
-          {/* Font Selection Section */}
-          <section className="py-6 border-b border-current/10">
-            <h3 className="text-xs font-medium uppercase tracking-widest mb-5 opacity-50">
-              Font
-            </h3>
-            <div className="space-y-2">
-              {FONT_OPTIONS.map((font) => (
-                <button
-                  key={font.id}
-                  onClick={() => onFontChange(font.id)}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-all ${
-                    currentFontId === font.id
-                      ? 'ring-2 ring-current bg-current/5'
-                      : 'hover:bg-current/5'
-                  }`}
-                  style={{ fontFamily: font.family }}
-                >
-                  <span className="font-medium">{font.name}</span>
-                  <span className="block text-sm opacity-50 mt-0.5">
-                    The quick brown fox jumps
-                  </span>
-                </button>
-              ))}
-            </div>
+        <div className="px-4 py-1">
+          {/* 1. Visible Presets — first section */}
+          {onToggleThemeVisibility && (
+            <section className="py-4 border-b border-current/10">
+              <h3 className="text-xs font-medium uppercase tracking-widest mb-3 opacity-50">
+                Visible Presets
+              </h3>
+              <div className="grid grid-cols-2 gap-1">
+                {THEMES.map((t) => {
+                  const isHidden = hiddenThemeIds.includes(t.id);
+                  return (
+                    <label
+                      key={t.id}
+                      className="flex items-center gap-1.5 p-1.5 rounded-lg hover:bg-current/5 cursor-pointer transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={!isHidden}
+                        onChange={() => onToggleThemeVisibility(t.id)}
+                        className="w-3.5 h-3.5 rounded border-2 border-current/30 bg-transparent accent-current"
+                      />
+                      <span
+                        className="w-3.5 h-3.5 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: t.accent }}
+                      />
+                      <span className="text-xs truncate">{t.name}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {/* 2. Font — collapsible, shows only selected by default */}
+          <section className="py-4 border-b border-current/10">
+            <button
+              onClick={() => setIsFontExpanded(prev => !prev)}
+              className="w-full flex items-center justify-between cursor-pointer"
+            >
+              <h3 className="text-xs font-medium uppercase tracking-widest opacity-50">
+                Font
+              </h3>
+              <IconChevron expanded={isFontExpanded} size={14} />
+            </button>
+            {/* Collapsed: show selected font only */}
+            {!isFontExpanded && (
+              <button
+                onClick={() => setIsFontExpanded(true)}
+                className="w-full text-left px-3 py-2 mt-2 rounded-lg ring-1 ring-current/20 bg-current/5"
+                style={{ fontFamily: selectedFont.family }}
+              >
+                <span className="font-medium text-sm">{selectedFont.name}</span>
+                <span className="block text-xs opacity-50">
+                  The quick brown fox jumps
+                </span>
+              </button>
+            )}
+            {/* Expanded: show all fonts */}
+            {isFontExpanded && (
+              <div className="space-y-1 mt-2">
+                {FONT_OPTIONS.map((font) => (
+                  <button
+                    key={font.id}
+                    onClick={() => {
+                      onFontChange(font.id);
+                      setIsFontExpanded(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded-lg transition-all ${
+                      currentFontId === font.id
+                        ? 'ring-1 ring-current bg-current/5'
+                        : 'hover:bg-current/5'
+                    }`}
+                    style={{ fontFamily: font.family }}
+                  >
+                    <span className="font-medium text-sm">{font.name}</span>
+                    <span className="block text-xs opacity-50">
+                      The quick brown fox jumps
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
           </section>
 
-          {/* Base Colors Section */}
-          <section className="py-6 border-b border-current/10">
-            <h3 className="text-xs font-medium uppercase tracking-widest mb-5 opacity-50">
+          {/* 3. Base Colors — compact rows */}
+          <section className="py-4 border-b border-current/10">
+            <h3 className="text-xs font-medium uppercase tracking-widest mb-3 opacity-50">
               Base Colors
             </h3>
-            <div className="space-y-4">
-              <ColorRow
+            <div className="space-y-1">
+              <CompactColorRow
                 label="Background"
                 color={theme.background}
                 path="background"
@@ -232,7 +288,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                 onSetColor={onSetColor}
                 onResetColor={onResetColor}
               />
-              <ColorRow
+              <CompactColorRow
                 label="Text"
                 color={theme.text}
                 path="text"
@@ -242,7 +298,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                 onSetColor={onSetColor}
                 onResetColor={onResetColor}
               />
-              <ColorRow
+              <CompactColorRow
                 label="Cursor"
                 color={theme.cursor}
                 path="cursor"
@@ -254,32 +310,37 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
             </div>
           </section>
 
-          {/* Word Type Colors Section */}
-          <section className="py-6 border-b border-current/10">
-            <h3 className="text-xs font-medium uppercase tracking-widest mb-5 opacity-50">
+          {/* 4. Word Type Colors — compact 3-column grid */}
+          <section className="py-4 border-b border-current/10">
+            <h3 className="text-xs font-medium uppercase tracking-widest mb-3 opacity-50">
               Word Type Colors
             </h3>
-            <div className="grid grid-cols-1 gap-3">
-              {WORD_TYPE_LABELS.map(({ key, label }) => (
-                <ColorRow
-                  key={key}
-                  label={label}
-                  color={theme.highlight[key]}
-                  path={key}
-                  bgColor={theme.background}
-                  showContrast
-                  isCustomized={checkCustomized(key)}
-                  onSetColor={onSetColor}
-                  onResetColor={onResetColor}
-                />
+            <div className="grid grid-cols-3 gap-x-2 gap-y-2">
+              {WORD_TYPE_LABELS.map(({ key, short }) => (
+                <div key={key} className="flex items-center gap-1.5">
+                  <span
+                    className="w-3 h-3 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: theme.highlight[key] }}
+                  />
+                  <span className="text-[10px] uppercase tracking-wide opacity-60 truncate flex-shrink-0 w-[28px]">
+                    {short}
+                  </span>
+                  <input
+                    type="color"
+                    value={theme.highlight[key]}
+                    onChange={(e) => onSetColor(key, e.target.value)}
+                    className="w-7 h-7 cursor-pointer rounded border-0 p-0 bg-transparent flex-shrink-0"
+                    style={{ minWidth: '28px', minHeight: '28px' }}
+                  />
+                </div>
               ))}
             </div>
           </section>
 
-          {/* Save as Palette Section - Only show when color customizations exist */}
+          {/* 5. Save as Palette — only when customizations exist */}
           {hasColorCustomizations && onSavePalette && (
-            <section className="py-6 border-b border-current/10">
-              <h3 className="text-xs font-medium uppercase tracking-widest mb-5 opacity-50">
+            <section className="py-4 border-b border-current/10">
+              <h3 className="text-xs font-medium uppercase tracking-widest mb-3 opacity-50">
                 Save as Palette
               </h3>
               <div className="flex gap-2">
@@ -288,18 +349,16 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                   value={paletteName}
                   onChange={(e) => setPaletteName(e.target.value)}
                   placeholder="Palette name..."
-                  className="flex-1 px-3 py-2 rounded-lg border border-current/20 bg-transparent focus:outline-none focus:ring-2 focus:ring-current/30"
+                  className="flex-1 px-3 py-2 rounded-lg border border-current/20 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-current/30"
                   style={{ color: theme.text }}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      handleSavePalette();
-                    }
+                    if (e.key === 'Enter') handleSavePalette();
                   }}
                 />
                 <TouchButton
                   onClick={handleSavePalette}
                   disabled={!paletteName.trim()}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                  className={`px-3 py-2 rounded-lg font-medium text-sm transition-all ${
                     paletteName.trim()
                       ? 'bg-current/10 hover:bg-current/20'
                       : 'opacity-50 cursor-not-allowed'
@@ -310,7 +369,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
               </div>
               {showSaveSuccess && (
                 <div
-                  className="mt-4 p-4 rounded-xl border"
+                  className="mt-3 p-3 rounded-xl border"
                   style={{
                     backgroundColor: `${theme.text}08`,
                     borderColor: `${theme.text}15`,
@@ -324,59 +383,21 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                   </p>
                 </div>
               )}
-              <p className="text-xs opacity-50 mt-2">
-                Save your current color customizations as a reusable palette
-              </p>
             </section>
           )}
 
-          {/* Visible Presets Section */}
-          {onToggleThemeVisibility && (
-            <section className="py-6 border-b border-current/10">
-              <h3 className="text-xs font-medium uppercase tracking-widest mb-5 opacity-50">
-                Visible Presets
-              </h3>
-              <div className="grid grid-cols-2 gap-2">
-                {THEMES.map((t) => {
-                  const isHidden = hiddenThemeIds.includes(t.id);
-                  return (
-                    <label
-                      key={t.id}
-                      className="flex items-center gap-2 p-2 rounded-lg hover:bg-current/5 cursor-pointer transition-colors"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={!isHidden}
-                        onChange={() => onToggleThemeVisibility(t.id)}
-                        className="w-4 h-4 rounded border-2 border-current/30 bg-transparent accent-current"
-                      />
-                      <span
-                        className="w-4 h-4 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: t.accent }}
-                      />
-                      <span className="text-sm truncate">{t.name}</span>
-                    </label>
-                  );
-                })}
-              </div>
-              <p className="text-xs opacity-50 mt-3">
-                Uncheck themes to hide them from the theme selector
-              </p>
-            </section>
-          )}
-
-          {/* Actions */}
-          <section className="py-6">
+          {/* 6. Reset */}
+          <section className="py-4">
             <TouchButton
               onClick={onResetToPreset}
               disabled={!hasCustomizations}
-              className={`w-full py-3 px-4 rounded-lg text-center font-medium transition-all flex items-center justify-center gap-2 ${
+              className={`w-full py-2.5 px-4 rounded-lg text-center text-sm font-medium transition-all flex items-center justify-center gap-2 ${
                 hasCustomizations
                   ? 'bg-current/10 hover:bg-current/20'
                   : 'opacity-50 cursor-not-allowed'
               }`}
             >
-              <IconReset size={18} />
+              <IconReset size={16} />
               Reset All to Preset Theme
             </TouchButton>
           </section>

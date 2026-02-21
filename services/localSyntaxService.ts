@@ -1,5 +1,5 @@
 import nlp from 'compromise';
-import { SyntaxAnalysis } from '../types';
+import { SyntaxAnalysis, SyntaxSets } from '../types';
 
 /**
  * Centralized word counting function with UTF-8 support.
@@ -86,6 +86,72 @@ export function getWordTypeCounts(syntaxData: SyntaxAnalysis): Record<string, nu
     articles: syntaxData.articles.length,
     interjections: syntaxData.interjections.length,
   };
+}
+
+/**
+ * Count word type occurrences in content using syntax sets for O(1) lookup.
+ * Unlike getWordTypeCounts which counts unique types, this counts every
+ * occurrence so that sum(type_counts) reflects actual word usage.
+ */
+export function getWordTypeOccurrences(
+  content: string,
+  syntaxSets: SyntaxSets
+): Record<string, number> {
+  const counts: Record<string, number> = {
+    nouns: 0,
+    verbs: 0,
+    adjectives: 0,
+    adverbs: 0,
+    pronouns: 0,
+    prepositions: 0,
+    conjunctions: 0,
+    articles: 0,
+    interjections: 0,
+  };
+
+  if (!content.trim()) return counts;
+
+  // Tokenize using Intl.Segmenter for consistency with countWords
+  let words: string[];
+  if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
+    try {
+      const segmenter = new Intl.Segmenter(undefined, { granularity: 'word' });
+      words = Array.from(segmenter.segment(content.trim()))
+        .filter(segment => segment.isWordLike)
+        .map(segment => segment.segment.toLowerCase());
+    } catch {
+      words = content.trim().toLowerCase().split(/\s+/).filter(w => w.length > 0);
+    }
+  } else {
+    words = content.trim().toLowerCase().split(/\s+/).filter(w => w.length > 0);
+  }
+
+  // Classify each word occurrence using O(1) Set lookups
+  // Priority order matters: a word is counted in its first matching category only
+  for (const word of words) {
+    if (syntaxSets.articles.has(word)) {
+      counts.articles++;
+    } else if (syntaxSets.interjections.has(word)) {
+      counts.interjections++;
+    } else if (syntaxSets.prepositions.has(word)) {
+      counts.prepositions++;
+    } else if (syntaxSets.conjunctions.has(word)) {
+      counts.conjunctions++;
+    } else if (syntaxSets.pronouns.has(word)) {
+      counts.pronouns++;
+    } else if (syntaxSets.nouns.has(word)) {
+      counts.nouns++;
+    } else if (syntaxSets.verbs.has(word)) {
+      counts.verbs++;
+    } else if (syntaxSets.adjectives.has(word)) {
+      counts.adjectives++;
+    } else if (syntaxSets.adverbs.has(word)) {
+      counts.adverbs++;
+    }
+    // Words not in any set are unclassified (not shown in breakdown)
+  }
+
+  return counts;
 }
 
 // Static lists for high accuracy word detection
