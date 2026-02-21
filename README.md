@@ -25,15 +25,16 @@ Open [http://localhost:3000](http://localhost:3000)
 | **Syntax Highlighting** | Nouns/verbs/adjectives + URLs, numbers, hashtags (Web Worker, O(1) lookups) |
 | **Theme Presets** | Classic, Blueprint, Midnight, Paper, Sepia, Terminal, Ocean, Forest, Flexoki |
 | **Markdown Preview** | Toggle with eye icon |
-| **Strikethrough** | Select text → click ~~S~~ button |
+| **Strikethrough** | Select text → click ~~S~~ button (selection stays visually frozen on mobile until action) |
+| **Magic Clean** | Removes complete `~~...~~` blocks for clean writing |
 | **Export** | Download as `.md` file |
 | **PWA** | Install on iOS/Android home screen |
 | **Offline** | Works without internet |
 | **Responsive** | Mobile-friendly with side panel for syntax controls |
 | **Harmonica Gesture** | Single continuous drag on mobile (40px→Peek→120px→Expand→220px→Full) |
 | **UTF Support** | UTF-aware word counting + optional emoji code display (`U+...`) |
-| **Quick Stats** | Dedicated counters for URLs, numbers, hashtags with collapsible grid |
-| **Build Identity** | Build label + wordism in settings and panel footer for local/prod matching |
+| **Quick Stats** | Clean collapsible counters for URLs, numbers, hashtags (no `(All Zero)` label noise) |
+| **Build Identity** | Full build identity + wordism in settings; version-only badge next to the gear icon |
 | **Collapsible Breakdown** | Toggle word type list with colored indicator |
 | **Golden Ratio Spacing** | φ-based spacing (8→13→21→34→55→89px) for harmonious layouts |
 | **Theme-Aware UI** | All buttons/controls adapt to light/dark themes |
@@ -56,9 +57,10 @@ npm run test:ui      # Run tests with UI
 
 ## Build Identity
 
-The UI shows a deployment-friendly identity, not commit SHA:
+Build metadata is shown in two focused places:
 
-- `Build vX.Y.Z · <track>` in settings and syntax panel footer
+- Gear area: `vX.Y.Z` only
+- Settings footer: `Build vX.Y.Z · <track> · Build wordism: ...`
 - `X.Y.Z` comes from `package.json` by default, or `VITE_APP_VERSION`
 - `<track>` comes from `VITE_BUILD_TRACK` (falls back to Vite mode)
 

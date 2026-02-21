@@ -6,6 +6,14 @@ Changelog and development progress for Clean Typewriter Experience t.
 
 ## Latest Release
 
+### v1.7.0 - Locked Selection UX, Clean Stats UI, and Build Metadata Placement
+
+**Release Date:** February 21, 2026
+
+Shipped a locked-in mobile selection experience with frozen visual highlight, simplified quick-stats interactions/styling, solid unified fold-tab visuals, and moved build metadata to settings + gear version badge only.
+
+---
+
 ### v1.6.0 - UTF Emoji Mode, Hashtag Stats, and Build Identity
 
 **Release Date:** February 21, 2026
@@ -47,6 +55,42 @@ Major update adding extended theme colors, mobile-first touch UX, and full PWA s
 ---
 
 ## Changelog
+
+### ✅ Phase 11: Locked Selection, Quick Stats Simplification, and Visual Cleanup
+
+Implemented mobile ergonomics and visual cleanup passes focused on high-frequency writing actions.
+
+**What shipped:**
+- Locked-in selection persistence:
+  - Saved selection no longer auto-expires after 5s
+  - Frozen visual overlay shows selected range even after blur/keyboard collapse
+  - Overlay clears after action execution (e.g. strikethrough)
+- Strikethrough clean action:
+  - Clean now removes full `~~...~~` objects (complete markdown strikethrough ranges)
+- Touch interaction fix:
+  - Removed duplicate touch/click invocation path to ensure one-tap toggles/actions
+- Quick stats refinements:
+  - Removed noisy `(All Zero)` label text
+  - One-click toggle verified
+  - Minimal clean card styling with consistent weights/borders
+- Mobile fold-tab visual cleanup:
+  - Replaced gray/gradient/texture treatment with unified solid tab color
+- Build metadata placement:
+  - Removed build label/wordism from syntax panel footer
+  - Added version-only badge near gear icon
+  - Kept full build identity + wordism in settings footer
+
+**Key files modified:**
+- `hooks/useSelectionPersistence.ts`
+- `components/Typewriter.tsx`
+- `components/TouchButton.tsx`
+- `components/UnifiedSyntaxPanel/PanelBody.tsx`
+- `components/UnifiedSyntaxPanel/CornerFoldTab.tsx`
+- `utils/strikethroughUtils.ts`
+- `App.tsx`
+- `tests/e2e/core-mechanics.spec.ts`
+- `tests/e2e/mobile-paradigm.spec.ts`
+- `tests/e2e/utf8-hashtag-wordism.spec.ts`
 
 ### ✅ Phase 10: UTF Emoji Mode, Hashtag Stats, Build Identity
 

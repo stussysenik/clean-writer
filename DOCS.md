@@ -595,6 +595,16 @@ All interactive elements have:
 - Haptic feedback (where supported)
 - Long-press detection for tooltips
 
+### Locked Selection Overlay
+
+When mobile focus is lost (for example keyboard collapse or toolbar tap), the last non-empty selection is preserved and rendered as a frozen visual highlight until an action uses it (such as strikethrough) or the user intentionally replaces/clears the selection.
+
+### Quick Stats Behavior
+
+- Quick stats label stays clean (`Quick Stats`) with no `(All Zero)` suffix
+- Section is collapsed by default when URL/number/hashtag counts are all zero
+- A single tap/click toggles open/close
+
 ### Responsive Breakpoints
 
 | Breakpoint | Font Size | Side Panel Behavior |
@@ -611,12 +621,13 @@ All interactive elements have:
 
 ## Build Identity & Deployment
 
-Build identity is surfaced in two places:
-- Settings footer (`settings-build-footer`)
-- Syntax panel footer (`panel-build-footer`)
+Build metadata is surfaced in two focused places:
+- Gear area version badge (`gear-build-version`) shows `vX.Y.Z` only
+- Settings footer (`settings-build-footer`) shows full identity + wordism
 
 Format:
-- `Build vX.Y.Z · track`
+- Gear badge: `vX.Y.Z`
+- Settings footer: `Build vX.Y.Z · track · Build wordism: ...`
 - `X.Y.Z` comes from `package.json` by default, or `VITE_APP_VERSION`
 - `track` comes from `VITE_BUILD_TRACK` (fallback: Vite mode)
 
@@ -624,7 +635,7 @@ This keeps local and Vercel deployments comparable without commit hashes.
 
 Recommended Vercel envs:
 ```bash
-VITE_APP_VERSION=1.6.0
+VITE_APP_VERSION=1.7.0
 VITE_BUILD_TRACK=production
 ```
 
