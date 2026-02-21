@@ -4,6 +4,7 @@ import {
         THEME_STORAGE_KEY,
         FONT_OPTIONS,
         FONT_STORAGE_KEY,
+        BUILD_NUMBER,
         FontId,
 } from "./constants";
 import { countWords } from "./services/localSyntaxService";
@@ -24,10 +25,13 @@ import { IconSettings } from "./components/Toolbar/Icons";
 import useCustomTheme from "./hooks/useCustomTheme";
 import useCustomPalettes, { SavedPalette } from "./hooks/useCustomPalettes";
 import useThemeVisibility from "./hooks/useThemeVisibility";
-import useVirtualKeyboard from "./hooks/useVirtualKeyboard";
 import useSelectionPersistence from "./hooks/useSelectionPersistence";
 import { getIconColor } from "./utils/contrastAwareColor";
-import { applyStrikethrough } from "./utils/strikethroughUtils";
+import {
+        applyStrikethrough,
+        hasStrikethroughBlocks,
+        removeStrikethroughBlocks,
+} from "./utils/strikethroughUtils";
 
 // Keyboard shortcut mapping (1-9 for word types)
 const NUMBER_KEY_MAP: { [key: string]: keyof HighlightConfig } = {
@@ -260,11 +264,8 @@ const App: React.FC = () => {
         // Web Worker for background NLP processing
         const { analyze: analyzeInWorker } = useSyntaxWorker();
 
-        // Virtual keyboard detection
-        const { isKeyboardOpen: keyboardOpen } = useVirtualKeyboard();
-
         // Selection persistence for mobile strikethrough
-        const { saveSelection, getSavedSelection, clearSelection } = useSelectionPersistence(textareaRef);
+        const { saveSelection, getSavedSelection, savedSelection, clearSelection } = useSelectionPersistence(textareaRef);
 
         // Enhanced drag state with position tracking
         const [dragState, setDragState] = useState<{
@@ -800,11 +801,16 @@ const App: React.FC = () => {
                 saveSelection();
         }, [saveSelection]);
 
-        // Magic clean: remove all strikethrough markers while preserving text
-        const hasStrikethroughs = content.includes('~~');
+        // Magic clean: remove full `~~...~~` segments
+        const hasStrikethroughs = useMemo(
+                () => hasStrikethroughBlocks(content),
+                [content],
+        );
         const handleCleanStrikethroughs = useCallback(() => {
-                const cleaned = content.replace(/~~/g, '');
-                setContent(cleaned);
+                const cleaned = removeStrikethroughBlocks(content);
+                if (cleaned !== content) {
+                        setContent(cleaned);
+                }
         }, [content]);
 
         return (
@@ -905,7 +911,14 @@ const App: React.FC = () => {
                                 </div>
                                 {/* Hidden when customizer open — customizer has its own close (X) button */}
                                 {!isCustomizerOpen && (
-                                        <div className="pointer-events-auto flex items-center min-h-[44px]">
+                                        <div className="pointer-events-auto flex items-center gap-2 min-h-[44px]">
+                                                <span
+                                                        data-testid="gear-build-version"
+                                                        className="text-[10px] font-mono tabular-nums opacity-60"
+                                                        style={{ color: getIconColor(currentTheme) }}
+                                                >
+                                                        {BUILD_NUMBER}
+                                                </span>
                                                 <TouchButton
                                                         onClick={() => setIsCustomizerOpen(true)}
                                                         className="p-2 rounded-xl hover:bg-current/5 transition-all duration-200"
@@ -939,6 +952,7 @@ const App: React.FC = () => {
                                                 showUtfEmojiCodes={utf8DisplayEnabled}
                                                 textareaRef={textareaRef}
                                                 hoveredCategory={hoveredCategory}
+                                                persistedSelection={savedSelection}
                                         />
                                 ) : (
                                         <div

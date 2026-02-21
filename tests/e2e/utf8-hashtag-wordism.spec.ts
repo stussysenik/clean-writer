@@ -76,7 +76,7 @@ test.describe('UTF-8 Display, Hashtags, and Wordism Footer', () => {
     await expect(hashtagsCounter).toHaveText('3');
   });
 
-  test('syntax panel footer includes a memorable build wordism', async ({ page }) => {
+  test('build wordism stays in settings and not in syntax panel', async ({ page }) => {
     const textarea = page.locator('textarea');
     await textarea.click();
     await textarea.pressSequentially('hello world', { delay: 10 });
@@ -85,13 +85,18 @@ test.describe('UTF-8 Display, Hashtags, and Wordism Footer', () => {
     const panel = page.locator('[data-testid="desktop-syntax-panel"]');
     await expect(panel).toBeVisible();
 
-    const wordism = panel.locator('[data-testid="panel-wordism"]');
-    await expect(wordism).toBeVisible();
-    await expect(wordism).toContainText('Build wordism');
+    await expect(panel.locator('[data-testid="panel-wordism"]')).toHaveCount(0);
+    await expect(panel.locator('[data-testid="panel-build-footer"]')).toHaveCount(0);
 
-    const panelBuild = panel.locator('[data-testid="panel-build-footer"]');
-    await expect(panelBuild).toBeVisible();
-    await expect(panelBuild).toContainText(/Build v?\d+\.\d+\.\d+/);
+    const gearBuildVersion = page.locator('[data-testid="gear-build-version"]');
+    await expect(gearBuildVersion).toBeVisible();
+    await expect(gearBuildVersion).toHaveText(/^v?\d+\.\d+\.\d+$/);
+
+    await page.locator('button[title="Customize Theme"]').click();
+    const footer = page.locator('[data-testid="settings-build-footer"]');
+    await expect(footer).toBeVisible();
+    await expect(footer).toContainText(/Build v?\d+\.\d+\.\d+ · /);
+    await expect(footer).toContainText('Build wordism');
   });
 
   test('settings panel opens without horizontal visual artifacts', async ({ page }) => {
@@ -294,7 +299,7 @@ test.describe('UTF-8 Display, Hashtags, and Wordism Footer', () => {
     expect(rightInset).toBeGreaterThan(8);
   });
 
-  test('quick stats collapse by default when extras are all zero', async ({ page }) => {
+  test('quick stats collapse by default when extras are all zero and open on one click', async ({ page }) => {
     const textarea = page.locator('textarea');
     await textarea.click();
     await textarea.pressSequentially('plain text only', { delay: 10 });
@@ -302,10 +307,15 @@ test.describe('UTF-8 Display, Hashtags, and Wordism Footer', () => {
 
     const toggle = page.locator('[data-testid="quick-stats-toggle"]');
     await expect(toggle).toBeVisible();
-    await expect(toggle).toContainText('All Zero');
+    await expect(toggle).toContainText('Quick Stats');
+    await expect(toggle).not.toContainText('All Zero');
 
     const quickStatsContent = page.locator('[data-testid="quick-stats-content"]');
     await expect(quickStatsContent).toHaveCSS('max-height', '0px');
     await expect(quickStatsContent).toHaveCSS('opacity', '0');
+
+    await toggle.click();
+    await expect(quickStatsContent).not.toHaveCSS('max-height', '0px');
+    await expect(quickStatsContent).toHaveCSS('opacity', '1');
   });
 });

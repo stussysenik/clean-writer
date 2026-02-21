@@ -202,6 +202,33 @@ test.describe('Mobile Paradigm', () => {
       await expect(textarea).toHaveValue('touch test');
     });
 
+    test('strikethrough uses persisted selection after blur', async ({ page }) => {
+      const textarea = page.locator('textarea');
+      const strikeBtn = page.locator('[data-testid="strikethrough-btn"]');
+      const persistedOverlay = page.locator('[data-testid="persisted-selection-overlay"]');
+
+      await textarea.click();
+      await textarea.pressSequentially('alpha beta', { delay: 10 });
+
+      // Create a selection, then blur and collapse to end to mimic keyboard collapse.
+      await textarea.evaluate((el) => {
+        const ta = el as HTMLTextAreaElement;
+        ta.focus();
+        ta.setSelectionRange(0, 5);
+        ta.dispatchEvent(new Event('select', { bubbles: true }));
+        ta.blur();
+        ta.setSelectionRange(ta.value.length, ta.value.length);
+      });
+
+      await expect(persistedOverlay).toBeVisible();
+      await page.waitForTimeout(5500);
+      await expect(persistedOverlay).toBeVisible();
+
+      await strikeBtn.click({ force: true });
+      await expect(textarea).toHaveValue('~~alpha~~ beta');
+      await expect(persistedOverlay).toHaveCount(0);
+    });
+
     test('fold-tab responds to click', async ({ page }) => {
       await page.locator('textarea').click();
       await page.locator('textarea').pressSequentially('test', { delay: 10 });

@@ -169,21 +169,21 @@ test.describe('Core Writing Mechanics', () => {
       expect(typeof value).toBe('string');
     });
 
-    test('clean action removes all strikethrough markers and preserves text', async ({ page }) => {
+    test('clean action removes all complete strikethrough segments', async ({ page }) => {
       await page.evaluate(() => {
-        localStorage.setItem('riso_flow_content', 'alpha ~~beta~~ gamma ~~delta~~ epsilon ~~zeta');
+        localStorage.setItem('riso_flow_content', 'alpha ~~beta~~ gamma ~~delta~~ epsilon ~~zeta~~');
       });
       await page.reload();
       await page.waitForSelector('textarea');
 
       const textarea = page.locator('textarea');
-      await expect(textarea).toHaveValue('alpha ~~beta~~ gamma ~~delta~~ epsilon ~~zeta');
+      await expect(textarea).toHaveValue('alpha ~~beta~~ gamma ~~delta~~ epsilon ~~zeta~~');
 
       const cleanBtn = page.locator('[data-testid="clean-strikethroughs-btn"]');
       await expect(cleanBtn).toBeEnabled();
       await cleanBtn.click();
 
-      await expect(textarea).toHaveValue('alpha beta gamma delta epsilon zeta');
+      await expect(textarea).toHaveValue('alpha gamma epsilon');
       await expect(cleanBtn).toBeDisabled();
     });
   });

@@ -5,12 +5,34 @@
 
 const MARKER = '~~';
 const MARKER_LENGTH = MARKER.length;
+const STRIKETHROUGH_BLOCK_REGEX = /~~(?:[^~]|~(?!~))+~~/g;
+const STRIKETHROUGH_BLOCK_TEST_REGEX = /~~(?:[^~]|~(?!~))+~~/;
 
 /**
  * Strips all strikethrough markers from text.
  */
 export function stripStrikethroughMarkers(text: string): string {
   return text.replace(/~~/g, '');
+}
+
+/**
+ * Returns true when the text contains at least one complete strikethrough block.
+ */
+export function hasStrikethroughBlocks(text: string): boolean {
+  return STRIKETHROUGH_BLOCK_TEST_REGEX.test(text);
+}
+
+/**
+ * Removes complete `~~...~~` segments from the text.
+ * This is used by the "magic clean" action to keep only non-struck writing.
+ */
+export function removeStrikethroughBlocks(text: string): string {
+  return text
+    .replace(STRIKETHROUGH_BLOCK_REGEX, '')
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n[ \t]+/g, '\n')
+    .replace(/[ \t]+$/g, '');
 }
 
 /**

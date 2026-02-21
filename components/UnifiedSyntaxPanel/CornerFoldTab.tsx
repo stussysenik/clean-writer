@@ -133,34 +133,18 @@ const CornerFoldTab: React.FC<CornerFoldTabProps> = ({
       onMouseMove={harmonicaMode ? onDragMove : undefined}
       onMouseUp={harmonicaMode ? onDragEnd : undefined}
     >
-      {/* Tab background with paper-fold effect */}
+      {/* Tab background: solid, unified color */}
       <div
         className="absolute inset-0 transition-all duration-300"
         style={{
-          background: `linear-gradient(${isOpen ? '90deg' : '135deg'},
-            ${theme.background} 0%,
-            ${theme.text}08 50%,
-            ${theme.text}12 100%)`,
+          backgroundColor: theme.background,
+          border: `1px solid ${theme.text}20`,
+          borderRight: isOpen ? 'none' : undefined,
           borderRadius: isOpen ? '8px 0 0 8px' : '0',
           clipPath: isOpen
             ? 'none'
             : 'polygon(100% 0, 100% 100%, 0 100%, 40% 50%)',
-          boxShadow: `
-            inset -2px 2px 8px ${theme.text}08,
-            -4px 0 16px rgba(0,0,0,0.1)
-          `,
-        }}
-      />
-
-      {/* Paper texture overlay */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-20"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.1'/%3E%3C/svg%3E")`,
-          borderRadius: isOpen ? '8px 0 0 8px' : '0',
-          clipPath: isOpen
-            ? 'none'
-            : 'polygon(100% 0, 100% 100%, 0 100%, 40% 50%)',
+          boxShadow: '-4px 0 12px rgba(0,0,0,0.08)',
         }}
       />
 
@@ -200,20 +184,6 @@ const CornerFoldTab: React.FC<CornerFoldTabProps> = ({
           </div>
         )}
       </div>
-
-      {/* Fold crease line (only when closed) */}
-      {!isOpen && stage === 'closed' && (
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: `linear-gradient(135deg,
-              transparent 38%,
-              ${theme.text}12 40%,
-              ${theme.text}06 42%,
-              transparent 44%)`,
-          }}
-        />
-      )}
 
       {/* Directional arrow affordance (harmonica mode only) */}
       {harmonicaMode && arrowDirection && (

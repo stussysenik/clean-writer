@@ -21,6 +21,7 @@ interface TypewriterProps {
   showUtfEmojiCodes?: boolean;
   textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
   hoveredCategory?: keyof HighlightConfig | null;
+  persistedSelection?: { start: number; end: number } | null;
 }
 
 // Map from HighlightConfig key to syntax category key for color lookup
@@ -56,10 +57,13 @@ const Typewriter: React.FC<TypewriterProps> = ({
   showUtfEmojiCodes = false,
   textareaRef: externalTextareaRef,
   hoveredCategory = null,
+  persistedSelection = null,
 }) => {
   const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
+  const selectionOverlayRef = useRef<HTMLDivElement>(null);
   const [ghostVisible, setGhostVisible] = useState(true);
+  const [isTextareaFocused, setIsTextareaFocused] = useState(false);
 
   // Use the external ref if provided, otherwise use internal ref
   const textareaRef = externalTextareaRef || internalTextareaRef;
@@ -197,10 +201,29 @@ const Typewriter: React.FC<TypewriterProps> = ({
   };
 
   const handleScroll = useCallback(() => {
-    if (textareaRef.current && backdropRef.current) {
+    if (!textareaRef.current) return;
+
+    if (backdropRef.current) {
       backdropRef.current.scrollTop = textareaRef.current.scrollTop;
     }
+
+    if (selectionOverlayRef.current) {
+      selectionOverlayRef.current.scrollTop = textareaRef.current.scrollTop;
+    }
   }, []);
+
+  const normalizedPersistedSelection = useMemo(() => {
+    if (!persistedSelection || showUtfEmojiCodes) return null;
+
+    const start = Math.max(0, Math.min(content.length, persistedSelection.start));
+    const end = Math.max(0, Math.min(content.length, persistedSelection.end));
+
+    if (start >= end) return null;
+
+    return { start, end };
+  }, [persistedSelection, content, showUtfEmojiCodes]);
+
+  const showPersistedSelectionOverlay = !!normalizedPersistedSelection && !isTextareaFocused;
 
   // Use passive event listener for scroll performance
   useEffect(() => {
@@ -210,6 +233,14 @@ const Typewriter: React.FC<TypewriterProps> = ({
       return () => textarea.removeEventListener('scroll', handleScroll);
     }
   }, [handleScroll]);
+
+  // Ensure frozen selection overlay is aligned when shown after a blur.
+  useEffect(() => {
+    if (!showPersistedSelectionOverlay || !textareaRef.current || !selectionOverlayRef.current) {
+      return;
+    }
+    selectionOverlayRef.current.scrollTop = textareaRef.current.scrollTop;
+  }, [showPersistedSelectionOverlay, textareaRef]);
 
   // Helper to determine which syntax category a word belongs to (O(1) lookups)
   const getWordCategory = useCallback((word: string): keyof HighlightConfig | null => {
@@ -402,6 +433,35 @@ const Typewriter: React.FC<TypewriterProps> = ({
         />
       </div>
 
+      {showPersistedSelectionOverlay && normalizedPersistedSelection && (
+        <div
+          ref={selectionOverlayRef}
+          data-testid="persisted-selection-overlay"
+          className="absolute inset-0 px-[13px] py-[21px] md:px-[21px] md:py-[34px] lg:px-[34px] lg:py-[55px] whitespace-pre-wrap break-words pointer-events-none z-[5] overflow-hidden"
+          style={{
+            fontFamily,
+            fontSize,
+            lineHeight: '1.6',
+            color: 'transparent',
+          }}
+        >
+          <span>{content.slice(0, normalizedPersistedSelection.start)}</span>
+          <span
+            style={{
+              backgroundColor: theme.selection,
+              borderRadius: '4px',
+              boxShadow: `0 0 0 1px ${theme.accent}40`,
+            }}
+          >
+            {content.slice(
+              normalizedPersistedSelection.start,
+              normalizedPersistedSelection.end,
+            )}
+          </span>
+          <span>{content.slice(normalizedPersistedSelection.end)}</span>
+        </div>
+      )}
+
       {/* Actual Input (Logic Layer) */}
       <textarea
         ref={textareaRef}
@@ -412,6 +472,8 @@ const Typewriter: React.FC<TypewriterProps> = ({
         onCompositionStart={handleCompositionStart}
         onCompositionUpdate={handleCompositionUpdate}
         onCompositionEnd={handleCompositionEndWithAppend}
+        onFocus={() => setIsTextareaFocused(true)}
+        onBlur={() => setIsTextareaFocused(false)}
         spellCheck={false}
         autoCorrect="off"
         autoCapitalize="off"

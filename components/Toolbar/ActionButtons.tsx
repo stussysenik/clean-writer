@@ -110,8 +110,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         disabled={!hasStrikethroughs}
         icon={<IconMagicClean />}
         label="Clean"
-        tooltip="Remove all strikethrough markers"
-        ariaLabel="Remove all strikethrough markers"
+        tooltip="Remove all ~~...~~ segments"
+        ariaLabel="Remove all struck text segments"
         data-testid="clean-strikethroughs-btn"
       />
 

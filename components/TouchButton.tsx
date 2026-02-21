@@ -39,10 +39,11 @@ const TouchButton: React.FC<TouchButtonProps> = ({
   'data-testid': dataTestId,
 }) => {
   const touchHandlers = useTouch({
-    onTap: disabled ? undefined : onClick,
     onLongPress: disabled ? undefined : onLongPress,
     hapticFeedback,
   });
+
+  const { onTouchStart: internalOnTouchStart, ...restTouchHandlers } = touchHandlers;
 
   return (
     <button
@@ -53,11 +54,14 @@ const TouchButton: React.FC<TouchButtonProps> = ({
       title={title}
       onMouseDown={onMouseDown}
       onPointerDown={onPointerDown}
-      onTouchStart={onTouchStart}
+      onTouchStart={(e) => {
+        onTouchStart?.(e);
+        internalOnTouchStart(e);
+      }}
       aria-label={ariaLabel}
       aria-expanded={ariaExpanded}
       data-testid={dataTestId}
-      {...touchHandlers}
+      {...restTouchHandlers}
       className={`min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation ${className}`}
       style={{ touchAction: 'manipulation', ...style }}
     >

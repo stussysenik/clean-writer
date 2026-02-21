@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { gsap } from 'gsap';
 import { RisoTheme, SyntaxAnalysis, SyntaxSets, HighlightConfig } from '../../types';
 import { getWordTypeOccurrences } from '../../services/localSyntaxService';
-import { BUILD_IDENTITY, BUILD_WORDISM } from '../../constants';
 import TouchButton from '../TouchButton';
 
 interface PanelBodyProps {
@@ -507,14 +506,20 @@ const PanelBody: React.FC<PanelBodyProps> = ({
           })}
           </div>
 
-          <div className="mt-3 pt-3 border-t" style={{ borderColor: `${theme.text}12` }}>
+          <div
+            className="mt-4 rounded-lg border px-2 py-2"
+            style={{
+              borderColor: `${theme.text}18`,
+              backgroundColor: `${theme.background}f4`,
+            }}
+          >
             <TouchButton
               onClick={() => setIsQuickStatsCollapsed(prev => !prev)}
-              className="w-full flex items-center justify-between text-[10px] uppercase tracking-widest px-2 py-1.5 rounded-md"
-              style={{ color: theme.text, opacity: 0.55 }}
+              className="w-full flex items-center justify-between text-[10px] uppercase tracking-wider font-medium px-2 py-1.5 rounded-md"
+              style={{ color: theme.text, opacity: 0.72 }}
               data-testid="quick-stats-toggle"
             >
-              <span>Quick Stats{totalQuickStatsCount === 0 ? ' (All Zero)' : ''}</span>
+              <span>Quick Stats</span>
               <span
                 className="inline-block transition-transform duration-200"
                 style={{ transform: isQuickStatsCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}
@@ -549,8 +554,10 @@ const PanelBody: React.FC<PanelBodyProps> = ({
                       onClick={() => onToggleHighlight(item.key as keyof HighlightConfig)}
                       className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${isLast ? 'col-span-2' : ''}`}
                       style={{
-                        opacity: isDimmed ? 0.3 : isActive ? 0.8 : 0.35,
-                        backgroundColor: isActive ? `${color}10` : 'transparent',
+                        opacity: isDimmed ? 0.3 : 1,
+                        backgroundColor: isActive ? `${color}12` : `${theme.background}a0`,
+                        border: `1px solid ${isActive ? `${color}40` : `${theme.text}16`}`,
+                        boxShadow: 'none',
                         minHeight: '38px',
                       }}
                     >
@@ -579,12 +586,6 @@ const PanelBody: React.FC<PanelBodyProps> = ({
         className="px-6 py-3 text-center border-t"
         style={{ borderColor: `${theme.text}10` }}
       >
-        <p className="text-xs opacity-35" data-testid="panel-build-footer">
-          Build {BUILD_IDENTITY}
-        </p>
-        <p className="text-xs opacity-40">
-          <span data-testid="panel-wordism">{BUILD_WORDISM}</span>
-        </p>
         <p className="text-xs opacity-40 mt-1">
           Press{' '}
           <kbd
