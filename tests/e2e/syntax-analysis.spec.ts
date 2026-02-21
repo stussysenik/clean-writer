@@ -305,6 +305,41 @@ test.describe('Syntax Analysis', () => {
       const wordCountEl = panel.locator('.text-5xl').first();
       await expect(wordCountEl).toHaveText('3');
     });
+
+    test('punctuation-attached adjectives stay highlighted and match counts', async ({ page }) => {
+      await page.reload();
+      await page.waitForSelector('textarea');
+
+      const textarea = page.locator('textarea');
+      await textarea.click();
+      await textarea.pressSequentially('BLUE, red, orange', { delay: 10 });
+      await page.waitForTimeout(900);
+
+      const panel = page.locator('[data-testid="desktop-syntax-panel"]');
+      await expect(panel).toBeVisible();
+
+      const adjectivesRow = panel
+        .locator('div.absolute')
+        .filter({ has: page.locator('span.font-medium:has-text("Adjectives")') });
+      const adjectivesCount = adjectivesRow.locator('.text-lg.tabular-nums');
+      await expect(adjectivesCount).toHaveText('3');
+
+      const backdrop = page.locator('main').locator('div.whitespace-pre-wrap.pointer-events-none').first();
+
+      const getWeight = async (token: string) =>
+        backdrop
+          .locator('span', { hasText: new RegExp(`^${token}$`) })
+          .first()
+          .evaluate((el) => getComputedStyle(el).fontWeight);
+
+      const blueWeight = await getWeight('BLUE');
+      const redWeight = await getWeight('red');
+      const orangeWeight = await getWeight('orange');
+
+      expect(parseInt(blueWeight, 10)).toBeGreaterThanOrEqual(700);
+      expect(parseInt(redWeight, 10)).toBeGreaterThanOrEqual(700);
+      expect(parseInt(orangeWeight, 10)).toBeGreaterThanOrEqual(700);
+    });
   });
 
   test.describe('Settings Gear Toggle', () => {
