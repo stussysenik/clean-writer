@@ -83,12 +83,9 @@ const CornerFoldTab: React.FC<CornerFoldTabProps> = ({
 
   // Determine arrow direction based on current stage
   const getArrowDirection = (): 'left' | 'up' | 'right' | null => {
-    if (!harmonicaMode) return null;
+    if (!harmonicaMode || stage !== 'closed') return null;
     switch (stage) {
       case 'closed': return 'left';
-      case 'peek': return 'up';
-      case 'expand': return 'left';
-      case 'full': return 'right'; // Collapse hint
       default: return null;
     }
   };

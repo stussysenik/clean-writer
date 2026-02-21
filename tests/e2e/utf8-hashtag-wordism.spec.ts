@@ -170,6 +170,72 @@ test.describe('UTF-8 Display, Hashtags, and Wordism Footer', () => {
     await expect(page.locator('[data-testid="toolbar-syntax-toggles"]')).toHaveCount(0);
   });
 
+  test('mobile panel uses a single clear arrow indicator when expanded', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+
+    const textarea = page.locator('textarea');
+    await textarea.click();
+    await textarea.pressSequentially('hello world #one #two', { delay: 10 });
+    await page.waitForTimeout(700);
+
+    const foldTab = page.locator('[data-testid="mobile-fold-tab"]');
+    await expect(foldTab).toBeVisible();
+
+    const box = await foldTab.boundingBox();
+    if (!box) throw new Error('Could not get fold tab bounds');
+
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 - 250, box.y + box.height / 2, { steps: 25 });
+    await page.mouse.up();
+    await page.waitForTimeout(350);
+
+    const arrowCount = await foldTab.locator('span').evaluateAll((els) =>
+      els.filter((el) => {
+        const value = (el.textContent || '').trim();
+        return value === '‹' || value === '›' || value === '⌃';
+      }).length
+    );
+
+    expect(arrowCount).toBeLessThanOrEqual(1);
+  });
+
+  test('mobile expanded panel scrolls to quick stats section', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 700 });
+
+    const textarea = page.locator('textarea');
+    await textarea.click();
+    await textarea.pressSequentially('hello world #one #two #three', { delay: 10 });
+    await page.waitForTimeout(700);
+
+    const foldTab = page.locator('[data-testid="mobile-fold-tab"]');
+    const box = await foldTab.boundingBox();
+    if (!box) throw new Error('Could not get fold tab bounds');
+
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 - 250, box.y + box.height / 2, { steps: 25 });
+    await page.mouse.up();
+    await page.waitForTimeout(350);
+
+    const scrollRegion = page.locator('[data-testid="mobile-panel-scroll-region"]');
+    await expect(scrollRegion).toBeVisible();
+
+    const canScroll = await scrollRegion.evaluate((el) => {
+      const node = el as HTMLElement;
+      return node.scrollHeight > node.clientHeight;
+    });
+    expect(canScroll).toBeTruthy();
+
+    await scrollRegion.evaluate((el) => {
+      const node = el as HTMLElement;
+      node.scrollTop = node.scrollHeight;
+    });
+    await page.waitForTimeout(150);
+
+    await expect(page.getByRole('button', { name: /Hashtags/i })).toBeVisible();
+  });
+
   test('quick stats collapse by default when extras are all zero', async ({ page }) => {
     const textarea = page.locator('textarea');
     await textarea.click();

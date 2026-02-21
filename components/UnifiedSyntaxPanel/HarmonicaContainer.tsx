@@ -194,6 +194,7 @@ const HarmonicaContainer: React.FC<HarmonicaContainerProps> = ({
 
         {/* Full content */}
         <div
+          data-testid="mobile-panel-scroll-region"
           className="absolute transition-opacity duration-200"
           style={{
             left: 0,
@@ -203,6 +204,9 @@ const HarmonicaContainer: React.FC<HarmonicaContainerProps> = ({
             opacity: showFull ? 1 : 0,
             visibility: showFull ? 'visible' : 'hidden',
             pointerEvents: showFull ? 'auto' : 'none',
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            overscrollBehavior: 'contain',
           }}
         >
           {children.full}
