@@ -236,6 +236,29 @@ test.describe('UTF-8 Display, Hashtags, and Wordism Footer', () => {
     await expect(page.getByRole('button', { name: /Hashtags/i })).toBeVisible();
   });
 
+  test('mobile closed fold tab has no glass smudge background', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+
+    const textarea = page.locator('textarea');
+    await textarea.click();
+    await textarea.pressSequentially('hello world', { delay: 10 });
+    await page.waitForTimeout(600);
+
+    const closedContainer = page.locator('.rounded-l-2xl').first();
+    await expect(closedContainer).toBeVisible();
+
+    const styles = await closedContainer.evaluate((el) => {
+      const computed = getComputedStyle(el);
+      return {
+        backgroundColor: computed.backgroundColor,
+        backdropFilter: computed.backdropFilter,
+      };
+    });
+
+    expect(styles.backgroundColor === 'rgba(0, 0, 0, 0)' || styles.backgroundColor === 'transparent').toBeTruthy();
+    expect(styles.backdropFilter === 'none' || styles.backdropFilter === '').toBeTruthy();
+  });
+
   test('quick stats collapse by default when extras are all zero', async ({ page }) => {
     const textarea = page.locator('textarea');
     await textarea.click();

@@ -113,11 +113,11 @@ const HarmonicaContainer: React.FC<HarmonicaContainerProps> = ({
           ? (typeof dimensions.height === 'number' ? dimensions.height : 'auto')
           : (typeof STAGE_DIMENSIONS[stage].height === 'number' ? STAGE_DIMENSIONS[stage].height : 'auto'),
         // Glassmorphism
-        backgroundColor: `${theme.background}E6`,
-        backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)',
-        border: `1px solid ${theme.text}15`,
-        borderRight: 'none',
+        backgroundColor: stage === 'closed' ? 'transparent' : `${theme.background}E6`,
+        backdropFilter: stage === 'closed' ? 'none' : 'blur(10px)',
+        WebkitBackdropFilter: stage === 'closed' ? 'none' : 'blur(10px)',
+        border: stage === 'closed' ? 'none' : `1px solid ${theme.text}15`,
+        borderRight: stage === 'closed' ? 'none' : 'none',
         boxShadow: stage !== 'closed'
           ? `-8px 0 32px rgba(0,0,0,0.15), -2px 0 8px rgba(0,0,0,0.08), inset 0 0 0 1px ${theme.text}08`
           : 'none',
@@ -128,25 +128,29 @@ const HarmonicaContainer: React.FC<HarmonicaContainerProps> = ({
         transition: isDragging ? 'none' : 'transform 0.2s ease',
       }}
     >
-      {/* Paper grain texture */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-15 mix-blend-multiply"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='paperNoise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23paperNoise)' opacity='0.08'/%3E%3C/svg%3E")`,
-        }}
-      />
+      {stage !== 'closed' && (
+        <>
+          {/* Paper grain texture */}
+          <div
+            className="absolute inset-0 pointer-events-none opacity-15 mix-blend-multiply"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='paperNoise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23paperNoise)' opacity='0.08'/%3E%3C/svg%3E")`,
+            }}
+          />
 
-      {/* Glass highlight at top edge */}
-      <div
-        className="absolute left-0 right-0 top-0 h-px pointer-events-none"
-        style={{
-          background: `linear-gradient(to right,
-            transparent 0%,
-            ${theme.text}20 20%,
-            ${theme.text}20 80%,
-            transparent 100%)`,
-        }}
-      />
+          {/* Glass highlight at top edge */}
+          <div
+            className="absolute left-0 right-0 top-0 h-px pointer-events-none"
+            style={{
+              background: `linear-gradient(to right,
+                transparent 0%,
+                ${theme.text}20 20%,
+                ${theme.text}20 80%,
+                transparent 100%)`,
+            }}
+          />
+        </>
+      )}
 
       {/* Content container */}
       <div ref={contentRef} className="relative w-full h-full flex">
