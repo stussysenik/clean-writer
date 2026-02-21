@@ -26,6 +26,9 @@ const defaultVisibility: HighlightConfig = {
   conjunctions: true,
   articles: true,
   interjections: true,
+  urls: true,
+  numbers: true,
+  hashtags: true,
 };
 
 export function useCustomTheme(baseThemeId: string) {
@@ -80,7 +83,7 @@ export function useCustomTheme(baseThemeId: string) {
       const base = prev || { baseThemeId, overrides: {}, wordVisibility: defaultVisibility };
       const highlightKeys: (keyof RisoTheme['highlight'])[] = [
         'noun', 'pronoun', 'verb', 'adjective', 'adverb',
-        'preposition', 'conjunction', 'article', 'interjection'
+        'preposition', 'conjunction', 'article', 'interjection', 'url', 'number', 'hashtag'
       ];
 
       if (highlightKeys.includes(path as keyof RisoTheme['highlight'])) {
@@ -136,7 +139,7 @@ export function useCustomTheme(baseThemeId: string) {
 
       const highlightKeys: (keyof RisoTheme['highlight'])[] = [
         'noun', 'pronoun', 'verb', 'adjective', 'adverb',
-        'preposition', 'conjunction', 'article', 'interjection'
+        'preposition', 'conjunction', 'article', 'interjection', 'url', 'number', 'hashtag'
       ];
 
       if (highlightKeys.includes(path as keyof RisoTheme['highlight'])) {
@@ -192,7 +195,7 @@ export function useCustomTheme(baseThemeId: string) {
 
     const highlightKeys: (keyof RisoTheme['highlight'])[] = [
       'noun', 'pronoun', 'verb', 'adjective', 'adverb',
-      'preposition', 'conjunction', 'article', 'interjection'
+      'preposition', 'conjunction', 'article', 'interjection', 'url', 'number', 'hashtag'
     ];
 
     if (highlightKeys.includes(path as keyof RisoTheme['highlight'])) {

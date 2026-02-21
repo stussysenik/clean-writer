@@ -2,6 +2,10 @@ import { RisoTheme } from './types';
 
 export const THEME_STORAGE_KEY = 'clean_writer_theme';
 export const FONT_STORAGE_KEY = 'clean_writer_font';
+export const BUILD_NUMBER = `v${__APP_VERSION__}`;
+export const BUILD_TRACK = __BUILD_TRACK__;
+export const BUILD_IDENTITY = `${BUILD_NUMBER} · ${BUILD_TRACK}`;
+export const BUILD_WORDISM = 'Build wordism: Write clean, ship loud.';
 
 export const FONT_OPTIONS = [
   { id: 'courier-prime', name: 'Courier Prime', family: '"Courier Prime", monospace' },
@@ -30,6 +34,9 @@ export const THEMES: RisoTheme[] = [
       conjunction: '#FF6C2F',
       article: '#5F6C6D', // Fixed: was #7F8C8D (2.5:1), now darker for 3.5:1+
       interjection: '#E91E63',
+      url: '#2980B9',
+      number: '#8E6F3E',
+      hashtag: '#2980B9',
     },
     accent: '#F15060',
     cursor: '#F15060',
@@ -49,8 +56,11 @@ export const THEMES: RisoTheme[] = [
       adverb: '#00A95C',
       preposition: '#9B59B6',
       conjunction: '#00A95C',
-      article: '#D5E0E6', // Fixed: was #95A5A6, now lighter for better contrast
+      article: '#D5E0E6',
       interjection: '#FF6C2F',
+      url: '#B8E6FF',
+      number: '#FFD700',
+      hashtag: '#B8E6FF',
     },
     accent: '#FFE800',
     cursor: '#FFE800',
@@ -70,8 +80,11 @@ export const THEMES: RisoTheme[] = [
       adverb: '#ffb86c',
       preposition: '#8be9fd',
       conjunction: '#ffb86c',
-      article: '#8A93B4', // Fixed: was #6272a4, now lighter for 3:1+
+      article: '#8A93B4',
       interjection: '#ff5555',
+      url: '#69C4FF',
+      number: '#F1FA8C',
+      hashtag: '#69C4FF',
     },
     accent: '#00d9ff',
     cursor: '#00d9ff',
@@ -91,8 +104,11 @@ export const THEMES: RisoTheme[] = [
       adverb: '#d35400',
       preposition: '#16a085',
       conjunction: '#996633',
-      article: '#6B7580', // Fixed: was #95a5a6, now darker for better contrast
+      article: '#6B7580',
       interjection: '#c0392b',
+      url: '#2471A3',
+      number: '#7D6608',
+      hashtag: '#2471A3',
     },
     accent: '#8b6914',
     cursor: '#8b6914',
@@ -115,6 +131,9 @@ export const THEMES: RisoTheme[] = [
       conjunction: '#EA580C',
       article: '#6B7280',
       interjection: '#DB2777',
+      url: '#1D4ED8',
+      number: '#92400E',
+      hashtag: '#1D4ED8',
     },
     accent: '#2563EB',
     cursor: '#2563EB',
@@ -136,6 +155,9 @@ export const THEMES: RisoTheme[] = [
       conjunction: '#66FF66',
       article: '#669966',
       interjection: '#FF3333',
+      url: '#3399FF',
+      number: '#CCCC00',
+      hashtag: '#3399FF',
     },
     accent: '#00FF00',
     cursor: '#00FF00',
@@ -157,6 +179,9 @@ export const THEMES: RisoTheme[] = [
       conjunction: '#EA580C',
       article: '#78716C',
       interjection: '#BE185D',
+      url: '#1E40AF',
+      number: '#854D0E',
+      hashtag: '#1E40AF',
     },
     accent: '#D97706',
     cursor: '#D97706',
@@ -178,6 +203,9 @@ export const THEMES: RisoTheme[] = [
       conjunction: '#2DD4BF',
       article: '#94A3B8',
       interjection: '#FB7185',
+      url: '#60A5FA',
+      number: '#FCD34D',
+      hashtag: '#60A5FA',
     },
     accent: '#38BDF8',
     cursor: '#38BDF8',
@@ -199,6 +227,9 @@ export const THEMES: RisoTheme[] = [
       conjunction: '#86EFAC',
       article: '#9CA38A',
       interjection: '#F9A8D4',
+      url: '#93C5FD',
+      number: '#FDE68A',
+      hashtag: '#93C5FD',
     },
     accent: '#4ADE80',
     cursor: '#4ADE80',
@@ -212,15 +243,18 @@ export const THEMES: RisoTheme[] = [
     text: '#100F0F',
     background: '#FFFCF0',
     highlight: {
-      noun: '#205EA6',      // Blue 600
-      pronoun: '#5E409D',   // Purple 600
-      verb: '#AF3029',      // Red 600
-      adjective: '#66800B', // Green 600
-      adverb: '#BC5215',    // Orange 600
-      preposition: '#24837B', // Cyan 600
-      conjunction: '#AD8301', // Yellow 600
-      article: '#6F6E69',   // Gray 600
-      interjection: '#A02F6F', // Magenta 600
+      noun: '#205EA6',
+      pronoun: '#5E409D',
+      verb: '#AF3029',
+      adjective: '#66800B',
+      adverb: '#BC5215',
+      preposition: '#24837B',
+      conjunction: '#AD8301',
+      article: '#6F6E69',
+      interjection: '#A02F6F',
+      url: '#2C5494',
+      number: '#8B7200',
+      hashtag: '#2C5494',
     },
     accent: '#205EA6',
     cursor: '#100F0F',
@@ -233,15 +267,18 @@ export const THEMES: RisoTheme[] = [
     text: '#FFFCF0',
     background: '#100F0F',
     highlight: {
-      noun: '#4385BE',      // Blue 400
-      pronoun: '#8B7EC8',   // Purple 400
-      verb: '#D14D41',      // Red 400
-      adjective: '#879A39', // Green 400
-      adverb: '#DA702C',    // Orange 400
-      preposition: '#3AA99F', // Cyan 400
-      conjunction: '#D0A215', // Yellow 400
-      article: '#878580',   // Gray 400
-      interjection: '#CE5D97', // Magenta 400
+      noun: '#4385BE',
+      pronoun: '#8B7EC8',
+      verb: '#D14D41',
+      adjective: '#879A39',
+      adverb: '#DA702C',
+      preposition: '#3AA99F',
+      conjunction: '#D0A215',
+      article: '#878580',
+      interjection: '#CE5D97',
+      url: '#5B9BD5',
+      number: '#E0B429',
+      hashtag: '#5B9BD5',
     },
     accent: '#4385BE',
     cursor: '#FFFCF0',

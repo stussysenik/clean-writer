@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { RisoTheme } from '../../types';
-import { FONT_OPTIONS, FontId, THEMES } from '../../constants';
+import { BUILD_IDENTITY, BUILD_WORDISM, FONT_OPTIONS, FontId, THEMES } from '../../constants';
 import { meetsMinimumContrast, getContrastRatio, formatContrastRatio } from '../../utils/colorContrast';
 import HexInput from '../ColorPicker/HexInput';
 import TouchButton from '../TouchButton';
@@ -47,6 +47,8 @@ interface ThemeCustomizerProps {
   onSavePalette?: (name: string) => void;
   hiddenThemeIds?: string[];
   onToggleThemeVisibility?: (id: string) => void;
+  utf8DisplayEnabled: boolean;
+  onToggleUtf8Display: (enabled: boolean) => void;
 }
 
 const WORD_TYPE_LABELS: { key: keyof RisoTheme['highlight']; label: string; short: string }[] = [
@@ -59,6 +61,9 @@ const WORD_TYPE_LABELS: { key: keyof RisoTheme['highlight']; label: string; shor
   { key: 'conjunction', label: 'Conjunctions', short: 'Conj' },
   { key: 'article', label: 'Articles', short: 'Art' },
   { key: 'interjection', label: 'Interjections', short: 'Intj' },
+  { key: 'url', label: 'URLs', short: 'URL' },
+  { key: 'number', label: 'Numbers', short: 'Num' },
+  { key: 'hashtag', label: 'Hashtags', short: '#Tag' },
 ];
 
 const MIN_CONTRAST_RATIO = 2.08;
@@ -129,6 +134,8 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
   onSavePalette,
   hiddenThemeIds = [],
   onToggleThemeVisibility,
+  utf8DisplayEnabled,
+  onToggleUtf8Display,
 }) => {
   const [paletteName, setPaletteName] = useState('');
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
@@ -138,7 +145,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
   if (!isOpen) return null;
 
   const hasColorCustomizations = isColorCustomized
-    ? ['background', 'text', 'cursor', 'selection', 'noun', 'verb', 'adjective', 'adverb', 'pronoun', 'preposition', 'conjunction', 'article', 'interjection'].some(path => isColorCustomized(path as any))
+    ? ['background', 'text', 'cursor', 'selection', 'noun', 'verb', 'adjective', 'adverb', 'pronoun', 'preposition', 'conjunction', 'article', 'interjection', 'url', 'number', 'hashtag'].some(path => isColorCustomized(path as any))
     : hasCustomizations;
 
   const handleSavePalette = () => {
@@ -167,6 +174,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
       {/* Panel */}
       <div
         className="fixed right-0 top-0 bottom-0 w-full max-w-md z-[101] overflow-y-auto"
+        data-testid="theme-customizer-panel"
         style={{
           backgroundColor: theme.background,
           color: theme.text,
@@ -273,7 +281,32 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
             )}
           </section>
 
-          {/* 3. Base Colors — compact rows */}
+          {/* 3. Display */}
+          <section className="py-4 border-b border-current/10">
+            <h3 className="text-xs font-medium uppercase tracking-widest mb-3 opacity-50">
+              Display
+            </h3>
+            <label
+              className="flex items-start gap-3 rounded-xl p-3 border border-current/10 bg-current/5 cursor-pointer"
+              data-testid="utf8-display-toggle-wrapper"
+            >
+              <input
+                type="checkbox"
+                checked={utf8DisplayEnabled}
+                onChange={(e) => onToggleUtf8Display(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded border-2 border-current/30 bg-transparent accent-current"
+                data-testid="utf8-display-toggle"
+              />
+              <div>
+                <p className="text-sm font-medium">UTF Emoji Display</p>
+                <p className="text-xs opacity-60 mt-0.5">
+                  On: show `U+...` code points. Off: show native emoji glyphs.
+                </p>
+              </div>
+            </label>
+          </section>
+
+          {/* 4. Base Colors — compact rows */}
           <section className="py-4 border-b border-current/10">
             <h3 className="text-xs font-medium uppercase tracking-widest mb-3 opacity-50">
               Base Colors
@@ -310,7 +343,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
             </div>
           </section>
 
-          {/* 4. Word Type Colors — compact 3-column grid */}
+          {/* 5. Word Type Colors — compact 3-column grid */}
           <section className="py-4 border-b border-current/10">
             <h3 className="text-xs font-medium uppercase tracking-widest mb-3 opacity-50">
               Word Type Colors
@@ -337,7 +370,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
             </div>
           </section>
 
-          {/* 5. Save as Palette — only when customizations exist */}
+          {/* 6. Save as Palette — only when customizations exist */}
           {hasColorCustomizations && onSavePalette && (
             <section className="py-4 border-b border-current/10">
               <h3 className="text-xs font-medium uppercase tracking-widest mb-3 opacity-50">
@@ -386,7 +419,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
             </section>
           )}
 
-          {/* 6. Reset */}
+          {/* 7. Reset */}
           <section className="py-4">
             <TouchButton
               onClick={onResetToPreset}
@@ -400,6 +433,15 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
               <IconReset size={16} />
               Reset All to Preset Theme
             </TouchButton>
+          </section>
+
+          <section className="pt-1 pb-5 border-t border-current/10">
+            <p
+              className="text-xs opacity-55 text-center"
+              data-testid="settings-build-footer"
+            >
+              Build {BUILD_IDENTITY} · {BUILD_WORDISM}
+            </p>
           </section>
         </div>
       </div>

@@ -1,5 +1,12 @@
 import nlp from 'compromise';
 import { SyntaxAnalysis } from '../types';
+import {
+  extractHashtags,
+  extractNumbers,
+  extractUrls,
+  normalizeApostrophes,
+  normalizeTokenForSyntaxLookup,
+} from '../utils/syntaxPatterns';
 
 // Static lists for high accuracy word detection
 const ARTICLES = ['a', 'an', 'the'];
@@ -96,11 +103,6 @@ const CONTRACTIONS: Record<string, { types: (keyof SyntaxAnalysis)[] }> = {
   "ain't": { types: ["verbs", "adverbs"] },
 };
 
-// Normalize apostrophe variants (curly quotes to straight)
-function normalizeApostrophes(text: string): string {
-  return text.replace(/['']/g, "'");
-}
-
 // Extract contractions from text and add to appropriate categories
 function extractContractions(text: string, result: SyntaxAnalysis): void {
   const normalizedText = normalizeApostrophes(text.toLowerCase());
@@ -130,34 +132,55 @@ function analyzeSyntax(text: string): SyntaxAnalysis {
       conjunctions: [],
       articles: [],
       interjections: [],
+      urls: [],
+      numbers: [],
+      hashtags: [],
     };
   }
+
+  // Extract non-NLP categories BEFORE NLP (these are always categorized)
+  const urls = extractUrls(text);
+  const numbers = extractNumbers(text);
+  const hashtags = extractHashtags(text);
 
   const doc = nlp(text);
 
   const getUniqueWords = (tag: string): string[] => {
     const words = doc.match(tag).out('array');
-    return Array.from(new Set((words as string[]).map((w: string) => w.toLowerCase())));
+    return Array.from(
+      new Set(
+        (words as string[])
+          .map((w: string) => normalizeTokenForSyntaxLookup(w))
+          .filter((w: string) => w.length > 0)
+      )
+    );
   };
 
   const extractArticles = (text: string): string[] => {
-    const words = text.toLowerCase().split(/\s+/);
+    const words = text
+      .split(/\s+/)
+      .map((word) => normalizeTokenForSyntaxLookup(word))
+      .filter((word) => word.length > 0);
     return Array.from(new Set(words.filter(w => ARTICLES.includes(w))));
   };
 
   const extractPrepositions = (text: string): string[] => {
     const nlpPrepositions = getUniqueWords('#Preposition');
-    const words = text.toLowerCase().split(/\s+/);
+    const words = text
+      .split(/\s+/)
+      .map((word) => normalizeTokenForSyntaxLookup(word))
+      .filter((word) => word.length > 0);
     const staticPrepositions = words.filter(w => PREPOSITIONS.includes(w));
     return Array.from(new Set([...nlpPrepositions, ...staticPrepositions]));
   };
 
   const extractInterjections = (text: string): string[] => {
-    const lowerText = text.toLowerCase();
-    const words = lowerText.split(/\s+/);
-    return Array.from(new Set(
-      INTERJECTIONS.filter(i => words.includes(i) || lowerText.includes(i + '!'))
-    ));
+    const normalizedWords = text
+      .split(/\s+/)
+      .map((word) => normalizeTokenForSyntaxLookup(word))
+      .filter((word) => word.length > 0);
+    const wordSet = new Set(normalizedWords);
+    return Array.from(new Set(INTERJECTIONS.filter(i => wordSet.has(i))));
   };
 
   const result: SyntaxAnalysis = {
@@ -170,6 +193,9 @@ function analyzeSyntax(text: string): SyntaxAnalysis {
     conjunctions: getUniqueWords('#Conjunction'),
     articles: extractArticles(text),
     interjections: extractInterjections(text),
+    urls,
+    numbers,
+    hashtags,
   };
 
   extractContractions(text, result);

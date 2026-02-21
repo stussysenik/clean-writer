@@ -7,7 +7,10 @@ export type SyntaxType =
   | 'preposition'
   | 'conjunction'
   | 'article'
-  | 'interjection';
+  | 'interjection'
+  | 'url'
+  | 'number'
+  | 'hashtag';
 
 export interface SyntaxAnalysis {
   nouns: string[];
@@ -19,6 +22,9 @@ export interface SyntaxAnalysis {
   conjunctions: string[];
   articles: string[];
   interjections: string[];
+  urls: string[];
+  numbers: string[];
+  hashtags: string[];
 }
 
 export interface SyntaxSets {
@@ -31,6 +37,9 @@ export interface SyntaxSets {
   conjunctions: Set<string>;
   articles: Set<string>;
   interjections: Set<string>;
+  urls: Set<string>;
+  numbers: Set<string>;
+  hashtags: Set<string>;
 }
 
 export function toSyntaxSets(analysis: SyntaxAnalysis): SyntaxSets {
@@ -44,6 +53,9 @@ export function toSyntaxSets(analysis: SyntaxAnalysis): SyntaxSets {
     conjunctions: new Set(analysis.conjunctions),
     articles: new Set(analysis.articles),
     interjections: new Set(analysis.interjections),
+    urls: new Set(analysis.urls),
+    numbers: new Set(analysis.numbers),
+    hashtags: new Set(analysis.hashtags),
   };
 }
 
@@ -57,6 +69,9 @@ export interface HighlightConfig {
   conjunctions: boolean;
   articles: boolean;
   interjections: boolean;
+  urls: boolean;
+  numbers: boolean;
+  hashtags: boolean;
 }
 
 export interface RisoTheme {
@@ -74,6 +89,9 @@ export interface RisoTheme {
     conjunction: string;
     article: string;
     interjection: string;
+    url: string;
+    number: string;
+    hashtag: string;
   };
   accent: string;
   cursor: string;        // Blinking cursor color

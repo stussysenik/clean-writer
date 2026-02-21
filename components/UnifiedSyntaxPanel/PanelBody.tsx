@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { gsap } from 'gsap';
 import { RisoTheme, SyntaxAnalysis, SyntaxSets, HighlightConfig } from '../../types';
 import { getWordTypeOccurrences } from '../../services/localSyntaxService';
+import { BUILD_IDENTITY, BUILD_WORDISM } from '../../constants';
 import TouchButton from '../TouchButton';
 
 interface PanelBodyProps {
@@ -18,7 +19,7 @@ interface PanelBodyProps {
   onCategoryHover?: (category: keyof HighlightConfig | null) => void;
 }
 
-const DEFAULT_WORD_TYPE_CONFIG = [
+const WORD_TYPE_CONFIG = [
   { key: 'nouns', label: 'Nouns', shortKey: '1', colorKey: 'noun' },
   { key: 'verbs', label: 'Verbs', shortKey: '2', colorKey: 'verb' },
   { key: 'adjectives', label: 'Adjectives', shortKey: '3', colorKey: 'adjective' },
@@ -30,7 +31,13 @@ const DEFAULT_WORD_TYPE_CONFIG = [
   { key: 'interjections', label: 'Interjections', shortKey: '9', colorKey: 'interjection' },
 ] as const;
 
-type WordTypeKey = typeof DEFAULT_WORD_TYPE_CONFIG[number]['key'];
+const EXTRAS_CONFIG = [
+  { key: 'urls', label: 'URLs', colorKey: 'url' },
+  { key: 'numbers', label: 'Numbers', colorKey: 'number' },
+  { key: 'hashtags', label: 'Hashtags', colorKey: 'hashtag' },
+] as const;
+
+type WordTypeKey = typeof WORD_TYPE_CONFIG[number]['key'];
 
 const ITEM_HEIGHT = 44;
 const LONG_PRESS_MS = 400;
@@ -116,12 +123,17 @@ const PanelBody: React.FC<PanelBodyProps> = ({
       const saved = localStorage.getItem(ORDER_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length === DEFAULT_WORD_TYPE_CONFIG.length) {
-          return parsed as WordTypeKey[];
+        if (Array.isArray(parsed)) {
+          // Filter to valid word type keys (migration from old config that included urls/numbers)
+          const validKeys = new Set(WORD_TYPE_CONFIG.map(c => c.key) as readonly string[]);
+          const filtered = parsed.filter((k: string) => validKeys.has(k)) as WordTypeKey[];
+          if (filtered.length === WORD_TYPE_CONFIG.length) {
+            return filtered;
+          }
         }
       }
     } catch {}
-    return DEFAULT_WORD_TYPE_CONFIG.map(c => c.key);
+    return WORD_TYPE_CONFIG.map(c => c.key);
   });
 
   const [draggedItem, setDraggedItem] = useState<WordTypeKey | null>(null);
@@ -133,13 +145,31 @@ const PanelBody: React.FC<PanelBodyProps> = ({
   // Get ordered word type config
   const orderedConfig = useMemo(() => {
     return wordTypeOrder.map(key => {
-      const config = DEFAULT_WORD_TYPE_CONFIG.find(c => c.key === key)!;
+      const config = WORD_TYPE_CONFIG.find(c => c.key === key)!;
       return {
         ...config,
         count: wordTypeCounts[key] || 0,
       };
     });
   }, [wordTypeOrder, wordTypeCounts]);
+
+  // Max count across word types for proportional bar visualization
+  const maxCount = useMemo(() => {
+    return Math.max(1, ...orderedConfig.map(item => item.count));
+  }, [orderedConfig]);
+
+  const totalQuickStatsCount = useMemo(() => {
+    return EXTRAS_CONFIG.reduce((sum, item) => sum + (wordTypeCounts[item.key] || 0), 0);
+  }, [wordTypeCounts]);
+
+  const [isQuickStatsCollapsed, setIsQuickStatsCollapsed] = useState(true);
+
+  // Auto-expand quick stats when there is real data to show
+  useEffect(() => {
+    if (totalQuickStatsCount > 0) {
+      setIsQuickStatsCollapsed(false);
+    }
+  }, [totalQuickStatsCount]);
 
   // Persist order
   useEffect(() => {
@@ -355,7 +385,7 @@ const PanelBody: React.FC<PanelBodyProps> = ({
         <div
           className="overflow-hidden transition-all duration-300 ease-out"
           style={{
-            maxHeight: isBreakdownCollapsed ? '0px' : `${orderedConfig.length * ITEM_HEIGHT + 20}px`,
+            maxHeight: isBreakdownCollapsed ? '0px' : '900px',
             opacity: isBreakdownCollapsed ? 0 : 1,
           }}
         >
@@ -412,6 +442,17 @@ const PanelBody: React.FC<PanelBodyProps> = ({
                 onMouseEnter={() => onCategoryHover?.(item.key as keyof HighlightConfig)}
                 onMouseLeave={() => onCategoryHover?.(null)}
               >
+                {/* Proportional bar — thin bottom line */}
+                <div
+                  className="absolute left-2 bottom-0 rounded-full pointer-events-none"
+                  style={{
+                    width: item.count > 0 ? `${Math.max(4, (item.count / maxCount) * 60)}%` : '0%',
+                    height: '2px',
+                    backgroundColor: theme.highlight[item.colorKey as keyof typeof theme.highlight],
+                    opacity: 0.3,
+                    transition: 'width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease',
+                  }}
+                />
                 <div className="flex items-center gap-3">
                   <span
                     ref={(el) => { dotsRef.current[index] = el; }}
@@ -465,6 +506,71 @@ const PanelBody: React.FC<PanelBodyProps> = ({
             );
           })}
           </div>
+
+          <div className="mt-3 pt-3 border-t" style={{ borderColor: `${theme.text}12` }}>
+            <TouchButton
+              onClick={() => setIsQuickStatsCollapsed(prev => !prev)}
+              className="w-full flex items-center justify-between text-[10px] uppercase tracking-widest px-2 py-1.5 rounded-md"
+              style={{ color: theme.text, opacity: 0.55 }}
+              data-testid="quick-stats-toggle"
+            >
+              <span>Quick Stats{totalQuickStatsCount === 0 ? ' (All Zero)' : ''}</span>
+              <span
+                className="inline-block transition-transform duration-200"
+                style={{ transform: isQuickStatsCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)' }}
+              >
+                ▼
+              </span>
+            </TouchButton>
+
+            {/* Extras: URLs, Numbers, Hashtags — collapsible */}
+            <div
+              data-testid="quick-stats-content"
+              className="overflow-hidden transition-all duration-300 ease-out"
+              style={{
+                maxHeight: isQuickStatsCollapsed ? '0px' : '220px',
+                opacity: isQuickStatsCollapsed ? 0 : 1,
+              }}
+            >
+              <div
+                className="grid grid-cols-2 gap-2 mt-2"
+                data-testid="quick-stats-grid"
+              >
+                {EXTRAS_CONFIG.map((item, index) => {
+                  const count = wordTypeCounts[item.key] || 0;
+                  const color = theme.highlight[item.colorKey as keyof typeof theme.highlight];
+                  const isActive = highlightConfig[item.key as keyof HighlightConfig];
+                  const isDimmed = soloMode !== null && soloMode !== item.key;
+                  const isLast = index === EXTRAS_CONFIG.length - 1;
+
+                  return (
+                    <TouchButton
+                      key={item.key}
+                      onClick={() => onToggleHighlight(item.key as keyof HighlightConfig)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all ${isLast ? 'col-span-2' : ''}`}
+                      style={{
+                        opacity: isDimmed ? 0.3 : isActive ? 0.8 : 0.35,
+                        backgroundColor: isActive ? `${color}10` : 'transparent',
+                        minHeight: '38px',
+                      }}
+                    >
+                      <span
+                        className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: color }}
+                      />
+                      <span className="text-xs font-medium">{item.label}</span>
+                      <span
+                        className="text-sm font-bold tabular-nums ml-auto"
+                        data-testid={item.key === 'hashtags' ? 'hashtags-counter' : undefined}
+                      >
+                        {count}
+                      </span>
+                    </TouchButton>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -473,7 +579,13 @@ const PanelBody: React.FC<PanelBodyProps> = ({
         className="px-6 py-3 text-center border-t"
         style={{ borderColor: `${theme.text}10` }}
       >
+        <p className="text-xs opacity-35" data-testid="panel-build-footer">
+          Build {BUILD_IDENTITY}
+        </p>
         <p className="text-xs opacity-40">
+          <span data-testid="panel-wordism">{BUILD_WORDISM}</span>
+        </p>
+        <p className="text-xs opacity-40 mt-1">
           Press{' '}
           <kbd
             className="px-1.5 py-0.5 rounded border text-[10px] font-bold mx-0.5"

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { RisoTheme, ViewMode } from '../../types';
-import { IconEyeOpen, IconEyeClosed, IconStrike, IconDownload, IconTrash, IconWidth } from './Icons';
+import { IconEyeOpen, IconEyeClosed, IconStrike, IconDownload, IconTrash, IconWidth, IconMagicClean } from './Icons';
 import TouchButton from '../TouchButton';
 import Tooltip from '../Tooltip';
 import { getIconColor } from '../../utils/contrastAwareColor';
@@ -9,9 +9,11 @@ interface ActionButtonsProps {
   theme: RisoTheme;
   viewMode: ViewMode;
   maxWidth: number;
+  hasStrikethroughs: boolean;
   onToggleView: () => void;
   onStrikethrough: () => void;
   onStrikethroughPointerDown?: () => void;
+  onCleanStrikethroughs: () => void;
   onExport: () => void;
   onClear: () => void;
   onWidthChange: (width: number) => void;
@@ -69,8 +71,10 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   viewMode,
   maxWidth,
   onToggleView,
+  hasStrikethroughs,
   onStrikethrough,
   onStrikethroughPointerDown,
+  onCleanStrikethroughs,
   onExport,
   onClear,
   onWidthChange,
@@ -99,6 +103,16 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         tooltip="Apply strikethrough to selected text"
         ariaLabel="Strikethrough selected text"
         data-testid="strikethrough-btn"
+      />
+
+      <ActionButton
+        onClick={onCleanStrikethroughs}
+        disabled={!hasStrikethroughs}
+        icon={<IconMagicClean />}
+        label="Clean"
+        tooltip="Remove all strikethrough markers"
+        ariaLabel="Remove all strikethrough markers"
+        data-testid="clean-strikethroughs-btn"
       />
 
       <ActionButton

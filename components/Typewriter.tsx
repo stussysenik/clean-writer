@@ -1,6 +1,13 @@
 import React, { useRef, useEffect, useCallback, useState, useMemo } from 'react';
 import { RisoTheme, SyntaxSets, HighlightConfig } from '../types';
 import { useIMEComposition } from '../hooks/useIMEComposition';
+import {
+  isHashtagToken,
+  isNumberToken,
+  isUrlToken,
+  normalizeTokenForSyntaxLookup,
+} from '../utils/syntaxPatterns';
+import { replaceEmojisWithUTF } from '../utils/emojiUtils';
 
 interface TypewriterProps {
   content: string;
@@ -11,6 +18,7 @@ interface TypewriterProps {
   fontSize: string;
   maxWidth: number;
   fontFamily: string;
+  showUtfEmojiCodes?: boolean;
   textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
   hoveredCategory?: keyof HighlightConfig | null;
 }
@@ -26,11 +34,14 @@ const HIGHLIGHT_TO_COLOR_KEY: Record<keyof HighlightConfig, keyof RisoTheme['hig
   conjunctions: 'conjunction',
   articles: 'article',
   interjections: 'interjection',
+  urls: 'url',
+  numbers: 'number',
+  hashtags: 'hashtag',
 };
 
-// Normalize apostrophe variants for consistent contraction matching
-function normalizeApostrophes(text: string): string {
-  return text.replace(/['']/g, "'");
+function isTextInputKey(key: string): boolean {
+  if (key.length === 1) return true;
+  return key.length === 2 && /[\uD800-\uDBFF][\uDC00-\uDFFF]/.test(key);
 }
 
 const Typewriter: React.FC<TypewriterProps> = ({
@@ -42,6 +53,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
   fontSize,
   maxWidth,
   fontFamily,
+  showUtfEmojiCodes = false,
   textareaRef: externalTextareaRef,
   hoveredCategory = null,
 }) => {
@@ -64,18 +76,23 @@ const Typewriter: React.FC<TypewriterProps> = ({
   const lastWordColor = useMemo(() => {
     if (!content) return theme.cursor;
 
-    // Extract the last word from content (ignoring trailing whitespace/punctuation)
-    // Preserve contractions by not splitting on apostrophes within words
-    const trimmed = content.replace(/[\s.,!?;:"()\-]+$/, '');
-    // Split on whitespace and punctuation, but keep contractions together
-    const words = trimmed.split(/[\s.,!?;:"()\-]+/);
-    const lastWord = normalizeApostrophes(words[words.length - 1]?.toLowerCase().trim() || '');
+    const rawLastToken = content.trim().split(/\s+/).pop() || '';
+    const lastWord = normalizeTokenForSyntaxLookup(rawLastToken);
 
     if (!lastWord) return theme.cursor;
 
     // Check which syntax category the last word belongs to (O(1) lookups with Sets)
     if (highlightConfig.articles && syntaxSets.articles.has(lastWord)) {
       return theme.highlight.article;
+    }
+    if (highlightConfig.urls && (syntaxSets.urls.has(lastWord) || isUrlToken(lastWord))) {
+      return theme.highlight.url;
+    }
+    if (highlightConfig.hashtags && (syntaxSets.hashtags.has(lastWord) || isHashtagToken(lastWord))) {
+      return theme.highlight.hashtag;
+    }
+    if (highlightConfig.numbers && (syntaxSets.numbers.has(lastWord) || isNumberToken(lastWord))) {
+      return theme.highlight.number;
     }
     if (highlightConfig.interjections && syntaxSets.interjections.has(lastWord)) {
       return theme.highlight.interjection;
@@ -129,7 +146,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
     if (e.ctrlKey || e.metaKey || e.altKey) return;
 
     // 3. Handle character input (strictly append to end)
-    if (e.key.length === 1 || e.key === 'Enter') {
+    if (isTextInputKey(e.key) || e.key === 'Enter') {
       e.preventDefault(); // Stop default insertion at cursor position
 
       const char = e.key === 'Enter' ? '\n' : e.key;
@@ -196,9 +213,12 @@ const Typewriter: React.FC<TypewriterProps> = ({
 
   // Helper to determine which syntax category a word belongs to (O(1) lookups)
   const getWordCategory = useCallback((word: string): keyof HighlightConfig | null => {
-    const lowerWord = normalizeApostrophes(word.toLowerCase().trim());
+    const lowerWord = normalizeTokenForSyntaxLookup(word);
     if (!lowerWord) return null;
 
+    if (syntaxSets.urls.has(lowerWord) || isUrlToken(lowerWord)) return 'urls';
+    if (syntaxSets.hashtags.has(lowerWord) || isHashtagToken(lowerWord)) return 'hashtags';
+    if (syntaxSets.numbers.has(lowerWord) || isNumberToken(lowerWord)) return 'numbers';
     if (syntaxSets.articles.has(lowerWord)) return 'articles';
     if (syntaxSets.interjections.has(lowerWord)) return 'interjections';
     if (syntaxSets.prepositions.has(lowerWord)) return 'prepositions';
@@ -222,6 +242,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
     return chunks.map((chunk, chunkIndex) => {
       // If it is a strikethrough block
       if (chunk.startsWith('~~') && chunk.endsWith('~~') && chunk.length >= 4) {
+        const renderedStrikeChunk = showUtfEmojiCodes ? replaceEmojisWithUTF(chunk) : chunk;
         return (
           <span
             key={`st-${chunkIndex}`}
@@ -233,21 +254,33 @@ const Typewriter: React.FC<TypewriterProps> = ({
               transition: 'color 0.3s ease, text-shadow 0.3s ease',
             }}
           >
-            {chunk}
+            {renderedStrikeChunk}
           </span>
         );
       }
 
       // If it is normal text, process syntax highlighting
-      // Tokenize preserving contractions: split on whitespace and punctuation,
-      // but keep apostrophes within words (for contractions like "where's", "let's")
-      const parts = chunk.split(/(\s+|[.,!?;:"()\-]+|(?<!\w)['']|[''](?!\w))/g);
+      // First split on URLs to preserve them as whole tokens, then tokenize the rest
+      const renderedChunk = showUtfEmojiCodes ? replaceEmojisWithUTF(chunk) : chunk;
+      const urlSplitPattern = /((?:https?:\/\/)\S+|(?:www\.)\S+|(?:[a-zA-Z0-9-]+\.)+(?:com|org|net|io|dev|co|app|ai|edu|gov|me|info|biz)(?:\/\S*)?)/g;
+      const urlTestPattern = /^(?:https?:\/\/)\S+$|^(?:www\.)\S+$|^(?:[a-zA-Z0-9-]+\.)+(?:com|org|net|io|dev|co|app|ai|edu|gov|me|info|biz)(?:\/\S*)?$/i;
+      const urlSplit = renderedChunk.split(urlSplitPattern);
+      // Flatten: for non-URL segments, split on whitespace/punctuation; URL segments stay whole
+      const parts: string[] = [];
+      for (const segment of urlSplit) {
+        if (urlTestPattern.test(segment)) {
+          parts.push(segment);
+        } else {
+          // Tokenize on whitespace and punctuation, preserving contractions
+          const subParts = segment.split(/(\s+|[.,!?;:"()\-]+|(?<!\w)['']|[''](?!\w))/g);
+          parts.push(...subParts);
+        }
+      }
 
       return (
         <React.Fragment key={`chunk-${chunkIndex}`}>
           {parts.map((part, index) => {
-            // Normalize apostrophes for consistent matching
-            const normalizedPart = normalizeApostrophes(part.toLowerCase().trim());
+            const normalizedPart = normalizeTokenForSyntaxLookup(part);
             let color = theme.text;
             let isMatch = false;
             let matchCategory: keyof HighlightConfig | null = null;
@@ -263,10 +296,21 @@ const Typewriter: React.FC<TypewriterProps> = ({
               );
             }
 
-            // Check highlights based on config - order matters for priority
-            // More specific types first (articles, interjections, etc.)
-            // Using O(1) Set.has() instead of O(n) Array.includes()
-            if (highlightConfig.articles && syntaxSets.articles.has(normalizedPart)) {
+            // Check highlights based on config — O(1) Set.has() lookups
+            // Priority: URLs → hashtags → numbers → NLP categories
+            if (highlightConfig.urls && (syntaxSets.urls.has(normalizedPart) || isUrlToken(normalizedPart))) {
+              color = theme.highlight.url;
+              isMatch = true;
+              matchCategory = 'urls';
+            } else if (highlightConfig.hashtags && (syntaxSets.hashtags.has(normalizedPart) || isHashtagToken(normalizedPart))) {
+              color = theme.highlight.hashtag;
+              isMatch = true;
+              matchCategory = 'hashtags';
+            } else if (highlightConfig.numbers && (syntaxSets.numbers.has(normalizedPart) || isNumberToken(normalizedPart))) {
+              color = theme.highlight.number;
+              isMatch = true;
+              matchCategory = 'numbers';
+            } else if (highlightConfig.articles && syntaxSets.articles.has(normalizedPart)) {
               color = theme.highlight.article;
               isMatch = true;
               matchCategory = 'articles';
@@ -322,7 +366,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
         </React.Fragment>
       );
     });
-  }, [content, syntaxSets, theme, highlightConfig, hoveredCategory]);
+  }, [content, syntaxSets, theme, highlightConfig, hoveredCategory, showUtfEmojiCodes]);
 
   return (
     <div

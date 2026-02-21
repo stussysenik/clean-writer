@@ -1,5 +1,17 @@
 import nlp from 'compromise';
 import { SyntaxAnalysis, SyntaxSets } from '../types';
+import {
+  HASHTAG_MATCH_REGEX,
+  URL_MATCH_REGEX,
+  countPatternMatches,
+  extractHashtags,
+  extractNumbers,
+  extractUrls,
+  isHashtagToken,
+  isNumberToken,
+  normalizeApostrophes,
+  normalizeTokenForSyntaxLookup,
+} from '../utils/syntaxPatterns';
 
 /**
  * Centralized word counting function with UTF-8 support.
@@ -85,6 +97,9 @@ export function getWordTypeCounts(syntaxData: SyntaxAnalysis): Record<string, nu
     conjunctions: syntaxData.conjunctions.length,
     articles: syntaxData.articles.length,
     interjections: syntaxData.interjections.length,
+    urls: syntaxData.urls.length,
+    numbers: syntaxData.numbers.length,
+    hashtags: syntaxData.hashtags.length,
   };
 }
 
@@ -107,29 +122,38 @@ export function getWordTypeOccurrences(
     conjunctions: 0,
     articles: 0,
     interjections: 0,
+    urls: 0,
+    numbers: 0,
+    hashtags: 0,
   };
 
   if (!content.trim()) return counts;
 
-  // Tokenize using Intl.Segmenter for consistency with countWords
-  let words: string[];
-  if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
-    try {
-      const segmenter = new Intl.Segmenter(undefined, { granularity: 'word' });
-      words = Array.from(segmenter.segment(content.trim()))
-        .filter(segment => segment.isWordLike)
-        .map(segment => segment.segment.toLowerCase());
-    } catch {
-      words = content.trim().toLowerCase().split(/\s+/).filter(w => w.length > 0);
-    }
-  } else {
-    words = content.trim().toLowerCase().split(/\s+/).filter(w => w.length > 0);
-  }
+  // First pass: count URL/hashtag occurrences directly from content (they span multiple tokens)
+  counts.urls = countPatternMatches(content, URL_MATCH_REGEX);
+  counts.hashtags = countPatternMatches(content, HASHTAG_MATCH_REGEX);
+
+  // Tokenize using whitespace split to keep URL-like tokens intact,
+  // then normalize punctuation/case for stable matching.
+  const normalizedTokens = content
+    .trim()
+    .split(/\s+/)
+    .map((token) => normalizeTokenForSyntaxLookup(token))
+    .filter((token) => token.length > 0);
+
+  // Build a set of URL tokens for exclusion from other categories
+  const urlTokenSet = new Set<string>(extractUrls(content));
 
   // Classify each word occurrence using O(1) Set lookups
-  // Priority order matters: a word is counted in its first matching category only
-  for (const word of words) {
-    if (syntaxSets.articles.has(word)) {
+  // Skip tokens that are part of URLs
+  for (const word of normalizedTokens) {
+    if (urlTokenSet.has(word)) {
+      continue; // Already counted as URL
+    } else if (isHashtagToken(word)) {
+      continue; // Already counted as hashtag
+    } else if (syntaxSets.numbers.has(word) || isNumberToken(word)) {
+      counts.numbers++;
+    } else if (syntaxSets.articles.has(word)) {
       counts.articles++;
     } else if (syntaxSets.interjections.has(word)) {
       counts.interjections++;
@@ -148,7 +172,6 @@ export function getWordTypeOccurrences(
     } else if (syntaxSets.adverbs.has(word)) {
       counts.adverbs++;
     }
-    // Words not in any set are unclassified (not shown in breakdown)
   }
 
   return counts;
@@ -250,11 +273,6 @@ const CONTRACTIONS: Record<string, { types: (keyof SyntaxAnalysis)[] }> = {
   "ain't": { types: ["verbs", "adverbs"] },
 };
 
-// Normalize apostrophe variants (curly quotes to straight)
-function normalizeApostrophes(text: string): string {
-  return text.replace(/['']/g, "'");
-}
-
 // Extract contractions from text and add to appropriate categories
 function extractContractions(text: string, result: SyntaxAnalysis): void {
   const normalizedText = normalizeApostrophes(text.toLowerCase());
@@ -286,8 +304,16 @@ export const analyzeSyntax = async (text: string): Promise<SyntaxAnalysis> => {
       conjunctions: [],
       articles: [],
       interjections: [],
+      urls: [],
+      numbers: [],
+      hashtags: [],
     };
   }
+
+  // Extract non-NLP categories BEFORE NLP (these are always categorized)
+  const urls = extractUrls(text);
+  const numbers = extractNumbers(text);
+  const hashtags = extractHashtags(text);
 
   // Use compromise for local NLP analysis
   const doc = nlp(text);
@@ -295,30 +321,43 @@ export const analyzeSyntax = async (text: string): Promise<SyntaxAnalysis> => {
   // Helper to get unique lowercase words from a tag match
   const getUniqueWords = (tag: string): string[] => {
     const words = doc.match(tag).out('array');
-    return Array.from(new Set((words as string[]).map((w: string) => w.toLowerCase())));
+    return Array.from(
+      new Set(
+        (words as string[])
+          .map((w: string) => normalizeTokenForSyntaxLookup(w))
+          .filter((w: string) => w.length > 0)
+      )
+    );
   };
 
   // Extract articles from text using static list (more reliable than NLP)
   const extractArticles = (text: string): string[] => {
-    const words = text.toLowerCase().split(/\s+/);
+    const words = text
+      .split(/\s+/)
+      .map((word) => normalizeTokenForSyntaxLookup(word))
+      .filter((word) => word.length > 0);
     return Array.from(new Set(words.filter(w => ARTICLES.includes(w))));
   };
 
   // Extract prepositions - combine NLP with static list for better coverage
   const extractPrepositions = (text: string): string[] => {
     const nlpPrepositions = getUniqueWords('#Preposition');
-    const words = text.toLowerCase().split(/\s+/);
+    const words = text
+      .split(/\s+/)
+      .map((word) => normalizeTokenForSyntaxLookup(word))
+      .filter((word) => word.length > 0);
     const staticPrepositions = words.filter(w => PREPOSITIONS.includes(w));
     return Array.from(new Set([...nlpPrepositions, ...staticPrepositions]));
   };
 
   // Extract interjections from text using static list
   const extractInterjections = (text: string): string[] => {
-    const lowerText = text.toLowerCase();
-    const words = lowerText.split(/\s+/);
-    return Array.from(new Set(
-      INTERJECTIONS.filter(i => words.includes(i) || lowerText.includes(i + '!'))
-    ));
+    const normalizedWords = text
+      .split(/\s+/)
+      .map((word) => normalizeTokenForSyntaxLookup(word))
+      .filter((word) => word.length > 0);
+    const wordSet = new Set(normalizedWords);
+    return Array.from(new Set(INTERJECTIONS.filter(i => wordSet.has(i))));
   };
 
   const result: SyntaxAnalysis = {
@@ -331,6 +370,9 @@ export const analyzeSyntax = async (text: string): Promise<SyntaxAnalysis> => {
     conjunctions: getUniqueWords('#Conjunction'),
     articles: extractArticles(text),
     interjections: extractInterjections(text),
+    urls,
+    numbers,
+    hashtags,
   };
 
   // Add contractions to appropriate categories

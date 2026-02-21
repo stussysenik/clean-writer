@@ -42,6 +42,8 @@ const NUMBER_KEY_MAP: { [key: string]: keyof HighlightConfig } = {
         "9": "interjections",
 };
 
+const UTF8_DISPLAY_STORAGE_KEY = "clean_writer_utf8_display_enabled";
+
 const App: React.FC = () => {
         const [content, setContent] = useState<string>(() => {
                 try {
@@ -109,6 +111,9 @@ const App: React.FC = () => {
                 conjunctions: [],
                 articles: [],
                 interjections: [],
+                urls: [],
+                numbers: [],
+                hashtags: [],
         });
         const defaultHighlightConfig: HighlightConfig = {
                 nouns: true,
@@ -120,6 +125,9 @@ const App: React.FC = () => {
                 conjunctions: true,
                 articles: true,
                 interjections: true,
+                urls: true,
+                numbers: true,
+                hashtags: true,
         };
 
         const [highlightConfig, setHighlightConfig] = useState<HighlightConfig>(
@@ -151,6 +159,13 @@ const App: React.FC = () => {
         const fluidFontSize = 'clamp(18px, 10px + 1.1vw, 24px)';
         const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
         const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
+        const [utf8DisplayEnabled, setUtf8DisplayEnabled] = useState<boolean>(() => {
+                try {
+                        return localStorage.getItem(UTF8_DISPLAY_STORAGE_KEY) === "true";
+                } catch {
+                        return false;
+                }
+        });
 
         // Solo mode state
         const [soloMode, setSoloMode] = useState<keyof HighlightConfig | null>(
@@ -171,6 +186,9 @@ const App: React.FC = () => {
                                                         "conjunctions",
                                                         "articles",
                                                         "interjections",
+                                                        "urls",
+                                                        "numbers",
+                                                        "hashtags",
                                                 ];
                                         return validKeys.includes(
                                                 saved as keyof HighlightConfig,
@@ -409,6 +427,11 @@ const App: React.FC = () => {
 
         const currentFont =
                 FONT_OPTIONS.find((f) => f.id === fontId) || FONT_OPTIONS[0];
+        const displayFontFamily = useMemo(
+                () =>
+                        `${currentFont.family}, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", "PingFang SC", "Hiragino Sans", "Yu Gothic", "Malgun Gothic", sans-serif`,
+                [currentFont.family],
+        );
         const wordCount = countWords(content);
 
         // Compute effective highlight config when solo mode is active
@@ -426,6 +449,9 @@ const App: React.FC = () => {
                         conjunctions: soloMode === "conjunctions",
                         articles: soloMode === "articles",
                         interjections: soloMode === "interjections",
+                        urls: soloMode === "urls",
+                        numbers: soloMode === "numbers",
+                        hashtags: soloMode === "hashtags",
                 };
         }, [soloMode, highlightConfig]);
 
@@ -674,6 +700,18 @@ const App: React.FC = () => {
                 }
         }, [activePaletteId]);
 
+        // Persist UTF-8 display preference
+        useEffect(() => {
+                try {
+                        localStorage.setItem(
+                                UTF8_DISPLAY_STORAGE_KEY,
+                                String(utf8DisplayEnabled),
+                        );
+                } catch (e) {
+                        console.warn("Could not save UTF-8 display setting");
+                }
+        }, [utf8DisplayEnabled]);
+
         // Syntax analysis (runs in Web Worker for better performance)
         // Replaces data entirely on each analysis - no accumulation of stale words
         useEffect(() => {
@@ -720,6 +758,9 @@ const App: React.FC = () => {
                         conjunctions: [],
                         articles: [],
                         interjections: [],
+                        urls: [],
+                        numbers: [],
+                        hashtags: [],
                 });
                 setIsClearDialogOpen(false);
         };
@@ -759,13 +800,20 @@ const App: React.FC = () => {
                 saveSelection();
         }, [saveSelection]);
 
+        // Magic clean: strip all ~~...~~ markers, keeping inner text
+        const hasStrikethroughs = content.includes('~~');
+        const handleCleanStrikethroughs = useCallback(() => {
+                const cleaned = content.replace(/~~((?:[^~]|~(?!~))+)~~/g, '$1');
+                setContent(cleaned);
+        }, [content]);
+
         return (
                 <div
                         className="w-full h-[100dvh] flex flex-col relative overflow-x-hidden transition-colors duration-500"
                         style={{
                                 backgroundColor: currentTheme.background,
                                 color: currentTheme.text,
-                                fontFamily: currentFont.family,
+                                fontFamily: displayFontFamily,
                         }}
                 >
                         {/* Background Texture */}
@@ -797,6 +845,8 @@ const App: React.FC = () => {
                                 onSavePalette={handleSavePalette}
                                 hiddenThemeIds={hiddenThemeIds}
                                 onToggleThemeVisibility={toggleThemeVisibility}
+                                utf8DisplayEnabled={utf8DisplayEnabled}
+                                onToggleUtf8Display={setUtf8DisplayEnabled}
                         />
 
                         {/* Animated Trash Bin for deleting/hiding themes */}
@@ -885,7 +935,8 @@ const App: React.FC = () => {
                                                 }
                                                 fontSize={fluidFontSize}
                                                 maxWidth={maxWidth}
-                                                fontFamily={currentFont.family}
+                                                fontFamily={displayFontFamily}
+                                                showUtfEmojiCodes={utf8DisplayEnabled}
                                                 textareaRef={textareaRef}
                                                 hoveredCategory={hoveredCategory}
                                         />
@@ -923,16 +974,17 @@ const App: React.FC = () => {
                                 viewMode={viewMode}
                                 maxWidth={maxWidth}
                                 highlightConfig={highlightConfig}
+                                hasStrikethroughs={hasStrikethroughs}
                                 onToggleView={toggleViewMode}
                                 onStrikethrough={handleStrikethrough}
                                 onStrikethroughPointerDown={handleStrikethroughPointerDown}
+                                onCleanStrikethroughs={handleCleanStrikethroughs}
                                 onExport={handleExport}
                                 onClear={handleClearRequest}
                                 onWidthChange={setMaxWidth}
                                 onToggleHighlight={toggleHighlight}
                                 soloMode={soloMode}
                                 onSoloToggle={handleSoloToggle}
-                                hasSeenSyntaxPanel={hasSeenSyntaxPanel}
                         />
                 </div>
         );

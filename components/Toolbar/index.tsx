@@ -1,6 +1,5 @@
 import React from 'react';
 import { RisoTheme, ViewMode, HighlightConfig } from '../../types';
-import SyntaxToggles from './SyntaxToggles';
 import ActionButtons from './ActionButtons';
 
 interface ToolbarProps {
@@ -8,9 +7,11 @@ interface ToolbarProps {
   viewMode: ViewMode;
   maxWidth: number;
   highlightConfig: HighlightConfig;
+  hasStrikethroughs: boolean;
   onToggleView: () => void;
   onStrikethrough: () => void;
   onStrikethroughPointerDown?: () => void;
+  onCleanStrikethroughs: () => void;
   onExport: () => void;
   onClear: () => void;
   onWidthChange: (width: number) => void;
@@ -18,8 +19,6 @@ interface ToolbarProps {
   // Solo mode props
   soloMode?: keyof HighlightConfig | null;
   onSoloToggle?: (key: keyof HighlightConfig | null) => void;
-  // First-visit hint for mobile
-  hasSeenSyntaxPanel?: boolean;
 }
 
 const Toolbar: React.FC<ToolbarProps> = ({
@@ -27,16 +26,17 @@ const Toolbar: React.FC<ToolbarProps> = ({
   viewMode,
   maxWidth,
   highlightConfig,
+  hasStrikethroughs,
   onToggleView,
   onStrikethrough,
   onStrikethroughPointerDown,
+  onCleanStrikethroughs,
   onExport,
   onClear,
   onWidthChange,
   onToggleHighlight,
   soloMode = null,
   onSoloToggle,
-  hasSeenSyntaxPanel = true,
 }) => {
   return (
     <footer
@@ -49,41 +49,16 @@ const Toolbar: React.FC<ToolbarProps> = ({
     >
       {/* Left: Interactive Tools */}
       <div className="flex flex-col gap-4 pointer-events-auto w-full md:w-auto">
-        {/* Syntax Toggles Row - shown only on tablet (768-1023px), hidden on mobile and desktop */}
-        <div data-testid="toolbar-syntax-toggles" className="hidden md:block lg:hidden px-1">
-          <SyntaxToggles
-            theme={theme}
-            highlightConfig={highlightConfig}
-            onToggle={onToggleHighlight}
-            visible={viewMode === 'write'}
-            soloMode={soloMode}
-            onSoloToggle={onSoloToggle}
-          />
-        </div>
-
-        {/* Mobile Hint - shown on mobile when in write mode, hidden after panel has been seen */}
-        {viewMode === 'write' && !hasSeenSyntaxPanel && (
-          <div
-            className="flex md:hidden items-center gap-2 px-3 py-2 text-xs rounded-lg animate-pulse"
-            style={{
-              backgroundColor: `${theme.text}08`,
-              color: theme.text,
-              opacity: 0.6,
-            }}
-          >
-            <span>Syntax panel</span>
-            <span>→</span>
-          </div>
-        )}
-
         {/* Main Actions Row */}
         <ActionButtons
           theme={theme}
           viewMode={viewMode}
           maxWidth={maxWidth}
+          hasStrikethroughs={hasStrikethroughs}
           onToggleView={onToggleView}
           onStrikethrough={onStrikethrough}
           onStrikethroughPointerDown={onStrikethroughPointerDown}
+          onCleanStrikethroughs={onCleanStrikethroughs}
           onExport={onExport}
           onClear={onClear}
           onWidthChange={onWidthChange}

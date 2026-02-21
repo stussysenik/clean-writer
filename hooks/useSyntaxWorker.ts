@@ -57,6 +57,9 @@ export function useSyntaxWorker() {
           conjunctions: [],
           articles: [],
           interjections: [],
+          urls: [],
+          numbers: [],
+          hashtags: [],
         });
         return;
       }
