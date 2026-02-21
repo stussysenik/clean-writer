@@ -16,8 +16,9 @@ Complete documentation for Clean Typewriter Experience - a distraction-free writ
 8. [PWA Configuration](#pwa-configuration)
 9. [Testing](#testing)
 10. [Mobile Support](#mobile-support)
-11. [Golden Ratio Spacing](#golden-ratio-spacing)
-12. [Keyboard Shortcuts](#keyboard-shortcuts)
+11. [Build Identity & Deployment](#build-identity--deployment)
+12. [Golden Ratio Spacing](#golden-ratio-spacing)
+13. [Keyboard Shortcuts](#keyboard-shortcuts)
 
 ---
 
@@ -81,7 +82,6 @@ clean-writer/
 │   └── Toolbar/
 │       ├── index.tsx          # Toolbar composition
 │       ├── Icons/index.tsx    # Radix UI icon components
-│       ├── SyntaxToggles.tsx  # POS highlight toggles
 │       ├── SyntaxLegend.tsx   # Word type legend modal
 │       ├── ActionButtons.tsx  # Action buttons
 │       ├── ThemeSelector.tsx  # Theme picker
@@ -94,10 +94,15 @@ clean-writer/
 │   └── useResponsiveBreakpoint.ts # Desktop/mobile detection
 │
 ├── utils/
-│   └── colorContrast.ts       # WCAG contrast utilities
+│   ├── colorContrast.ts       # WCAG contrast utilities
+│   ├── syntaxPatterns.ts      # URL/number/hashtag matching + token normalization
+│   └── emojiUtils.ts          # Emoji to UTF codepoint rendering
 │
 ├── services/
 │   └── localSyntaxService.ts  # NLP syntax analysis
+│
+├── workers/
+│   └── syntaxWorker.ts        # Background syntax analysis worker
 │
 ├── public/
 │   ├── favicon.svg
@@ -151,6 +156,9 @@ interface RisoTheme {
     conjunction: string;
     article: string;
     interjection: string;
+    url: string;
+    number: string;
+    hashtag: string;
   };
   accent: string;         // Primary accent
   cursor: string;         // Blinking cursor color
@@ -159,7 +167,7 @@ interface RisoTheme {
 }
 ```
 
-### Available Themes (10 Total)
+### Available Themes (11 Total)
 
 | Theme | Background | Text | Accent | Vibe |
 |-------|------------|------|--------|------|
@@ -167,12 +175,13 @@ interface RisoTheme {
 | Blueprint | #0078BF | #FDFBF7 | #FFE800 | Technical |
 | Midnight | #1a1a2e | #e8e8e8 | #00d9ff | Dark purple |
 | Sepia | #f4ecd8 | #5c4b37 | #8b6914 | Vintage |
-| Ink | #0d0d0d | #f5f5f5 | #ff6b6b | High contrast |
 | Paper | #FFFFFF | #1A1A1A | #2563EB | Pure minimal |
 | Terminal | #0C0C0C | #00FF00 | #00FF00 | Hacker/dev |
 | Warmth | #FFF8F0 | #4A3728 | #D97706 | Cozy warm |
 | Ocean | #0F172A | #E2E8F0 | #38BDF8 | Deep calm |
 | Forest | #1A2F1A | #D4E5D4 | #4ADE80 | Nature green |
+| Flexoki Light | #FFFCF0 | #100F0F | #205EA6 | Accessible IDE |
+| Flexoki Dark | #100F0F | #FFFCF0 | #4385BE | Accessible IDE |
 
 ### Color Contrast
 
@@ -228,6 +237,14 @@ Font selection is saved to `clean_writer_font` in LocalStorage.
 | 8 | Articles | Text | Determiners |
 | 9 | Interjections | Chat | Expressions |
 
+### Quick Stats Extras
+
+| Type | Source | Notes |
+|------|--------|-------|
+| URLs | Regex extraction | Counted separately from lexical categories |
+| Numbers | Regex extraction | Handles decimals, separators, and units |
+| Hashtags | Unicode-aware regex | Independent counter + dedicated highlight color |
+
 ---
 
 ## Components
@@ -253,6 +270,7 @@ The main editor with forward-only typing:
 - Passive scroll event listener
 - Ghost cursor with theme-based color
 - Syntax highlighting via backdrop overlay
+- Optional UTF emoji display mode (`U+...`) without mutating stored content
 
 ### TouchButton
 
@@ -509,7 +527,7 @@ await panel.getByText('Nouns', { exact: true });
 ```
 
 **Data-testid Attributes:**
-- `desktop-syntax-panel` - Desktop left panel (≥1024px)
+- `desktop-syntax-panel` - Desktop right panel (≥1024px)
 - `mobile-fold-tab` - Mobile right fold-tab (<1024px)
 - `ghost-cursor` - Blinking cursor in typewriter
 - `strikethrough-btn` - Strikethrough toolbar button
@@ -517,8 +535,8 @@ await panel.getByText('Nouns', { exact: true });
 ### Critical Test Assertions
 
 ```typescript
-// Desktop: left panel ONLY, no mobile fold-tab
-test('Desktop shows left panel only', async ({ page }) => {
+// Desktop: right panel ONLY, no mobile fold-tab
+test('Desktop shows right panel only', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await expect(page.locator('[data-testid="desktop-syntax-panel"]')).toBeVisible();
   await expect(page.locator('[data-testid="mobile-fold-tab"]')).toHaveCount(0);
@@ -579,15 +597,36 @@ All interactive elements have:
 
 ### Responsive Breakpoints
 
-| Breakpoint | Font Size | Syntax Toggles | Side Panel |
-|------------|-----------|----------------|------------|
-| < 768px | 18px | Hidden (use side panel) | Pulsing hint for first-time users |
-| ≥ 768px | 24px | Full toolbar visible | Available |
+| Breakpoint | Font Size | Side Panel Behavior |
+|------------|-----------|---------------------|
+| < 1024px | Fluid clamp | Harmonica fold-tab / drag stages |
+| ≥ 1024px | Fluid clamp | Persistent desktop panel |
 
 ### Theme Selector
 
 - Mobile: 24x24px circles (wraps to 2 rows)
 - Desktop: 20x20px circles
+
+---
+
+## Build Identity & Deployment
+
+Build identity is surfaced in two places:
+- Settings footer (`settings-build-footer`)
+- Syntax panel footer (`panel-build-footer`)
+
+Format:
+- `Build vX.Y.Z · track`
+- `X.Y.Z` comes from `package.json` by default, or `VITE_APP_VERSION`
+- `track` comes from `VITE_BUILD_TRACK` (fallback: Vite mode)
+
+This keeps local and Vercel deployments comparable without commit hashes.
+
+Recommended Vercel envs:
+```bash
+VITE_APP_VERSION=1.6.0
+VITE_BUILD_TRACK=production
+```
 
 ---
 

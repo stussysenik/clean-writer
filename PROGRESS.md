@@ -6,6 +6,14 @@ Changelog and development progress for Clean Typewriter Experience t.
 
 ## Latest Release
 
+### v1.6.0 - UTF Emoji Mode, Hashtag Stats, and Build Identity
+
+**Release Date:** February 21, 2026
+
+Shipped UTF emoji display mode, hashtag quick stats, punctuation-safe syntax normalization, and deployment-friendly build identity labels in both settings and panel footer.
+
+---
+
 ### v1.5.0 - Golden Ratio Spacing & UI Polish
 
 **Release Date:** February 2025
@@ -39,6 +47,46 @@ Major update adding extended theme colors, mobile-first touch UX, and full PWA s
 ---
 
 ## Changelog
+
+### ✅ Phase 10: UTF Emoji Mode, Hashtag Stats, Build Identity
+
+Implemented consistency and deployment-traceability upgrades across syntax analysis, rendering, and settings.
+
+**What shipped:**
+- UTF Emoji Display toggle in settings:
+  - `Off`: native emoji glyphs
+  - `On`: `U+...` codepoint display
+  - Stored content remains unchanged
+- Hashtag category end-to-end:
+  - Detection + highlighting + counters + theme color controls
+  - Quick stats includes dedicated hashtag tile
+- Build identity system:
+  - `Build vX.Y.Z · track` surfaced in settings + syntax panel footer
+  - Version from `package.json` (or `VITE_APP_VERSION`)
+  - Track from `VITE_BUILD_TRACK` (fallback to build mode)
+- Highlight/count correctness:
+  - Shared token normalization for worker analysis, local analysis, counting, and rendering
+  - Fixed punctuation-attached words (e.g. `BLUE, red, orange`) mismatch
+- Responsive polish:
+  - Removed legacy tablet bottom syntax strip
+  - Quick stats collapse-state behavior tightened for all-zero extras
+
+**Files added:**
+- `utils/syntaxPatterns.ts`
+- `types/build-env.d.ts`
+- `tests/e2e/utf8-hashtag-wordism.spec.ts`
+
+**Key files modified:**
+- `components/Typewriter.tsx`
+- `services/localSyntaxService.ts`
+- `workers/syntaxWorker.ts`
+- `components/UnifiedSyntaxPanel/PanelBody.tsx`
+- `components/ThemeCustomizer/index.tsx`
+- `constants.ts`
+- `vite.config.ts`
+- `tests/e2e/syntax-analysis.spec.ts`
+
+---
 
 ### ✅ Phase 9: Golden Ratio Spacing & UI Polish
 
