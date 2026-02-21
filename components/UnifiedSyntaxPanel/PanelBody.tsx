@@ -335,7 +335,7 @@ const PanelBody: React.FC<PanelBodyProps> = ({
       className="font-mono text-sm"
       style={{
         color: theme.text,
-        width: 'min(320px, calc(100vw - 84px))',
+        width: 'min(320px, calc(100vw - 72px))',
         minWidth: '260px',
       }}
     >
@@ -406,7 +406,7 @@ const PanelBody: React.FC<PanelBodyProps> = ({
             return (
               <div
                 key={item.key}
-                className={`absolute left-0 right-0 flex items-center justify-between py-2 px-2 -mx-2 rounded-lg select-none ${
+                className={`absolute left-0 right-0 flex items-center justify-between py-2 px-2.5 rounded-lg select-none ${
                   isBeingDragged ? 'z-50 cursor-grabbing' : 'z-10 cursor-grab'
                 }`}
                 style={{

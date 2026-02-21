@@ -800,10 +800,10 @@ const App: React.FC = () => {
                 saveSelection();
         }, [saveSelection]);
 
-        // Magic clean: strip all ~~...~~ markers, keeping inner text
+        // Magic clean: remove all strikethrough markers while preserving text
         const hasStrikethroughs = content.includes('~~');
         const handleCleanStrikethroughs = useCallback(() => {
-                const cleaned = content.replace(/~~((?:[^~]|~(?!~))+)~~/g, '$1');
+                const cleaned = content.replace(/~~/g, '');
                 setContent(cleaned);
         }, [content]);
 
