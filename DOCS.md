@@ -16,9 +16,10 @@ Complete documentation for Clean Typewriter Experience - a distraction-free writ
 8. [PWA Configuration](#pwa-configuration)
 9. [Testing](#testing)
 10. [Mobile Support](#mobile-support)
-11. [Build Identity & Deployment](#build-identity--deployment)
-12. [Golden Ratio Spacing](#golden-ratio-spacing)
-13. [Keyboard Shortcuts](#keyboard-shortcuts)
+11. [Song Mode](#song-mode)
+12. [Build Identity & Deployment](#build-identity--deployment)
+13. [Golden Ratio Spacing](#golden-ratio-spacing)
+14. [Keyboard Shortcuts](#keyboard-shortcuts)
 
 ---
 
@@ -244,6 +245,14 @@ Font selection is saved to `clean_writer_font` in LocalStorage.
 | URLs | Regex extraction | Counted separately from lexical categories |
 | Numbers | Regex extraction | Handles decimals, separators, and units |
 | Hashtags | Unicode-aware regex | Independent counter + dedicated highlight color |
+
+**Interactions:**
+
+| Action | Effect |
+|--------|--------|
+| **Single click** | Toggle category highlighting on/off |
+| **Double-click** | Solo mode — only this category highlighted |
+| **Hover** | Preview — category's words glow in editor |
 
 ---
 
@@ -619,6 +628,111 @@ When mobile focus is lost (for example keyboard collapse or toolbar tap), the la
 
 ---
 
+## Song Mode
+
+Song Mode provides rhyme and syllable analysis for lyrics and poetry. Toggle it via the **Song** pill button in the panel header.
+
+### Quick Counts Grid
+
+Three-column summary at the top of the song section:
+
+| Metric | Source |
+|--------|--------|
+| Syllables | Total syllable count across all lines |
+| Lines | Non-empty line count |
+| Rhymes | Number of distinct rhyme groups |
+
+### Rhyme Scheme Display
+
+Shows the detected rhyme pattern as colored letters (e.g., **AABBA**) with a label:
+
+| Pattern | Label |
+|---------|-------|
+| AABB | Couplets |
+| ABAB | Alternating |
+| ABBA | Enclosed |
+| AAAA | Monorhyme |
+| Mixed | Free Verse |
+
+Each letter is colored to match its rhyme group.
+
+### Rhyme Groups
+
+Lists each rhyme group with:
+- Color dot matching the rhyme palette
+- Up to 5 example words ("+N" if more)
+- Count badge
+- Approximate marker (~) when rhyme was detected via suffix heuristic rather than CMU dictionary
+
+Sorted by group size (largest first). Only groups with 2+ unique words are shown.
+
+**Interactions (mirrors word type model):**
+
+| Action | Effect |
+|--------|--------|
+| **Hover** | Temporary preview — group's words brighten in editor |
+| **Single click** | Toggle group highlighting on/off |
+| **Double-click** | Solo mode — only this group visible, all others dimmed |
+
+Visual states:
+- **Disabled** (toggled off): row at 35% opacity, editor highlights removed
+- **Focused** (solo'd): ring highlight on row, full editor highlight
+- **Dimmed** (another group solo'd): 35% opacity + grayscale, editor highlights at low opacity
+
+### Section Headings
+
+The song panel has two collapsible sections:
+
+| Section | Contains | Default State |
+|---------|----------|---------------|
+| **RHYMES** | Rhyme scheme + rhyme groups | Expanded |
+| **LINES** | Per-line syllable breakdown | Collapsed |
+
+Collapse state is persisted to localStorage (`clean_writer_song_rhymes_collapsed`, `clean_writer_song_lines_collapsed`). Style matches BREAKDOWN and QUICK STATS headers (uppercase, tracking-wider, chevron indicator).
+
+### Per-Line Syllable Breakdown
+
+Scrollable list showing each line's text preview and syllable count:
+- **Density coloring:** lines with >70% of the maximum syllable count use the accent color
+- **Opacity scaling:** 0.35 (lowest) to 0.9 (highest) based on relative count
+- Bottom fade gradient appears when more than 12 lines
+
+### Syllable Annotation Toggle
+
+Click the **eye icon** next to the "Song" header to overlay syllable counts on words in the editor. Annotations appear below each word, colored by rhyme group. The preference persists across sessions.
+
+### Rhyme Detection
+
+Two detection methods, used in priority order:
+
+1. **CMU Pronouncing Dictionary** — phoneme-based key from last stressed vowel onward (most accurate)
+2. **Suffix heuristic** — vowel suffix matching (fallback, marked with ~)
+
+### Syllable Counting
+
+1. CMU dictionary lookup (phoneme vowel count)
+2. 200+ common word overrides
+3. Heuristic fallback: count vowel groups, subtract silent-e (minimum 1)
+
+### Rhyme Color Palette
+
+8 OKLCH-uniform colors (L=0.65, C=0.155):
+
+| Index | Color | Hex |
+|-------|-------|-----|
+| 0 | Red | #de6457 |
+| 1 | Blue | #2895e7 |
+| 2 | Green | #859b00 |
+| 3 | Orange | #d86d28 |
+| 4 | Purple | #917be5 |
+| 5 | Teal | #00ac9e |
+| 6 | Pink | #d3629c |
+| 7 | Yellow | #b78800 |
+
+Colors are customizable via the Theme Customizer.
+
+---
+
 ## Build Identity & Deployment
 
 Build metadata is surfaced in two focused places:
@@ -707,7 +821,9 @@ export const GOLDEN_SCALE = {
 | 8 | Toggle Articles |
 | 9 | Toggle Interjections |
 
-*Note: Shortcuts only work when not typing in the editor.*
+| Cmd+Shift+Alt+O | Toggle overlap debug overlay |
+
+*Note: Number shortcuts only work when not typing in the editor.*
 
 ---
 
@@ -723,6 +839,8 @@ export const GOLDEN_SCALE = {
 | `seen_syntax_panel` | First-visit tracking for side panel |
 | `clean_writer_word_type_order` | Custom word type ordering |
 | `clean_writer_breakdown_collapsed` | Breakdown section collapsed state |
+| `clean_writer_song_rhymes_collapsed` | Song RHYMES section collapsed state |
+| `clean_writer_song_lines_collapsed` | Song LINES section collapsed state |
 
 ---
 

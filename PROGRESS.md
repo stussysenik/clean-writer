@@ -6,6 +6,22 @@ Changelog and development progress for Clean Typewriter Experience t.
 
 ## Latest Release
 
+### v1.9.0 - Interactive Rhyme View, Quick Stats Interactions, Section Headings
+
+**Release Date:** February 22, 2026
+
+Shipped full rhyme group interaction model (hover preview, single-click toggle, double-click solo), added hover + double-click to Quick Stats extras, collapsible RHYMES and LINES sections in song panel, and enabled overlap debug in production.
+
+---
+
+### v1.8.0 - Song Mode, Tufte Polish, and Theme Dot Clipping Fix
+
+**Release Date:** February 22, 2026
+
+Shipped Song Mode with CMU-powered rhyme/syllable analysis, Tufte-inspired panel redesign with tabular alignment and hairline separators, and fixed theme selector dot clipping.
+
+---
+
 ### v1.7.0 - Locked Selection UX, Clean Stats UI, and Build Metadata Placement
 
 **Release Date:** February 21, 2026
@@ -55,6 +71,75 @@ Major update adding extended theme colors, mobile-first touch UX, and full PWA s
 ---
 
 ## Changelog
+
+### ✅ Phase 13: Interactive Rhyme View, Quick Stats Interactions, Section Headings
+
+Full interaction model for rhyme groups and quick stats, plus collapsible song panel sections.
+
+**What shipped:**
+- Rhyme group interaction model (mirrors word type pattern):
+  - **Hover**: mouse over rhyme group row → words brighten in editor
+  - **Single click**: toggle group highlighting on/off
+  - **Double-click**: solo mode — only that group visible, rest dimmed in panel + editor
+- Quick Stats extras (URLs, Numbers, Hashtags) now have:
+  - **Double-click** → solo mode (previously single-click only)
+  - **Hover** → category preview in editor
+- Collapsible song panel sections:
+  - **RHYMES** heading — wraps rhyme scheme + rhyme groups (default: expanded)
+  - **LINES** heading — wraps per-line syllable breakdown (default: collapsed)
+  - Collapse state persisted to localStorage
+  - Same visual style as BREAKDOWN and QUICK STATS headers
+- Typewriter rendering respects focused/hovered/disabled rhyme keys:
+  - Disabled groups: highlight removed entirely
+  - Unfocused groups (when another is solo'd): dimmed to low opacity
+  - Hovered group: full highlight regardless of focus state
+- Overlap debug shortcut (Cmd+Shift+Alt+O) enabled in production builds
+- TouchButton gains onMouseEnter/onMouseLeave props
+
+**Key files modified:**
+- `App.tsx` — rhyme interaction state, overlap debug DEV gate removed
+- `components/UnifiedSyntaxPanel/PanelBody.tsx` — interactive rhyme rows, section headings
+- `components/Typewriter.tsx` — conditional rhyme rendering
+- `components/UnifiedSyntaxPanel/index.tsx` — prop plumbing
+- `components/UnifiedSyntaxPanel/DesktopSyntaxPanel.tsx` — prop plumbing
+- `components/TouchButton.tsx` — onMouseEnter/onMouseLeave props
+
+### ✅ Phase 12: Song Mode, Tufte Polish, and Theme Dot Clipping Fix
+
+Implemented Song Mode with full rhyme/syllable analysis and a Tufte-inspired panel redesign.
+
+**What shipped:**
+- Song Mode toggle in panel header:
+  - Quick counts grid (syllables, lines, rhymes)
+  - Rhyme scheme display with colored letters (AABB, ABAB, ABBA, Free Verse detection)
+  - Rhyme groups with count badges and approximate (~) markers
+  - Per-line syllable breakdown with density coloring
+  - Syllable annotation toggle (eye icon) overlays counts on words in editor
+- CMU Pronouncing Dictionary integration:
+  - Phoneme-based rhyme detection from last stressed vowel
+  - Accurate syllable counting with fallback heuristics
+  - 200+ common word overrides for edge cases
+- Song analysis via Web Worker (200ms debounce, 5s timeout)
+- Tufte-inspired panel redesign:
+  - Hairline separators between sections
+  - Tabular-nums alignment for all count columns
+  - Fixed-width approximate marker slots in rhyme groups
+  - Right-aligned per-line syllable counts
+  - Fixed-width word type count column
+- Theme selector dot clipping fix:
+  - Outer padding 5px → 8px (golden ratio xs)
+  - max-w/max-h adjusted to preserve content area
+- Overlap debug badge hidden (keyboard shortcuts retained)
+
+**Key files modified:**
+- `components/UnifiedSyntaxPanel/PanelBody.tsx`
+- `components/Toolbar/ThemeSelector.tsx`
+- `components/Typewriter.tsx`
+- `services/songAnalysisService.ts`
+- `workers/syntaxWorker.ts`
+- `hooks/useSyntaxWorker.ts`
+- `utils/overlapDebug.ts`
+- `App.tsx`
 
 ### ✅ Phase 11: Locked Selection, Quick Stats Simplification, and Visual Cleanup
 
@@ -478,6 +563,10 @@ Fixed the broken origami paper-fold animation and added UX improvements.
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 1.9.0 | Feb 2026 | Interactive rhyme view, quick stats interactions, section headings |
+| 1.8.0 | Feb 2026 | Song Mode, Tufte panel polish, theme dot clipping fix |
+| 1.7.0 | Feb 2026 | Locked selection UX, clean stats UI, build metadata placement |
+| 1.6.0 | Feb 2026 | UTF emoji mode, hashtag stats, build identity |
 | 1.5.0 | Feb 2025 | Golden ratio spacing, theme-aware UI, colored toggle |
 | 1.4.0 | Feb 2025 | Smooth harmonica gesture, Web Worker NLP, O(1) lookups |
 | 1.3.0 | Feb 2025 | Right panel position, 3-stage harmonica UX |
