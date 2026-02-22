@@ -1,5 +1,5 @@
-import React from 'react';
-import { RisoTheme } from '../../types';
+import React from "react";
+import { RisoTheme } from "../../types";
 
 interface FoldContainerProps {
   theme: RisoTheme;
@@ -20,27 +20,27 @@ const FoldContainer: React.FC<FoldContainerProps> = ({
       style={{
         // Glassmorphism: semi-transparent background with blur
         backgroundColor: `${theme.background}E6`, // ~90% opacity
-        backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)',
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
         // Glass border effect
         border: `1px solid ${theme.text}15`,
-        borderRight: 'none',
+        borderRight: "none",
         // Slide animation
-        transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
+        transform: isOpen ? "translateX(0)" : "translateX(100%)",
         transition: reducedMotion
-          ? 'opacity 200ms ease'
-          : 'transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+          ? "opacity 200ms ease"
+          : "transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1)",
         opacity: reducedMotion ? (isOpen ? 1 : 0) : 1,
         // Enhanced shadow with glass effect
         boxShadow: isOpen
           ? `-8px 0 32px rgba(0,0,0,0.15), -2px 0 8px rgba(0,0,0,0.08), inset 0 0 0 1px ${theme.text}08`
-          : 'none',
+          : "none",
         // Mobile viewport constraints
-        maxHeight: 'calc(100dvh - 100px)',
-        overflowY: 'auto',
-        WebkitOverflowScrolling: 'touch',
+        maxHeight: "calc(100dvh - 100px)",
+        overflowY: "auto",
+        WebkitOverflowScrolling: "touch",
         // Prevent closed panel from intercepting pointer events
-        pointerEvents: isOpen ? 'auto' : 'none',
+        pointerEvents: isOpen ? "auto" : "none",
       }}
     >
       {/* Paper grain texture */}

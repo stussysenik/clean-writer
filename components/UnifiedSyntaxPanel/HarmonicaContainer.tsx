@@ -1,7 +1,7 @@
-import React, { useRef, useEffect, useMemo } from 'react';
-import { gsap } from 'gsap';
-import { RisoTheme } from '../../types';
-import { HarmonicaStage } from '../../hooks/useHarmonicaDrag';
+import React, { useRef, useEffect, useMemo } from "react";
+import { gsap } from "gsap";
+import { RisoTheme } from "../../types";
+import { HarmonicaStage } from "../../hooks/useHarmonicaDrag";
 
 interface HarmonicaContainerProps {
   theme: RisoTheme;
@@ -18,7 +18,10 @@ interface HarmonicaContainerProps {
 }
 
 // Stage dimensions
-const STAGE_DIMENSIONS: Record<HarmonicaStage, { width: number; height: number | 'auto' }> = {
+const STAGE_DIMENSIONS: Record<
+  HarmonicaStage,
+  { width: number; height: number | "auto" }
+> = {
   closed: { width: 56, height: 80 },
   peek: { width: 140, height: 80 },
   expand: { width: 140, height: 180 },
@@ -44,22 +47,24 @@ const HarmonicaContainer: React.FC<HarmonicaContainerProps> = ({
     if (!isDragging) return current;
 
     // During drag, interpolate towards next stage
-    const stageOrder: HarmonicaStage[] = ['closed', 'peek', 'expand', 'full'];
+    const stageOrder: HarmonicaStage[] = ["closed", "peek", "expand", "full"];
     const currentIndex = stageOrder.indexOf(stage);
     const nextIndex = Math.min(currentIndex + 1, stageOrder.length - 1);
     const nextStage = stageOrder[nextIndex];
     const next = STAGE_DIMENSIONS[nextStage];
 
     // Apply resistance effect before 50% threshold
-    const easeProgress = dragProgress < 0.5
-      ? dragProgress * 0.3 // Resistance: only 30% of drag translates to expansion
-      : 0.15 + (dragProgress - 0.5) * 1.7; // After 50%, accelerate
+    const easeProgress =
+      dragProgress < 0.5
+        ? dragProgress * 0.3 // Resistance: only 30% of drag translates to expansion
+        : 0.15 + (dragProgress - 0.5) * 1.7; // After 50%, accelerate
 
     return {
       width: current.width + (next.width - current.width) * easeProgress,
-      height: typeof current.height === 'number' && typeof next.height === 'number'
-        ? current.height + (next.height - current.height) * easeProgress
-        : current.height,
+      height:
+        typeof current.height === "number" && typeof next.height === "number"
+          ? current.height + (next.height - current.height) * easeProgress
+          : current.height,
     };
   }, [stage, isDragging, dragProgress]);
 
@@ -73,15 +78,21 @@ const HarmonicaContainer: React.FC<HarmonicaContainerProps> = ({
       // Instant transition for reduced motion
       gsap.set(containerRef.current, {
         width: targetDimensions.width,
-        height: typeof targetDimensions.height === 'number' ? targetDimensions.height : 'auto',
+        height:
+          typeof targetDimensions.height === "number"
+            ? targetDimensions.height
+            : "auto",
       });
     } else {
       // Mechanical spring animation with overshoot
       gsap.to(containerRef.current, {
         width: targetDimensions.width,
-        height: typeof targetDimensions.height === 'number' ? targetDimensions.height : 'auto',
+        height:
+          typeof targetDimensions.height === "number"
+            ? targetDimensions.height
+            : "auto",
         duration: 0.35,
-        ease: 'back.out(1.2)', // Overshoot for mechanical feel
+        ease: "back.out(1.2)", // Overshoot for mechanical feel
       });
     }
 
@@ -94,14 +105,15 @@ const HarmonicaContainer: React.FC<HarmonicaContainerProps> = ({
 
     gsap.set(containerRef.current, {
       width: dimensions.width,
-      height: typeof dimensions.height === 'number' ? dimensions.height : 'auto',
+      height:
+        typeof dimensions.height === "number" ? dimensions.height : "auto",
     });
   }, [dimensions, isDragging]);
 
   // Determine which content sections to show (mutually exclusive to prevent overlaps)
-  const showPeek = stage === 'peek';
-  const showExpand = stage === 'expand';
-  const showFull = stage === 'full';
+  const showPeek = stage === "peek";
+  const showExpand = stage === "expand";
+  const showFull = stage === "full";
 
   return (
     <div
@@ -110,25 +122,32 @@ const HarmonicaContainer: React.FC<HarmonicaContainerProps> = ({
       style={{
         width: isDragging ? dimensions.width : STAGE_DIMENSIONS[stage].width,
         height: isDragging
-          ? (typeof dimensions.height === 'number' ? dimensions.height : 'auto')
-          : (typeof STAGE_DIMENSIONS[stage].height === 'number' ? STAGE_DIMENSIONS[stage].height : 'auto'),
+          ? typeof dimensions.height === "number"
+            ? dimensions.height
+            : "auto"
+          : typeof STAGE_DIMENSIONS[stage].height === "number"
+            ? STAGE_DIMENSIONS[stage].height
+            : "auto",
         // Glassmorphism
-        backgroundColor: stage === 'closed' ? 'transparent' : `${theme.background}E6`,
-        backdropFilter: stage === 'closed' ? 'none' : 'blur(10px)',
-        WebkitBackdropFilter: stage === 'closed' ? 'none' : 'blur(10px)',
-        border: stage === 'closed' ? 'none' : `1px solid ${theme.text}15`,
-        borderRight: stage === 'closed' ? 'none' : 'none',
-        boxShadow: stage !== 'closed'
-          ? `-8px 0 32px rgba(0,0,0,0.15), -2px 0 8px rgba(0,0,0,0.08), inset 0 0 0 1px ${theme.text}08`
-          : 'none',
+        backgroundColor:
+          stage === "closed" ? "transparent" : `${theme.background}E6`,
+        backdropFilter: stage === "closed" ? "none" : "blur(10px)",
+        WebkitBackdropFilter: stage === "closed" ? "none" : "blur(10px)",
+        border: stage === "closed" ? "none" : `1px solid ${theme.text}15`,
+        borderRight: stage === "closed" ? "none" : "none",
+        boxShadow:
+          stage !== "closed"
+            ? `-8px 0 32px rgba(0,0,0,0.15), -2px 0 8px rgba(0,0,0,0.08), inset 0 0 0 1px ${theme.text}08`
+            : "none",
         // Resistance visual feedback during drag
-        transform: isDragging && dragProgress < 0.5
-          ? `scale(${1 - dragProgress * 0.02})`
-          : 'scale(1)',
-        transition: isDragging ? 'none' : 'transform 0.2s ease',
+        transform:
+          isDragging && dragProgress < 0.5
+            ? `scale(${1 - dragProgress * 0.02})`
+            : "scale(1)",
+        transition: isDragging ? "none" : "transform 0.2s ease",
       }}
     >
-      {stage !== 'closed' && (
+      {stage !== "closed" && (
         <>
           {/* Paper grain texture */}
           <div
@@ -173,8 +192,8 @@ const HarmonicaContainer: React.FC<HarmonicaContainerProps> = ({
             right: STAGE_DIMENSIONS.closed.width,
             height: STAGE_DIMENSIONS.peek.height,
             opacity: showPeek ? 1 : 0,
-            visibility: showPeek ? 'visible' : 'hidden',
-            pointerEvents: showPeek ? 'auto' : 'none',
+            visibility: showPeek ? "visible" : "hidden",
+            pointerEvents: showPeek ? "auto" : "none",
           }}
         >
           {children.peek}
@@ -187,10 +206,12 @@ const HarmonicaContainer: React.FC<HarmonicaContainerProps> = ({
             left: 0,
             right: STAGE_DIMENSIONS.closed.width,
             top: STAGE_DIMENSIONS.peek.height,
-            height: (STAGE_DIMENSIONS.expand.height as number) - (STAGE_DIMENSIONS.peek.height as number),
+            height:
+              (STAGE_DIMENSIONS.expand.height as number) -
+              (STAGE_DIMENSIONS.peek.height as number),
             opacity: showExpand ? 1 : 0,
-            visibility: showExpand ? 'visible' : 'hidden',
-            pointerEvents: showExpand ? 'auto' : 'none',
+            visibility: showExpand ? "visible" : "hidden",
+            pointerEvents: showExpand ? "auto" : "none",
           }}
         >
           {children.expand}
@@ -206,11 +227,11 @@ const HarmonicaContainer: React.FC<HarmonicaContainerProps> = ({
             top: 0,
             bottom: 0,
             opacity: showFull ? 1 : 0,
-            visibility: showFull ? 'visible' : 'hidden',
-            pointerEvents: showFull ? 'auto' : 'none',
-            overflowY: 'auto',
-            WebkitOverflowScrolling: 'touch',
-            overscrollBehavior: 'contain',
+            visibility: showFull ? "visible" : "hidden",
+            pointerEvents: showFull ? "auto" : "none",
+            overflowY: "auto",
+            WebkitOverflowScrolling: "touch",
+            overscrollBehavior: "contain",
           }}
         >
           {children.full}
@@ -218,7 +239,7 @@ const HarmonicaContainer: React.FC<HarmonicaContainerProps> = ({
       </div>
 
       {/* Fold crease shadow at the hinge (right edge) */}
-      {stage !== 'closed' && (
+      {stage !== "closed" && (
         <div
           className="absolute right-0 top-0 bottom-0 w-2 pointer-events-none"
           style={{

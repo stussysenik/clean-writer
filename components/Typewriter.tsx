@@ -1,13 +1,20 @@
-import React, { useRef, useEffect, useCallback, useState, useMemo } from 'react';
-import { RisoTheme, SyntaxSets, HighlightConfig } from '../types';
-import { useIMEComposition } from '../hooks/useIMEComposition';
+import React, {
+  useRef,
+  useEffect,
+  useCallback,
+  useState,
+  useMemo,
+} from "react";
+import { RisoTheme, SyntaxSets, HighlightConfig, SongAnalysis } from "../types";
+import { useIMEComposition } from "../hooks/useIMEComposition";
 import {
   isHashtagToken,
   isNumberToken,
   isUrlToken,
   normalizeTokenForSyntaxLookup,
-} from '../utils/syntaxPatterns';
-import { replaceEmojisWithUTF } from '../utils/emojiUtils';
+} from "../utils/syntaxPatterns";
+import { replaceEmojisWithUTF } from "../utils/emojiUtils";
+import { isDarkBackground } from "../utils/colorContrast";
 
 interface TypewriterProps {
   content: string;
@@ -22,27 +29,90 @@ interface TypewriterProps {
   textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
   hoveredCategory?: keyof HighlightConfig | null;
   persistedSelection?: { start: number; end: number } | null;
+  songMode?: boolean;
+  songData?: SongAnalysis | null;
+  rhymeColors?: readonly string[];
+  showSyllableAnnotations?: boolean;
+  rhymeHighlightRadius?: number;
+  rhymeBoldEnabled?: boolean;
+  focusedRhymeKey?: string | null;
+  hoveredRhymeKey?: string | null;
+  disabledRhymeKeys?: Set<string>;
 }
 
 // Map from HighlightConfig key to syntax category key for color lookup
-const HIGHLIGHT_TO_COLOR_KEY: Record<keyof HighlightConfig, keyof RisoTheme['highlight']> = {
-  nouns: 'noun',
-  pronouns: 'pronoun',
-  verbs: 'verb',
-  adjectives: 'adjective',
-  adverbs: 'adverb',
-  prepositions: 'preposition',
-  conjunctions: 'conjunction',
-  articles: 'article',
-  interjections: 'interjection',
-  urls: 'url',
-  numbers: 'number',
-  hashtags: 'hashtag',
+const HIGHLIGHT_TO_COLOR_KEY: Record<
+  keyof HighlightConfig,
+  keyof RisoTheme["highlight"]
+> = {
+  nouns: "noun",
+  pronouns: "pronoun",
+  verbs: "verb",
+  adjectives: "adjective",
+  adverbs: "adverb",
+  prepositions: "preposition",
+  conjunctions: "conjunction",
+  articles: "article",
+  interjections: "interjection",
+  urls: "url",
+  numbers: "number",
+  hashtags: "hashtag",
 };
 
+// Known non-text keys to reject (control, navigation, function keys).
+// Everything else is treated as text input, which correctly handles
+// emoji (multi-codepoint), CJK, and other Unicode input.
+const NON_TEXT_KEYS = new Set([
+  "Backspace",
+  "Delete",
+  "Tab",
+  "Escape",
+  "Enter",
+  "ArrowUp",
+  "ArrowDown",
+  "ArrowLeft",
+  "ArrowRight",
+  "Home",
+  "End",
+  "PageUp",
+  "PageDown",
+  "Insert",
+  "PrintScreen",
+  "ScrollLock",
+  "Pause",
+  "CapsLock",
+  "NumLock",
+  "Shift",
+  "Control",
+  "Alt",
+  "Meta",
+  "ContextMenu",
+  "F1",
+  "F2",
+  "F3",
+  "F4",
+  "F5",
+  "F6",
+  "F7",
+  "F8",
+  "F9",
+  "F10",
+  "F11",
+  "F12",
+  "AudioVolumeUp",
+  "AudioVolumeDown",
+  "AudioVolumeMute",
+  "MediaPlayPause",
+  "MediaTrackNext",
+  "MediaTrackPrevious",
+  "MediaStop",
+  "Unidentified",
+  "Process",
+  "Dead",
+]);
+
 function isTextInputKey(key: string): boolean {
-  if (key.length === 1) return true;
-  return key.length === 2 && /[\uD800-\uDBFF][\uDC00-\uDFFF]/.test(key);
+  return !NON_TEXT_KEYS.has(key);
 }
 
 const Typewriter: React.FC<TypewriterProps> = ({
@@ -58,6 +128,15 @@ const Typewriter: React.FC<TypewriterProps> = ({
   textareaRef: externalTextareaRef,
   hoveredCategory = null,
   persistedSelection = null,
+  songMode = false,
+  songData = null,
+  rhymeColors = [],
+  showSyllableAnnotations = false,
+  rhymeHighlightRadius = 4,
+  rhymeBoldEnabled = true,
+  focusedRhymeKey = null,
+  hoveredRhymeKey = null,
+  disabledRhymeKeys,
 }) => {
   const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
@@ -80,7 +159,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
   const lastWordColor = useMemo(() => {
     if (!content) return theme.cursor;
 
-    const rawLastToken = content.trim().split(/\s+/).pop() || '';
+    const rawLastToken = content.trim().split(/\s+/).pop() || "";
     const lastWord = normalizeTokenForSyntaxLookup(rawLastToken);
 
     if (!lastWord) return theme.cursor;
@@ -89,16 +168,28 @@ const Typewriter: React.FC<TypewriterProps> = ({
     if (highlightConfig.articles && syntaxSets.articles.has(lastWord)) {
       return theme.highlight.article;
     }
-    if (highlightConfig.urls && (syntaxSets.urls.has(lastWord) || isUrlToken(lastWord))) {
+    if (
+      highlightConfig.urls &&
+      (syntaxSets.urls.has(lastWord) || isUrlToken(lastWord))
+    ) {
       return theme.highlight.url;
     }
-    if (highlightConfig.hashtags && (syntaxSets.hashtags.has(lastWord) || isHashtagToken(lastWord))) {
+    if (
+      highlightConfig.hashtags &&
+      (syntaxSets.hashtags.has(lastWord) || isHashtagToken(lastWord))
+    ) {
       return theme.highlight.hashtag;
     }
-    if (highlightConfig.numbers && (syntaxSets.numbers.has(lastWord) || isNumberToken(lastWord))) {
+    if (
+      highlightConfig.numbers &&
+      (syntaxSets.numbers.has(lastWord) || isNumberToken(lastWord))
+    ) {
       return theme.highlight.number;
     }
-    if (highlightConfig.interjections && syntaxSets.interjections.has(lastWord)) {
+    if (
+      highlightConfig.interjections &&
+      syntaxSets.interjections.has(lastWord)
+    ) {
       return theme.highlight.interjection;
     }
     if (highlightConfig.prepositions && syntaxSets.prepositions.has(lastWord)) {
@@ -129,7 +220,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
   // Blink effect for the ghost cursor
   useEffect(() => {
     const interval = setInterval(() => {
-      setGhostVisible(v => !v);
+      setGhostVisible((v) => !v);
     }, 530);
     return () => clearInterval(interval);
   }, []);
@@ -141,7 +232,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
     }
 
     // 1. Strictly Disable Deletion
-    if (e.key === 'Backspace' || e.key === 'Delete') {
+    if (e.key === "Backspace" || e.key === "Delete") {
       e.preventDefault();
       return;
     }
@@ -150,10 +241,10 @@ const Typewriter: React.FC<TypewriterProps> = ({
     if (e.ctrlKey || e.metaKey || e.altKey) return;
 
     // 3. Handle character input (strictly append to end)
-    if (isTextInputKey(e.key) || e.key === 'Enter') {
+    if (isTextInputKey(e.key) || e.key === "Enter") {
       e.preventDefault(); // Stop default insertion at cursor position
 
-      const char = e.key === 'Enter' ? '\n' : e.key;
+      const char = e.key === "Enter" ? "\n" : e.key;
 
       // Force append to the very end
       const newContent = content + char;
@@ -169,7 +260,9 @@ const Typewriter: React.FC<TypewriterProps> = ({
   };
 
   // Handle IME composition end - append the composed text
-  const handleCompositionEndWithAppend = (e: React.CompositionEvent<HTMLTextAreaElement>) => {
+  const handleCompositionEndWithAppend = (
+    e: React.CompositionEvent<HTMLTextAreaElement>,
+  ) => {
     handleCompositionEnd(e, (composedText: string) => {
       // Append the composed text to the end of content
       const newContent = content + composedText;
@@ -184,10 +277,52 @@ const Typewriter: React.FC<TypewriterProps> = ({
     });
   };
 
+  // Fallback for OS emoji pickers (macOS Ctrl+Cmd+Space, Windows Win+.) that
+  // insert text via InputEvent without triggering keyDown. We compare the
+  // textarea value against `content` to detect OS-injected text and append it.
+  const handleInput = useCallback(
+    (e: React.FormEvent<HTMLTextAreaElement>) => {
+      const textarea = e.currentTarget;
+      const newValue = textarea.value;
+
+      // No change or shorter (shouldn't happen with delete blocked) — ignore
+      if (newValue.length <= content.length) return;
+
+      let inserted: string;
+
+      if (newValue.startsWith(content)) {
+        // Simple append at the end — most common emoji picker case
+        inserted = newValue.slice(content.length);
+      } else {
+        // Inserted mid-text (e.g. OS placed cursor somewhere): use selectionStart
+        const cursor = textarea.selectionStart ?? newValue.length;
+        const insertLen = newValue.length - content.length;
+        inserted = newValue.slice(
+          Math.max(0, cursor - insertLen),
+          cursor,
+        );
+      }
+
+      if (inserted) {
+        setContent(content + inserted);
+        // Force cursor to end after OS-injected input (forward-only guarantee)
+        setTimeout(() => {
+          if (textareaRef.current) {
+            const len = (content + inserted).length;
+            textareaRef.current.selectionStart = len;
+            textareaRef.current.selectionEnd = len;
+            textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
+          }
+        }, 0);
+      }
+    },
+    [content, setContent, textareaRef],
+  );
+
   // Handle paste - append pasted text to end
   const handlePaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
-    const pastedText = e.clipboardData.getData('text');
+    const pastedText = e.clipboardData.getData("text");
     if (pastedText) {
       setContent(content + pastedText);
 
@@ -215,7 +350,10 @@ const Typewriter: React.FC<TypewriterProps> = ({
   const normalizedPersistedSelection = useMemo(() => {
     if (!persistedSelection || showUtfEmojiCodes) return null;
 
-    const start = Math.max(0, Math.min(content.length, persistedSelection.start));
+    const start = Math.max(
+      0,
+      Math.min(content.length, persistedSelection.start),
+    );
     const end = Math.max(0, Math.min(content.length, persistedSelection.end));
 
     if (start >= end) return null;
@@ -223,45 +361,56 @@ const Typewriter: React.FC<TypewriterProps> = ({
     return { start, end };
   }, [persistedSelection, content, showUtfEmojiCodes]);
 
-  const showPersistedSelectionOverlay = !!normalizedPersistedSelection && !isTextareaFocused;
+  const showPersistedSelectionOverlay =
+    !!normalizedPersistedSelection && !isTextareaFocused;
 
   // Use passive event listener for scroll performance
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
-      textarea.addEventListener('scroll', handleScroll, { passive: true });
-      return () => textarea.removeEventListener('scroll', handleScroll);
+      textarea.addEventListener("scroll", handleScroll, { passive: true });
+      return () => textarea.removeEventListener("scroll", handleScroll);
     }
   }, [handleScroll]);
 
   // Ensure frozen selection overlay is aligned when shown after a blur.
   useEffect(() => {
-    if (!showPersistedSelectionOverlay || !textareaRef.current || !selectionOverlayRef.current) {
+    if (
+      !showPersistedSelectionOverlay ||
+      !textareaRef.current ||
+      !selectionOverlayRef.current
+    ) {
       return;
     }
     selectionOverlayRef.current.scrollTop = textareaRef.current.scrollTop;
   }, [showPersistedSelectionOverlay, textareaRef]);
 
   // Helper to determine which syntax category a word belongs to (O(1) lookups)
-  const getWordCategory = useCallback((word: string): keyof HighlightConfig | null => {
-    const lowerWord = normalizeTokenForSyntaxLookup(word);
-    if (!lowerWord) return null;
+  const getWordCategory = useCallback(
+    (word: string): keyof HighlightConfig | null => {
+      const lowerWord = normalizeTokenForSyntaxLookup(word);
+      if (!lowerWord) return null;
 
-    if (syntaxSets.urls.has(lowerWord) || isUrlToken(lowerWord)) return 'urls';
-    if (syntaxSets.hashtags.has(lowerWord) || isHashtagToken(lowerWord)) return 'hashtags';
-    if (syntaxSets.numbers.has(lowerWord) || isNumberToken(lowerWord)) return 'numbers';
-    if (syntaxSets.articles.has(lowerWord)) return 'articles';
-    if (syntaxSets.interjections.has(lowerWord)) return 'interjections';
-    if (syntaxSets.prepositions.has(lowerWord)) return 'prepositions';
-    if (syntaxSets.conjunctions.has(lowerWord)) return 'conjunctions';
-    if (syntaxSets.pronouns.has(lowerWord)) return 'pronouns';
-    if (syntaxSets.adverbs.has(lowerWord)) return 'adverbs';
-    if (syntaxSets.verbs.has(lowerWord)) return 'verbs';
-    if (syntaxSets.adjectives.has(lowerWord)) return 'adjectives';
-    if (syntaxSets.nouns.has(lowerWord)) return 'nouns';
+      if (syntaxSets.urls.has(lowerWord) || isUrlToken(lowerWord))
+        return "urls";
+      if (syntaxSets.hashtags.has(lowerWord) || isHashtagToken(lowerWord))
+        return "hashtags";
+      if (syntaxSets.numbers.has(lowerWord) || isNumberToken(lowerWord))
+        return "numbers";
+      if (syntaxSets.articles.has(lowerWord)) return "articles";
+      if (syntaxSets.interjections.has(lowerWord)) return "interjections";
+      if (syntaxSets.prepositions.has(lowerWord)) return "prepositions";
+      if (syntaxSets.conjunctions.has(lowerWord)) return "conjunctions";
+      if (syntaxSets.pronouns.has(lowerWord)) return "pronouns";
+      if (syntaxSets.adverbs.has(lowerWord)) return "adverbs";
+      if (syntaxSets.verbs.has(lowerWord)) return "verbs";
+      if (syntaxSets.adjectives.has(lowerWord)) return "adjectives";
+      if (syntaxSets.nouns.has(lowerWord)) return "nouns";
 
-    return null;
-  }, [syntaxSets]);
+      return null;
+    },
+    [syntaxSets],
+  );
 
   const renderHighlights = useCallback(() => {
     if (!content) return null;
@@ -272,17 +421,19 @@ const Typewriter: React.FC<TypewriterProps> = ({
 
     return chunks.map((chunk, chunkIndex) => {
       // If it is a strikethrough block
-      if (chunk.startsWith('~~') && chunk.endsWith('~~') && chunk.length >= 4) {
-        const renderedStrikeChunk = showUtfEmojiCodes ? replaceEmojisWithUTF(chunk) : chunk;
+      if (chunk.startsWith("~~") && chunk.endsWith("~~") && chunk.length >= 4) {
+        const renderedStrikeChunk = showUtfEmojiCodes
+          ? replaceEmojisWithUTF(chunk)
+          : chunk;
         return (
           <span
             key={`st-${chunkIndex}`}
             style={{
-              textDecoration: 'line-through',
+              textDecoration: "line-through",
               opacity: 0.5,
-              textDecorationThickness: '2px',
+              textDecorationThickness: "2px",
               textDecorationColor: theme.strikethrough,
-              transition: 'color 0.3s ease, text-shadow 0.3s ease',
+              transition: "color 0.3s ease, text-shadow 0.3s ease",
             }}
           >
             {renderedStrikeChunk}
@@ -292,9 +443,13 @@ const Typewriter: React.FC<TypewriterProps> = ({
 
       // If it is normal text, process syntax highlighting
       // First split on URLs to preserve them as whole tokens, then tokenize the rest
-      const renderedChunk = showUtfEmojiCodes ? replaceEmojisWithUTF(chunk) : chunk;
-      const urlSplitPattern = /((?:https?:\/\/)\S+|(?:www\.)\S+|(?:[a-zA-Z0-9-]+\.)+(?:com|org|net|io|dev|co|app|ai|edu|gov|me|info|biz)(?:\/\S*)?)/g;
-      const urlTestPattern = /^(?:https?:\/\/)\S+$|^(?:www\.)\S+$|^(?:[a-zA-Z0-9-]+\.)+(?:com|org|net|io|dev|co|app|ai|edu|gov|me|info|biz)(?:\/\S*)?$/i;
+      const renderedChunk = showUtfEmojiCodes
+        ? replaceEmojisWithUTF(chunk)
+        : chunk;
+      const urlSplitPattern =
+        /((?:https?:\/\/)\S+|(?:www\.)\S+|(?:[a-zA-Z0-9-]+\.)+(?:com|org|net|io|dev|co|app|ai|edu|gov|me|info|biz)(?:\/\S*)?)/g;
+      const urlTestPattern =
+        /^(?:https?:\/\/)\S+$|^(?:www\.)\S+$|^(?:[a-zA-Z0-9-]+\.)+(?:com|org|net|io|dev|co|app|ai|edu|gov|me|info|biz)(?:\/\S*)?$/i;
       const urlSplit = renderedChunk.split(urlSplitPattern);
       // Flatten: for non-URL segments, split on whitespace/punctuation; URL segments stay whole
       const parts: string[] = [];
@@ -303,7 +458,9 @@ const Typewriter: React.FC<TypewriterProps> = ({
           parts.push(segment);
         } else {
           // Tokenize on whitespace and punctuation, preserving contractions
-          const subParts = segment.split(/(\s+|[.,!?;:"()\-]+|(?<!\w)['']|[''](?!\w))/g);
+          const subParts = segment.split(
+            /(\s+|[.,!?;:"()\-]+|(?<!\w)['']|[''](?!\w))/g,
+          );
           parts.push(...subParts);
         }
       }
@@ -318,10 +475,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
 
             if (!normalizedPart) {
               return (
-                <span
-                  key={index}
-                  style={{ transition: 'color 0.3s ease' }}
-                >
+                <span key={index} style={{ transition: "color 0.3s ease" }}>
                   {part}
                 </span>
               );
@@ -329,75 +483,246 @@ const Typewriter: React.FC<TypewriterProps> = ({
 
             // Check highlights based on config — O(1) Set.has() lookups
             // Priority: URLs → hashtags → numbers → NLP categories
-            if (highlightConfig.urls && (syntaxSets.urls.has(normalizedPart) || isUrlToken(normalizedPart))) {
+            if (
+              highlightConfig.urls &&
+              (syntaxSets.urls.has(normalizedPart) ||
+                isUrlToken(normalizedPart))
+            ) {
               color = theme.highlight.url;
               isMatch = true;
-              matchCategory = 'urls';
-            } else if (highlightConfig.hashtags && (syntaxSets.hashtags.has(normalizedPart) || isHashtagToken(normalizedPart))) {
+              matchCategory = "urls";
+            } else if (
+              highlightConfig.hashtags &&
+              (syntaxSets.hashtags.has(normalizedPart) ||
+                isHashtagToken(normalizedPart))
+            ) {
               color = theme.highlight.hashtag;
               isMatch = true;
-              matchCategory = 'hashtags';
-            } else if (highlightConfig.numbers && (syntaxSets.numbers.has(normalizedPart) || isNumberToken(normalizedPart))) {
+              matchCategory = "hashtags";
+            } else if (
+              highlightConfig.numbers &&
+              (syntaxSets.numbers.has(normalizedPart) ||
+                isNumberToken(normalizedPart))
+            ) {
               color = theme.highlight.number;
               isMatch = true;
-              matchCategory = 'numbers';
-            } else if (highlightConfig.articles && syntaxSets.articles.has(normalizedPart)) {
+              matchCategory = "numbers";
+            } else if (
+              highlightConfig.articles &&
+              syntaxSets.articles.has(normalizedPart)
+            ) {
               color = theme.highlight.article;
               isMatch = true;
-              matchCategory = 'articles';
-            } else if (highlightConfig.interjections && syntaxSets.interjections.has(normalizedPart)) {
+              matchCategory = "articles";
+            } else if (
+              highlightConfig.interjections &&
+              syntaxSets.interjections.has(normalizedPart)
+            ) {
               color = theme.highlight.interjection;
               isMatch = true;
-              matchCategory = 'interjections';
-            } else if (highlightConfig.prepositions && syntaxSets.prepositions.has(normalizedPart)) {
+              matchCategory = "interjections";
+            } else if (
+              highlightConfig.prepositions &&
+              syntaxSets.prepositions.has(normalizedPart)
+            ) {
               color = theme.highlight.preposition;
               isMatch = true;
-              matchCategory = 'prepositions';
-            } else if (highlightConfig.conjunctions && syntaxSets.conjunctions.has(normalizedPart)) {
+              matchCategory = "prepositions";
+            } else if (
+              highlightConfig.conjunctions &&
+              syntaxSets.conjunctions.has(normalizedPart)
+            ) {
               color = theme.highlight.conjunction;
               isMatch = true;
-              matchCategory = 'conjunctions';
-            } else if (highlightConfig.pronouns && syntaxSets.pronouns.has(normalizedPart)) {
+              matchCategory = "conjunctions";
+            } else if (
+              highlightConfig.pronouns &&
+              syntaxSets.pronouns.has(normalizedPart)
+            ) {
               color = theme.highlight.pronoun;
               isMatch = true;
-              matchCategory = 'pronouns';
-            } else if (highlightConfig.adverbs && syntaxSets.adverbs.has(normalizedPart)) {
+              matchCategory = "pronouns";
+            } else if (
+              highlightConfig.adverbs &&
+              syntaxSets.adverbs.has(normalizedPart)
+            ) {
               color = theme.highlight.adverb;
               isMatch = true;
-              matchCategory = 'adverbs';
-            } else if (highlightConfig.verbs && syntaxSets.verbs.has(normalizedPart)) {
+              matchCategory = "adverbs";
+            } else if (
+              highlightConfig.verbs &&
+              syntaxSets.verbs.has(normalizedPart)
+            ) {
               color = theme.highlight.verb;
               isMatch = true;
-              matchCategory = 'verbs';
-            } else if (highlightConfig.adjectives && syntaxSets.adjectives.has(normalizedPart)) {
+              matchCategory = "verbs";
+            } else if (
+              highlightConfig.adjectives &&
+              syntaxSets.adjectives.has(normalizedPart)
+            ) {
               color = theme.highlight.adjective;
               isMatch = true;
-              matchCategory = 'adjectives';
-            } else if (highlightConfig.nouns && syntaxSets.nouns.has(normalizedPart)) {
+              matchCategory = "adjectives";
+            } else if (
+              highlightConfig.nouns &&
+              syntaxSets.nouns.has(normalizedPart)
+            ) {
               color = theme.highlight.noun;
               isMatch = true;
-              matchCategory = 'nouns';
+              matchCategory = "nouns";
             }
 
             // Check if this word should glow (matching hovered category)
-            const shouldGlow = hoveredCategory && matchCategory === hoveredCategory;
-            const glowColor = shouldGlow ? color : 'transparent';
+            const shouldGlow =
+              hoveredCategory && matchCategory === hoveredCategory;
+            const glowColor = shouldGlow ? color : "transparent";
 
             const style: React.CSSProperties = {
               color: isMatch ? color : theme.text,
-              fontWeight: isMatch ? 700 : 'inherit',
+              fontWeight: isMatch ? 700 : "inherit",
               textShadow: shouldGlow
                 ? `0 0 8px ${glowColor}, 0 0 16px ${glowColor}80`
-                : (theme.id === 'blueprint' && isMatch ? `0 0 1px ${color}` : 'none'),
-              transition: 'color 0.3s ease, text-shadow 0.3s ease, font-weight 0.3s ease',
+                : theme.id === "blueprint" && isMatch
+                  ? `0 0 1px ${color}`
+                  : "none",
+              transition:
+                "color 0.3s ease, text-shadow 0.3s ease, font-weight 0.3s ease",
             };
 
-            return <span key={`${chunkIndex}-${index}`} style={style}>{part}</span>;
+            return (
+              <span key={`${chunkIndex}-${index}`} style={style}>
+                {part}
+              </span>
+            );
           })}
         </React.Fragment>
       );
     });
-  }, [content, syntaxSets, theme, highlightConfig, hoveredCategory, showUtfEmojiCodes]);
+  }, [
+    content,
+    syntaxSets,
+    theme,
+    highlightConfig,
+    hoveredCategory,
+    showUtfEmojiCodes,
+  ]);
+
+  // Build a map of rhymeKey -> color for song mode
+  const rhymeColorMap = useMemo(() => {
+    if (!songData || !rhymeColors.length) return new Map<string, string>();
+    const map = new Map<string, string>();
+    for (const group of songData.rhymeGroups) {
+      map.set(group.key, rhymeColors[group.colorIndex] || rhymeColors[0]);
+    }
+    return map;
+  }, [songData, rhymeColors]);
+
+  const renderSongHighlights = useCallback(() => {
+    if (!content || !songData) return null;
+
+    const lines = content.split("\n");
+    return lines.map((lineText, lineIdx) => {
+      const songLine = songData.lines[lineIdx];
+      if (!songLine || songLine.words.length === 0) {
+        return (
+          <React.Fragment key={`sl-${lineIdx}`}>
+            {lineText}
+            {lineIdx < lines.length - 1 ? "\n" : ""}
+          </React.Fragment>
+        );
+      }
+
+      // Tokenize the line for rendering
+      const parts = lineText.split(/(\s+)/);
+      let wordIdx = 0;
+
+      const rendered = parts.map((part, partIdx) => {
+        if (/^\s+$/.test(part)) {
+          return <span key={`${lineIdx}-${partIdx}`}>{part}</span>;
+        }
+
+        const songWord = songLine.words[wordIdx];
+        wordIdx++;
+
+        if (!songWord) {
+          return (
+            <span key={`${lineIdx}-${partIdx}`} style={{ color: theme.text }}>
+              {part}
+            </span>
+          );
+        }
+
+        const rhymeColor = rhymeColorMap.get(songWord.rhymeKey);
+        const isRhymeDisabled = disabledRhymeKeys?.has(songWord.rhymeKey);
+        const isRhymeFocused = focusedRhymeKey === null || focusedRhymeKey === songWord.rhymeKey;
+        const isRhymeHovered = hoveredRhymeKey === songWord.rhymeKey;
+
+        const syllableAnnotation = showSyllableAnnotations ? (
+          <span
+            style={{
+              position: 'absolute',
+              bottom: '-1.1em',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              fontSize: '0.55em',
+              fontWeight: 600,
+              color: rhymeColor || theme.text,
+              opacity: rhymeColor ? 0.8 : 0.35,
+              pointerEvents: 'none',
+              lineHeight: 1,
+              userSelect: 'none',
+            }}
+          >
+            {songWord.syllables}
+          </span>
+        ) : null;
+
+        if (rhymeColor && !isRhymeDisabled) {
+          // Priority: hover > focused > dimmed
+          const showFull = isRhymeHovered || isRhymeFocused;
+          const markerOpacity = showFull
+            ? (isDarkBackground(theme.background) ? "A0" : "88")
+            : "20";
+          return (
+            <span key={`${lineIdx}-${partIdx}`} style={{ position: 'relative', display: 'inline' }}>
+              {syllableAnnotation}
+              <span
+                style={{
+                  backgroundColor: `${rhymeColor}${markerOpacity}`,
+                  color: theme.text,
+                  padding: "1px 6px",
+                  borderRadius: "4px",
+                  fontWeight: showFull ? 700 : "inherit",
+                  boxDecorationBreak: "clone",
+                  WebkitBoxDecorationBreak: "clone",
+                  transition:
+                    "background-color 0.3s ease, color 0.3s ease, font-weight 0.3s ease",
+                }}
+              >
+                {part}
+              </span>
+            </span>
+          );
+        }
+
+        return (
+          <span key={`${lineIdx}-${partIdx}`} style={{ position: 'relative', display: 'inline' }}>
+            {syllableAnnotation}
+            <span style={{ color: theme.text, transition: "color 0.3s ease" }}>
+              {part}
+            </span>
+          </span>
+        );
+      });
+
+      return (
+        <React.Fragment key={`sl-${lineIdx}`}>
+          {rendered}
+          {lineIdx < lines.length - 1 ? "\n" : ""}
+        </React.Fragment>
+      );
+    });
+  }, [content, songData, rhymeColorMap, theme.text, theme.background, showSyllableAnnotations, focusedRhymeKey, hoveredRhymeKey, disabledRhymeKeys]);
 
   return (
     <div
@@ -407,28 +732,28 @@ const Typewriter: React.FC<TypewriterProps> = ({
       {/* Backdrop (Visual Layer) */}
       <div
         ref={backdropRef}
-        className="absolute inset-0 px-[13px] py-[21px] md:px-[21px] md:py-[34px] lg:px-[34px] lg:py-[55px] whitespace-pre-wrap break-words pointer-events-none z-0 overflow-hidden"
+        className="absolute inset-0 px-[13px] pt-[34px] pb-[89px] md:px-[21px] md:pt-[34px] lg:px-[34px] lg:pt-[55px] whitespace-pre-wrap break-words pointer-events-none z-0 overflow-hidden"
         style={{
           fontFamily,
           fontSize,
-          lineHeight: '1.6',
+          lineHeight: songMode && showSyllableAnnotations ? "2.4" : "1.6",
           color: theme.text,
         }}
       >
-        {renderHighlights()}
+        {songMode && songData ? renderSongHighlights() : renderHighlights()}
         {/* The Ghost Cursor - Always at the end, color matches last typed word (Garfield cursor) */}
         <span
           data-testid="ghost-cursor"
           style={{
             color: lastWordColor,
             opacity: ghostVisible ? 1 : 0,
-            transition: 'opacity 0.1s, background-color 0.3s ease',
-            marginLeft: '1px',
+            transition: "opacity 0.1s, background-color 0.3s ease",
+            marginLeft: "1px",
             backgroundColor: lastWordColor,
-            display: 'inline-block',
-            width: '10px',
-            height: '1em',
-            verticalAlign: 'text-bottom'
+            display: "inline-block",
+            width: "10px",
+            height: "1em",
+            verticalAlign: "text-bottom",
           }}
         />
       </div>
@@ -437,19 +762,19 @@ const Typewriter: React.FC<TypewriterProps> = ({
         <div
           ref={selectionOverlayRef}
           data-testid="persisted-selection-overlay"
-          className="absolute inset-0 px-[13px] py-[21px] md:px-[21px] md:py-[34px] lg:px-[34px] lg:py-[55px] whitespace-pre-wrap break-words pointer-events-none z-[5] overflow-hidden"
+          className="absolute inset-0 px-[13px] pt-[34px] pb-[89px] md:px-[21px] md:pt-[34px] lg:px-[34px] lg:pt-[55px] whitespace-pre-wrap break-words pointer-events-none z-[5] overflow-hidden"
           style={{
             fontFamily,
             fontSize,
-            lineHeight: '1.6',
-            color: 'transparent',
+            lineHeight: songMode && showSyllableAnnotations ? "2.4" : "1.6",
+            color: "transparent",
           }}
         >
           <span>{content.slice(0, normalizedPersistedSelection.start)}</span>
           <span
             style={{
               backgroundColor: theme.selection,
-              borderRadius: '4px',
+              borderRadius: "4px",
               boxShadow: `0 0 0 1px ${theme.accent}40`,
             }}
           >
@@ -466,8 +791,9 @@ const Typewriter: React.FC<TypewriterProps> = ({
       <textarea
         ref={textareaRef}
         value={content}
-        onChange={() => { }} // Handled in onKeyDown and composition events
+        onChange={() => {}} // Handled in onKeyDown and composition events
         onKeyDown={handleKeyDown}
+        onInput={handleInput}
         onPaste={handlePaste}
         onCompositionStart={handleCompositionStart}
         onCompositionUpdate={handleCompositionUpdate}
@@ -481,15 +807,15 @@ const Typewriter: React.FC<TypewriterProps> = ({
         inputMode="text"
         enterKeyHint="enter"
         autoFocus
-        className="absolute inset-0 w-full h-full px-[13px] py-[21px] md:px-[21px] md:py-[34px] lg:px-[34px] lg:py-[55px] bg-transparent resize-none border-none outline-none z-10 whitespace-pre-wrap break-words overflow-y-auto"
+        className="absolute inset-0 w-full h-full px-[13px] pt-[34px] pb-[89px] md:px-[21px] md:pt-[34px] lg:px-[34px] lg:pt-[55px] bg-transparent resize-none border-none outline-none z-10 whitespace-pre-wrap break-words overflow-y-auto"
         style={{
           fontFamily,
           fontSize,
-          lineHeight: '1.6',
-          color: 'transparent',
+          lineHeight: songMode && showSyllableAnnotations ? "2.4" : "1.6",
+          color: "transparent",
           caretColor: lastWordColor, // Garfield cursor: caret color matches last typed word's syntax
-          transition: 'caret-color 0.3s ease',
-          opacity: 1
+          transition: "caret-color 0.3s ease",
+          opacity: 1,
         }}
         placeholder="Type here..."
       />

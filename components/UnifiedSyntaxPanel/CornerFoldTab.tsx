@@ -1,6 +1,6 @@
-import React from 'react';
-import { RisoTheme } from '../../types';
-import { HarmonicaStage } from '../../hooks/useHarmonicaDrag';
+import React from "react";
+import { RisoTheme } from "../../types";
+import { HarmonicaStage } from "../../hooks/useHarmonicaDrag";
 
 interface CornerFoldTabProps {
   theme: RisoTheme;
@@ -19,32 +19,46 @@ interface CornerFoldTabProps {
 
 // Directional arrow affordance component
 const DirectionArrow: React.FC<{
-  direction: 'left' | 'up' | 'right';
+  direction: "left" | "up" | "right";
   theme: RisoTheme;
   animate?: boolean;
 }> = ({ direction, theme, animate = false }) => {
   const arrows: Record<string, string> = {
-    left: '‹',
-    up: '⌃',
-    right: '›',
+    left: "‹",
+    up: "⌃",
+    right: "›",
   };
 
   const transforms: Record<string, string> = {
-    left: 'translateX(-2px)',
-    up: 'translateY(-2px)',
-    right: 'translateX(2px)',
+    left: "translateX(-2px)",
+    up: "translateY(-2px)",
+    right: "translateX(2px)",
   };
 
   return (
     <span
-      className={`absolute text-sm font-bold transition-all duration-300 ${animate ? 'animate-pulse' : ''}`}
+      className={`absolute text-sm font-bold transition-all duration-300 ${animate ? "animate-pulse" : ""}`}
       style={{
         color: theme.text,
         opacity: 0.3,
-        ...(direction === 'left' && { left: '4px', top: '50%', transform: 'translateY(-50%)' }),
-        ...(direction === 'up' && { top: '4px', left: '50%', transform: 'translateX(-50%)' }),
-        ...(direction === 'right' && { right: '4px', top: '50%', transform: 'translateY(-50%)' }),
-        animation: animate ? `gentleBounce-${direction} 1.5s ease-in-out infinite` : undefined,
+        ...(direction === "left" && {
+          left: "4px",
+          top: "50%",
+          transform: "translateY(-50%)",
+        }),
+        ...(direction === "up" && {
+          top: "4px",
+          left: "50%",
+          transform: "translateX(-50%)",
+        }),
+        ...(direction === "right" && {
+          right: "4px",
+          top: "50%",
+          transform: "translateY(-50%)",
+        }),
+        animation: animate
+          ? `gentleBounce-${direction} 1.5s ease-in-out infinite`
+          : undefined,
       }}
     >
       <style>{`
@@ -73,20 +87,22 @@ const CornerFoldTab: React.FC<CornerFoldTabProps> = ({
   hasSeenPanel,
   onClick,
   harmonicaMode = false,
-  stage = 'closed',
+  stage = "closed",
   dragProgress = 0,
   onDragStart,
   onDragMove,
   onDragEnd,
 }) => {
-  const showPulse = !hasSeenPanel && !isOpen && stage === 'closed';
+  const showPulse = !hasSeenPanel && !isOpen && stage === "closed";
 
   // Determine arrow direction based on current stage
-  const getArrowDirection = (): 'left' | 'up' | 'right' | null => {
-    if (!harmonicaMode || stage !== 'closed') return null;
+  const getArrowDirection = (): "left" | "up" | "right" | null => {
+    if (!harmonicaMode || stage !== "closed") return null;
     switch (stage) {
-      case 'closed': return 'left';
-      default: return null;
+      case "closed":
+        return "left";
+      default:
+        return null;
     }
   };
 
@@ -103,28 +119,33 @@ const CornerFoldTab: React.FC<CornerFoldTabProps> = ({
         relative cursor-pointer select-none touch-manipulation
         transition-all duration-300 ease-out
         focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
-        ${showPulse ? 'animate-pulse' : ''}
+        ${showPulse ? "animate-pulse" : ""}
       `}
       style={{
         // Size of the corner tab
-        width: harmonicaMode ? '56px' : (isOpen ? '36px' : '56px'),
-        height: '80px',
+        width: harmonicaMode ? "56px" : isOpen ? "36px" : "56px",
+        height: "80px",
         // Move tab left when panel opens (so it stays attached to panel edge)
-        marginRight: harmonicaMode ? '0' : (isOpen ? '-2px' : '0'),
+        marginRight: harmonicaMode ? "0" : isOpen ? "-2px" : "0",
         // Align tab to bottom when panel is anchored at bottom
-        alignSelf: 'flex-end',
-        marginBottom: '8px',
-        ['--tw-ring-color' as string]: theme.text,
-        ['--tw-ring-offset-color' as string]: theme.background,
+        alignSelf: "flex-end",
+        marginBottom: "8px",
+        ["--tw-ring-color" as string]: theme.text,
+        ["--tw-ring-offset-color" as string]: theme.background,
         // Touch action for harmonica drag mode
-        touchAction: harmonicaMode ? 'none' : undefined,
+        touchAction: harmonicaMode ? "none" : undefined,
         // Visual feedback during drag
-        transform: harmonicaMode && dragProgress > 0 && dragProgress < 0.5
-          ? `scale(${1 - dragProgress * 0.05})`
-          : 'scale(1)',
+        transform:
+          harmonicaMode && dragProgress > 0 && dragProgress < 0.5
+            ? `scale(${1 - dragProgress * 0.05})`
+            : "scale(1)",
       }}
-      aria-label={isOpen || stage !== 'closed' ? 'Close syntax panel' : `Open syntax panel (${wordCount} words)`}
-      aria-expanded={isOpen || stage !== 'closed'}
+      aria-label={
+        isOpen || stage !== "closed"
+          ? "Close syntax panel"
+          : `Open syntax panel (${wordCount} words)`
+      }
+      aria-expanded={isOpen || stage !== "closed"}
       // Harmonica drag handlers
       onTouchStart={harmonicaMode ? onDragStart : undefined}
       onTouchMove={harmonicaMode ? onDragMove : undefined}
@@ -139,12 +160,12 @@ const CornerFoldTab: React.FC<CornerFoldTabProps> = ({
         style={{
           backgroundColor: theme.background,
           border: `1px solid ${theme.text}20`,
-          borderRight: isOpen ? 'none' : undefined,
-          borderRadius: isOpen ? '8px 0 0 8px' : '0',
+          borderRight: isOpen ? "none" : undefined,
+          borderRadius: isOpen ? "8px 0 0 8px" : "0",
           clipPath: isOpen
-            ? 'none'
-            : 'polygon(100% 0, 100% 100%, 0 100%, 40% 50%)',
-          boxShadow: '-4px 0 12px rgba(0,0,0,0.08)',
+            ? "none"
+            : "polygon(100% 0, 100% 100%, 0 100%, 40% 50%)",
+          boxShadow: "-4px 0 12px rgba(0,0,0,0.08)",
         }}
       />
 
@@ -166,7 +187,7 @@ const CornerFoldTab: React.FC<CornerFoldTabProps> = ({
           <div
             className="flex flex-col items-center justify-center"
             style={{
-              transform: 'translateX(8px)',
+              transform: "translateX(8px)",
             }}
           >
             <span
@@ -190,7 +211,7 @@ const CornerFoldTab: React.FC<CornerFoldTabProps> = ({
         <DirectionArrow
           direction={arrowDirection}
           theme={theme}
-          animate={!hasSeenPanel && stage === 'closed'}
+          animate={!hasSeenPanel && stage === "closed"}
         />
       )}
     </button>

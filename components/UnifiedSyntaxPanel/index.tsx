@@ -1,13 +1,25 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { gsap } from 'gsap';
-import { RisoTheme, SyntaxAnalysis, SyntaxSets, HighlightConfig } from '../../types';
-import { countWords } from '../../services/localSyntaxService';
-import { useResponsiveBreakpoint } from '../../hooks/useResponsiveBreakpoint';
-import { useHarmonicaDrag, HarmonicaStage } from '../../hooks/useHarmonicaDrag';
-import CornerFoldTab from './CornerFoldTab';
-import HarmonicaContainer from './HarmonicaContainer';
-import PanelBody from './PanelBody';
-import DesktopSyntaxPanel from './DesktopSyntaxPanel';
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
+import { gsap } from "gsap";
+import {
+  RisoTheme,
+  SyntaxAnalysis,
+  SyntaxSets,
+  HighlightConfig,
+  SongAnalysis,
+} from "../../types";
+import { countWords } from "../../services/localSyntaxService";
+import { useResponsiveBreakpoint } from "../../hooks/useResponsiveBreakpoint";
+import { useHarmonicaDrag, HarmonicaStage } from "../../hooks/useHarmonicaDrag";
+import CornerFoldTab from "./CornerFoldTab";
+import HarmonicaContainer from "./HarmonicaContainer";
+import PanelBody from "./PanelBody";
+import DesktopSyntaxPanel from "./DesktopSyntaxPanel";
 
 interface UnifiedSyntaxPanelProps {
   content: string;
@@ -21,6 +33,18 @@ interface UnifiedSyntaxPanelProps {
   hasSeenPanel?: boolean;
   onPanelSeen?: () => void;
   onCategoryHover?: (category: keyof HighlightConfig | null) => void;
+  songMode?: boolean;
+  onToggleSongMode?: () => void;
+  songData?: SongAnalysis | null;
+  rhymeColors?: readonly string[];
+  showSyllableAnnotations?: boolean;
+  onToggleSyllableAnnotations?: () => void;
+  focusedRhymeKey?: string | null;
+  onFocusRhymeKey?: (key: string | null) => void;
+  hoveredRhymeKey?: string | null;
+  onHoverRhymeKey?: (key: string | null) => void;
+  disabledRhymeKeys?: Set<string>;
+  onToggleRhymeKey?: (key: string) => void;
 }
 
 const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
@@ -35,18 +59,30 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
   hasSeenPanel = true,
   onPanelSeen,
   onCategoryHover,
+  songMode = false,
+  onToggleSongMode,
+  songData = null,
+  rhymeColors = [],
+  showSyllableAnnotations = false,
+  onToggleSyllableAnnotations,
+  focusedRhymeKey,
+  onFocusRhymeKey,
+  hoveredRhymeKey,
+  onHoverRhymeKey,
+  disabledRhymeKeys,
+  onToggleRhymeKey,
 }) => {
   const wordCount = countWords(content);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const { isDesktop, isMobile } = useResponsiveBreakpoint();
-  const prevScreenRef = useRef<'mobile' | 'desktop' | null>(null);
+  const prevScreenRef = useRef<"mobile" | "desktop" | null>(null);
   const transitionRef = useRef<HTMLDivElement>(null);
 
   // Check for reduced motion preference
   const reducedMotion = useMemo(() => {
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   }, []);
 
   // Harmonica drag system for mobile
@@ -58,15 +94,19 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
     reducedMotion,
     onStageChange: (stage: HarmonicaStage) => {
       // Sync isOpen state with harmonica stage
-      setIsOpen(stage !== 'closed');
+      setIsOpen(stage !== "closed");
     },
   });
 
   // Paradigm transition animation when switching between mobile/desktop
   useEffect(() => {
-    const currentScreen = isDesktop ? 'desktop' : 'mobile';
+    const currentScreen = isDesktop ? "desktop" : "mobile";
 
-    if (prevScreenRef.current !== null && prevScreenRef.current !== currentScreen && !reducedMotion) {
+    if (
+      prevScreenRef.current !== null &&
+      prevScreenRef.current !== currentScreen &&
+      !reducedMotion
+    ) {
       // Animate the transition between paradigms
       if (transitionRef.current) {
         gsap.fromTo(
@@ -76,8 +116,8 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
             opacity: 1,
             scale: 1,
             duration: 0.4,
-            ease: 'power2.out'
-          }
+            ease: "power2.out",
+          },
         );
       }
     }
@@ -87,7 +127,7 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
 
   // Toggle panel (mobile only - kept for backwards compatibility with onClick prop)
   const toggle = useCallback(() => {
-    setIsOpen(prev => !prev);
+    setIsOpen((prev) => !prev);
   }, []);
 
   // Close on outside click (mobile only)
@@ -96,7 +136,7 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
 
     const handleClickOutside = (e: MouseEvent) => {
       if (
-        harmonicaState.stage !== 'closed' &&
+        harmonicaState.stage !== "closed" &&
         containerRef.current &&
         !containerRef.current.contains(e.target as Node)
       ) {
@@ -104,13 +144,17 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [harmonicaState.stage, harmonicaClose, isMobile]);
 
   // Mark panel as seen when opened (mobile) or when mounted (desktop)
   useEffect(() => {
-    if ((harmonicaState.stage !== 'closed' || isDesktop) && !hasSeenPanel && onPanelSeen) {
+    if (
+      (harmonicaState.stage !== "closed" || isDesktop) &&
+      !hasSeenPanel &&
+      onPanelSeen
+    ) {
       onPanelSeen();
     }
   }, [harmonicaState.stage, isDesktop, hasSeenPanel, onPanelSeen]);
@@ -133,6 +177,18 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
           soloMode={soloMode}
           onSoloToggle={onSoloToggle}
           onCategoryHover={onCategoryHover}
+          songMode={songMode}
+          onToggleSongMode={onToggleSongMode}
+          songData={songData}
+          rhymeColors={rhymeColors}
+          showSyllableAnnotations={showSyllableAnnotations}
+          onToggleSyllableAnnotations={onToggleSyllableAnnotations}
+          focusedRhymeKey={focusedRhymeKey}
+          onFocusRhymeKey={onFocusRhymeKey}
+          hoveredRhymeKey={hoveredRhymeKey}
+          onHoverRhymeKey={onHoverRhymeKey}
+          disabledRhymeKeys={disabledRhymeKeys}
+          onToggleRhymeKey={onToggleRhymeKey}
         />
       </div>
     );
@@ -144,9 +200,9 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
       ref={containerRef}
       className="fixed right-0 z-[55] flex items-end"
       style={{
-        bottom: 'max(80px, calc(64px + env(safe-area-inset-bottom)))',
-        paddingRight: 'env(safe-area-inset-right)',
-        maxHeight: 'calc(100dvh - 100px)',
+        bottom: "max(80px, calc(64px + env(safe-area-inset-bottom)))",
+        paddingRight: "env(safe-area-inset-right)",
+        maxHeight: "calc(100dvh - 100px)",
       }}
     >
       <HarmonicaContainer
@@ -161,7 +217,7 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
             <CornerFoldTab
               theme={theme}
               wordCount={wordCount}
-              isOpen={harmonicaState.stage !== 'closed'}
+              isOpen={harmonicaState.stage !== "closed"}
               hasSeenPanel={hasSeenPanel}
               onClick={toggle}
               harmonicaMode={true}
@@ -194,9 +250,15 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
                 className="text-[10px] uppercase tracking-widest opacity-40 flex items-center gap-2"
                 style={{ color: theme.text }}
               >
-                <span className="flex-1 h-px" style={{ backgroundColor: `${theme.text}20` }} />
+                <span
+                  className="flex-1 h-px"
+                  style={{ backgroundColor: `${theme.text}20` }}
+                />
                 <span>Breakdown</span>
-                <span className="flex-1 h-px" style={{ backgroundColor: `${theme.text}20` }} />
+                <span
+                  className="flex-1 h-px"
+                  style={{ backgroundColor: `${theme.text}20` }}
+                />
               </div>
             </div>
           ),
@@ -211,8 +273,21 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
               onToggleHighlight={onToggleHighlight}
               soloMode={soloMode}
               onSoloToggle={onSoloToggle}
-              isOpen={harmonicaState.stage === 'full'}
+              isOpen={harmonicaState.stage === "full"}
               onCategoryHover={onCategoryHover}
+              songMode={songMode}
+              onToggleSongMode={onToggleSongMode}
+              songData={songData}
+              rhymeColors={rhymeColors}
+              onClose={harmonicaClose}
+              showSyllableAnnotations={showSyllableAnnotations}
+              onToggleSyllableAnnotations={onToggleSyllableAnnotations}
+              focusedRhymeKey={focusedRhymeKey}
+              onFocusRhymeKey={onFocusRhymeKey}
+              hoveredRhymeKey={hoveredRhymeKey}
+              onHoverRhymeKey={onHoverRhymeKey}
+              disabledRhymeKeys={disabledRhymeKeys}
+              onToggleRhymeKey={onToggleRhymeKey}
             />
           ),
         }}
