@@ -1,5 +1,6 @@
-const DOMAIN_TLDS = 'com|org|net|io|dev|co|app|ai|edu|gov|me|info|biz|us|uk|ca';
-const NUMBER_SUFFIXES = 'px|em|rem|vh|vw|pt|kg|lb|mi|km|ft|in|cm|mm|m|s|ms|hz|gb|mb|kb|tb';
+const DOMAIN_TLDS = "com|org|net|io|dev|co|app|ai|edu|gov|me|info|biz|us|uk|ca";
+const NUMBER_SUFFIXES =
+  "px|em|rem|vh|vw|pt|kg|lb|mi|km|ft|in|cm|mm|m|s|ms|hz|gb|mb|kb|tb";
 
 // Normalize typographic apostrophes into straight apostrophes.
 export function normalizeApostrophes(text: string): string {
@@ -9,33 +10,33 @@ export function normalizeApostrophes(text: string): string {
 // Normalize raw tokens so counting/highlighting share the same lookup key.
 export function normalizeTokenForSyntaxLookup(token: string): string {
   const normalized = normalizeApostrophes(token.toLowerCase().trim());
-  if (!normalized) return '';
+  if (!normalized) return "";
 
   // Trim boundary punctuation while preserving meaningful internals such as:
   // - contractions: don't
   // - URLs: example.com/path
   // - numbers: 1,000.5
-  return normalized.replace(/^[^\p{L}\p{N}#]+|[^\p{L}\p{N}%#]+$/gu, '');
+  return normalized.replace(/^[^\p{L}\p{N}#]+|[^\p{L}\p{N}%#]+$/gu, "");
 }
 
 export const URL_MATCH_REGEX = new RegExp(
   `\\b(?:https?:\\/\\/|www\\.)\\S+|(?:[a-zA-Z0-9-]+\\.)+(?:${DOMAIN_TLDS})\\b`,
-  'gi'
+  "gi",
 );
 
 export const URL_TOKEN_REGEX = new RegExp(
   `^(?:https?:\\/\\/)\\S+$|^(?:www\\.)\\S+$|^(?:[a-zA-Z0-9-]+\\.)+(?:${DOMAIN_TLDS})(?:\\/\\S*)?$`,
-  'i'
+  "i",
 );
 
 export const NUMBER_MATCH_REGEX = new RegExp(
   `\\b\\d+(?:[.,]\\d+)*(?:%|${NUMBER_SUFFIXES})?\\b`,
-  'gi'
+  "gi",
 );
 
 export const NUMBER_TOKEN_REGEX = new RegExp(
   `^\\d+(?:[.,]\\d+)*(?:%|${NUMBER_SUFFIXES})?$`,
-  'i'
+  "i",
 );
 
 export const HASHTAG_MATCH_REGEX = /#[\p{L}\p{M}\p{N}_-]+/gu;
@@ -48,8 +49,8 @@ function extractUniqueLowercaseMatches(text: string, regex: RegExp): string[] {
     new Set(
       matches
         .map((match) => normalizeTokenForSyntaxLookup(match))
-        .filter((match) => match.length > 0)
-    )
+        .filter((match) => match.length > 0),
+    ),
   );
 }
 

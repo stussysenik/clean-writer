@@ -1,4 +1,4 @@
-import emojiUnicode from 'emoji-unicode';
+import emojiUnicode from "emoji-unicode";
 
 // Regex to detect emoji characters (supports Unicode emoji properties)
 const EMOJI_REGEX = /(\p{Emoji_Presentation}|\p{Extended_Pictographic})/gu;
@@ -23,10 +23,10 @@ export function emojiToUTF(emoji: string): string {
  * Convert UTF code back to emoji (e.g., "U+1F600" → "😀")
  */
 export function utfToEmoji(utfCode: string): string {
-  const hex = utfCode.replace(/^U\+/i, '');
+  const hex = utfCode.replace(/^U\+/i, "");
   try {
     // Handle multi-codepoint emojis (separated by spaces)
-    const codePoints = hex.split(/[\s-]+/).map(h => parseInt(h, 16));
+    const codePoints = hex.split(/[\s-]+/).map((h) => parseInt(h, 16));
     return String.fromCodePoint(...codePoints);
   } catch {
     return utfCode; // Return original if invalid
@@ -67,14 +67,19 @@ export function replaceEmojisWithUTF(text: string): string {
  * Replace UTF codes with emojis in text
  */
 export function replaceUTFWithEmojis(text: string): string {
-  return text.replace(/U\+([0-9A-Fa-f]+(?:[\s-][0-9A-Fa-f]+)*)/gi, (match, hex) => {
-    try {
-      const codePoints = hex.split(/[\s-]+/).map((h: string) => parseInt(h, 16));
-      return String.fromCodePoint(...codePoints);
-    } catch {
-      return match; // Return original if invalid
-    }
-  });
+  return text.replace(
+    /U\+([0-9A-Fa-f]+(?:[\s-][0-9A-Fa-f]+)*)/gi,
+    (match, hex) => {
+      try {
+        const codePoints = hex
+          .split(/[\s-]+/)
+          .map((h: string) => parseInt(h, 16));
+        return String.fromCodePoint(...codePoints);
+      } catch {
+        return match; // Return original if invalid
+      }
+    },
+  );
 }
 
 /**

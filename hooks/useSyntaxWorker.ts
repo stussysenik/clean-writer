@@ -1,36 +1,42 @@
-import { useRef, useEffect, useCallback, useState } from 'react';
-import { SyntaxAnalysis } from '../types';
+import { useRef, useEffect, useCallback, useState } from "react";
+import { SyntaxAnalysis, SongAnalysis } from "../types";
 
+// Worker messages use a generic result that callers cast to the expected type
 interface WorkerMessage {
-  result: SyntaxAnalysis;
+  type?: string;
+  result: any;
   id: number;
 }
 
 export function useSyntaxWorker() {
   const workerRef = useRef<Worker | null>(null);
   const [isReady, setIsReady] = useState(false);
-  const pendingRequestsRef = useRef<Map<number, (result: SyntaxAnalysis) => void>>(new Map());
+  const pendingRequestsRef = useRef<
+    Map<number, (result: SyntaxAnalysis) => void>
+  >(new Map());
   const idCounterRef = useRef(0);
 
   useEffect(() => {
     // Create the worker
     workerRef.current = new Worker(
-      new URL('../workers/syntaxWorker.ts', import.meta.url),
-      { type: 'module' }
+      new URL("../workers/syntaxWorker.ts", import.meta.url),
+      { type: "module" },
     );
 
     // Set up message handler
     workerRef.current.onmessage = (e: MessageEvent<WorkerMessage>) => {
-      const { result, id } = e.data;
+      const { id } = e.data;
       const resolver = pendingRequestsRef.current.get(id);
       if (resolver) {
+        // Pass the result regardless of type - caller knows what they asked for
+        const result = e.data.result;
         resolver(result);
         pendingRequestsRef.current.delete(id);
       }
     };
 
     workerRef.current.onerror = (error) => {
-      console.error('Syntax worker error:', error);
+      console.error("Syntax worker error:", error);
     };
 
     setIsReady(true);
@@ -46,7 +52,6 @@ export function useSyntaxWorker() {
   const analyze = useCallback((text: string): Promise<SyntaxAnalysis> => {
     return new Promise((resolve, reject) => {
       if (!workerRef.current) {
-        // Fallback: return empty result if worker not ready
         resolve({
           nouns: [],
           pronouns: [],
@@ -65,20 +70,41 @@ export function useSyntaxWorker() {
       }
 
       const id = ++idCounterRef.current;
-      pendingRequestsRef.current.set(id, resolve);
+      pendingRequestsRef.current.set(id, resolve as (result: any) => void);
+      workerRef.current.postMessage({ type: "syntax", text, id });
 
-      // Send message to worker
-      workerRef.current.postMessage({ text, id });
-
-      // Timeout after 5 seconds
       setTimeout(() => {
         if (pendingRequestsRef.current.has(id)) {
           pendingRequestsRef.current.delete(id);
-          reject(new Error('Syntax analysis timeout'));
+          reject(new Error("Syntax analysis timeout"));
         }
       }, 5000);
     });
   }, []);
 
-  return { analyze, isReady };
+  const analyzeSong = useCallback((text: string): Promise<SongAnalysis> => {
+    return new Promise((resolve, reject) => {
+      if (!workerRef.current) {
+        resolve({
+          lines: [], rhymeGroups: [], totalSyllables: 0,
+          flowMetrics: { rhymeDensity: 0, avgSyllablesPerLine: 0, internalRhymeCount: 0, multiSyllabicRhymes: 0, longestRhymeChain: 0 },
+          rhymeScheme: { pattern: "—", label: "—" },
+        });
+        return;
+      }
+
+      const id = ++idCounterRef.current;
+      pendingRequestsRef.current.set(id, resolve as (result: any) => void);
+      workerRef.current.postMessage({ type: "song", text, id });
+
+      setTimeout(() => {
+        if (pendingRequestsRef.current.has(id)) {
+          pendingRequestsRef.current.delete(id);
+          reject(new Error("Song analysis timeout"));
+        }
+      }, 5000);
+    });
+  }, []);
+
+  return { analyze, analyzeSong, isReady };
 }

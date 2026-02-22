@@ -3,7 +3,7 @@
  * Handles merging adjacent/overlapping strikethrough ranges.
  */
 
-const MARKER = '~~';
+const MARKER = "~~";
 const MARKER_LENGTH = MARKER.length;
 const STRIKETHROUGH_BLOCK_REGEX = /~~(?:[^~]|~(?!~))+~~/g;
 const STRIKETHROUGH_BLOCK_TEST_REGEX = /~~(?:[^~]|~(?!~))+~~/;
@@ -12,7 +12,7 @@ const STRIKETHROUGH_BLOCK_TEST_REGEX = /~~(?:[^~]|~(?!~))+~~/;
  * Strips all strikethrough markers from text.
  */
 export function stripStrikethroughMarkers(text: string): string {
-  return text.replace(/~~/g, '');
+  return text.replace(/~~/g, "");
 }
 
 /**
@@ -28,11 +28,11 @@ export function hasStrikethroughBlocks(text: string): boolean {
  */
 export function removeStrikethroughBlocks(text: string): string {
   return text
-    .replace(STRIKETHROUGH_BLOCK_REGEX, '')
-    .replace(/[ \t]{2,}/g, ' ')
-    .replace(/[ \t]+\n/g, '\n')
-    .replace(/\n[ \t]+/g, '\n')
-    .replace(/[ \t]+$/g, '');
+    .replace(STRIKETHROUGH_BLOCK_REGEX, "")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n[ \t]+/g, "\n")
+    .replace(/[ \t]+$/g, "");
 }
 
 /**
@@ -41,7 +41,7 @@ export function removeStrikethroughBlocks(text: string): string {
  */
 function findStrikethroughRegion(
   content: string,
-  position: number
+  position: number,
 ): { start: number; end: number } | null {
   // Find all strikethrough regions
   const regex = /~~([^~]+)~~/g;
@@ -77,7 +77,7 @@ function findStrikethroughRegion(
 export function applyStrikethrough(
   content: string,
   selectionStart: number,
-  selectionEnd: number
+  selectionEnd: number,
 ): string {
   if (selectionStart === selectionEnd) return content;
 
@@ -133,11 +133,14 @@ export function applyStrikethrough(
 export function isFullyStruckThrough(
   content: string,
   selectionStart: number,
-  selectionEnd: number
+  selectionEnd: number,
 ): boolean {
   // Check if the selection starts at ~~ and ends at ~~
-  const hasOpenMarker = content.substring(selectionStart - MARKER_LENGTH, selectionStart) === MARKER;
-  const hasCloseMarker = content.substring(selectionEnd, selectionEnd + MARKER_LENGTH) === MARKER;
+  const hasOpenMarker =
+    content.substring(selectionStart - MARKER_LENGTH, selectionStart) ===
+    MARKER;
+  const hasCloseMarker =
+    content.substring(selectionEnd, selectionEnd + MARKER_LENGTH) === MARKER;
 
   if (!hasOpenMarker || !hasCloseMarker) return false;
 
@@ -152,7 +155,7 @@ export function isFullyStruckThrough(
 export function removeStrikethrough(
   content: string,
   selectionStart: number,
-  selectionEnd: number
+  selectionEnd: number,
 ): string {
   const before = content.substring(0, selectionStart - MARKER_LENGTH);
   const selectedText = content.substring(selectionStart, selectionEnd);

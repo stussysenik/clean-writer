@@ -1,5 +1,5 @@
-import nlp from 'compromise';
-import { SyntaxAnalysis, SyntaxSets } from '../types';
+import nlp from "compromise";
+import { SyntaxAnalysis, SyntaxSets } from "../types";
 import {
   HASHTAG_MATCH_REGEX,
   URL_MATCH_REGEX,
@@ -11,7 +11,7 @@ import {
   isNumberToken,
   normalizeApostrophes,
   normalizeTokenForSyntaxLookup,
-} from '../utils/syntaxPatterns';
+} from "../utils/syntaxPatterns";
 
 /**
  * Centralized word counting function with UTF-8 support.
@@ -24,12 +24,12 @@ export function countWords(content: string): number {
   if (!content.trim()) return 0;
 
   // Try to use Intl.Segmenter for proper word segmentation (modern browsers)
-  if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
+  if (typeof Intl !== "undefined" && "Segmenter" in Intl) {
     try {
-      const segmenter = new Intl.Segmenter(undefined, { granularity: 'word' });
+      const segmenter = new Intl.Segmenter(undefined, { granularity: "word" });
       const segments = Array.from(segmenter.segment(content.trim()));
       // Count only segments that are actual words (not whitespace/punctuation)
-      return segments.filter(segment => segment.isWordLike).length;
+      return segments.filter((segment) => segment.isWordLike).length;
     } catch {
       // Fall back to manual counting if Segmenter fails
     }
@@ -47,7 +47,8 @@ export function countWords(content: string): number {
   // Korean Hangul
   const koreanPattern = /[\uAC00-\uD7AF\u1100-\u11FF]/g;
   // Emoji (simplified pattern covering common emoji ranges)
-  const emojiPattern = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu;
+  const emojiPattern =
+    /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu;
 
   // Count CJK characters (each character = 1 word)
   const cjkMatches = text.match(cjkPattern) || [];
@@ -67,15 +68,17 @@ export function countWords(content: string): number {
 
   // Remove CJK, Japanese, Korean, and emoji from text before counting Western words
   const westernText = text
-    .replace(cjkPattern, ' ')
-    .replace(japaneseKanaPattern, ' ')
-    .replace(koreanPattern, ' ')
-    .replace(emojiPattern, ' ')
+    .replace(cjkPattern, " ")
+    .replace(japaneseKanaPattern, " ")
+    .replace(koreanPattern, " ")
+    .replace(emojiPattern, " ")
     .trim();
 
   // Count Western words (whitespace-separated)
   if (westernText) {
-    const westernWords = westernText.split(/\s+/).filter(word => word.length > 0);
+    const westernWords = westernText
+      .split(/\s+/)
+      .filter((word) => word.length > 0);
     count += westernWords.length;
   }
 
@@ -86,7 +89,9 @@ export function countWords(content: string): number {
  * Get word type counts from syntax analysis.
  * Uses the array lengths from analyzed syntax data for accurate type counts.
  */
-export function getWordTypeCounts(syntaxData: SyntaxAnalysis): Record<string, number> {
+export function getWordTypeCounts(
+  syntaxData: SyntaxAnalysis,
+): Record<string, number> {
   return {
     nouns: syntaxData.nouns.length,
     verbs: syntaxData.verbs.length,
@@ -110,7 +115,7 @@ export function getWordTypeCounts(syntaxData: SyntaxAnalysis): Record<string, nu
  */
 export function getWordTypeOccurrences(
   content: string,
-  syntaxSets: SyntaxSets
+  syntaxSets: SyntaxSets,
 ): Record<string, number> {
   const counts: Record<string, number> = {
     nouns: 0,
@@ -178,26 +183,108 @@ export function getWordTypeOccurrences(
 }
 
 // Static lists for high accuracy word detection
-const ARTICLES = ['a', 'an', 'the'];
+const ARTICLES = ["a", "an", "the"];
 
 const PREPOSITIONS = [
-  'in', 'on', 'at', 'to', 'for', 'with', 'by', 'from',
-  'up', 'about', 'into', 'over', 'after', 'under', 'between',
-  'through', 'during', 'before', 'behind', 'above', 'below',
-  'across', 'against', 'along', 'among', 'around', 'beside',
-  'beyond', 'despite', 'down', 'except', 'inside', 'near',
-  'off', 'onto', 'outside', 'past', 'since', 'toward',
-  'towards', 'underneath', 'until', 'upon', 'within', 'without'
+  "in",
+  "on",
+  "at",
+  "to",
+  "for",
+  "with",
+  "by",
+  "from",
+  "up",
+  "about",
+  "into",
+  "over",
+  "after",
+  "under",
+  "between",
+  "through",
+  "during",
+  "before",
+  "behind",
+  "above",
+  "below",
+  "across",
+  "against",
+  "along",
+  "among",
+  "around",
+  "beside",
+  "beyond",
+  "despite",
+  "down",
+  "except",
+  "inside",
+  "near",
+  "off",
+  "onto",
+  "outside",
+  "past",
+  "since",
+  "toward",
+  "towards",
+  "underneath",
+  "until",
+  "upon",
+  "within",
+  "without",
 ];
 
 const INTERJECTIONS = [
-  'wow', 'oh', 'ah', 'oops', 'ouch', 'yay', 'hey', 'hmm',
-  'ugh', 'phew', 'alas', 'bravo', 'hurray', 'hooray', 'yikes',
-  'ooh', 'aha', 'ahem', 'aww', 'bah', 'boo', 'duh', 'eek',
-  'gee', 'geez', 'gosh', 'ha', 'haha', 'huh', 'hurrah',
-  'jeez', 'meh', 'nah', 'nope', 'okay', 'ok', 'ow', 'psst',
-  'shh', 'shush', 'tsk', 'uh', 'um', 'whoa', 'whoops', 'yep',
-  'yes', 'yeah', 'yup', 'yo', 'hello'
+  "wow",
+  "oh",
+  "ah",
+  "oops",
+  "ouch",
+  "yay",
+  "hey",
+  "hmm",
+  "ugh",
+  "phew",
+  "alas",
+  "bravo",
+  "hurray",
+  "hooray",
+  "yikes",
+  "ooh",
+  "aha",
+  "ahem",
+  "aww",
+  "bah",
+  "boo",
+  "duh",
+  "eek",
+  "gee",
+  "geez",
+  "gosh",
+  "ha",
+  "haha",
+  "huh",
+  "hurrah",
+  "jeez",
+  "meh",
+  "nah",
+  "nope",
+  "okay",
+  "ok",
+  "ow",
+  "psst",
+  "shh",
+  "shush",
+  "tsk",
+  "uh",
+  "um",
+  "whoa",
+  "whoops",
+  "yep",
+  "yes",
+  "yeah",
+  "yup",
+  "yo",
+  "hello",
 ];
 
 // Comprehensive contraction map for proper categorization
@@ -280,7 +367,7 @@ function extractContractions(text: string, result: SyntaxAnalysis): void {
   for (const [contraction, info] of Object.entries(CONTRACTIONS)) {
     // Create regex that matches word boundaries and handles both straight and curly apostrophes
     const escapedContraction = contraction.replace("'", "['']");
-    const regex = new RegExp(`\\b${escapedContraction}\\b`, 'gi');
+    const regex = new RegExp(`\\b${escapedContraction}\\b`, "gi");
 
     if (regex.test(normalizedText)) {
       // Add the contraction to its primary category (first in types array)
@@ -320,13 +407,13 @@ export const analyzeSyntax = async (text: string): Promise<SyntaxAnalysis> => {
 
   // Helper to get unique lowercase words from a tag match
   const getUniqueWords = (tag: string): string[] => {
-    const words = doc.match(tag).out('array');
+    const words = doc.match(tag).out("array");
     return Array.from(
       new Set(
         (words as string[])
           .map((w: string) => normalizeTokenForSyntaxLookup(w))
-          .filter((w: string) => w.length > 0)
-      )
+          .filter((w: string) => w.length > 0),
+      ),
     );
   };
 
@@ -336,17 +423,17 @@ export const analyzeSyntax = async (text: string): Promise<SyntaxAnalysis> => {
       .split(/\s+/)
       .map((word) => normalizeTokenForSyntaxLookup(word))
       .filter((word) => word.length > 0);
-    return Array.from(new Set(words.filter(w => ARTICLES.includes(w))));
+    return Array.from(new Set(words.filter((w) => ARTICLES.includes(w))));
   };
 
   // Extract prepositions - combine NLP with static list for better coverage
   const extractPrepositions = (text: string): string[] => {
-    const nlpPrepositions = getUniqueWords('#Preposition');
+    const nlpPrepositions = getUniqueWords("#Preposition");
     const words = text
       .split(/\s+/)
       .map((word) => normalizeTokenForSyntaxLookup(word))
       .filter((word) => word.length > 0);
-    const staticPrepositions = words.filter(w => PREPOSITIONS.includes(w));
+    const staticPrepositions = words.filter((w) => PREPOSITIONS.includes(w));
     return Array.from(new Set([...nlpPrepositions, ...staticPrepositions]));
   };
 
@@ -357,17 +444,17 @@ export const analyzeSyntax = async (text: string): Promise<SyntaxAnalysis> => {
       .map((word) => normalizeTokenForSyntaxLookup(word))
       .filter((word) => word.length > 0);
     const wordSet = new Set(normalizedWords);
-    return Array.from(new Set(INTERJECTIONS.filter(i => wordSet.has(i))));
+    return Array.from(new Set(INTERJECTIONS.filter((i) => wordSet.has(i))));
   };
 
   const result: SyntaxAnalysis = {
-    nouns: getUniqueWords('#Noun'),
-    pronouns: getUniqueWords('#Pronoun'),
-    verbs: getUniqueWords('#Verb'),
-    adjectives: getUniqueWords('#Adjective'),
-    adverbs: getUniqueWords('#Adverb'),
+    nouns: getUniqueWords("#Noun"),
+    pronouns: getUniqueWords("#Pronoun"),
+    verbs: getUniqueWords("#Verb"),
+    adjectives: getUniqueWords("#Adjective"),
+    adverbs: getUniqueWords("#Adverb"),
     prepositions: extractPrepositions(text),
-    conjunctions: getUniqueWords('#Conjunction'),
+    conjunctions: getUniqueWords("#Conjunction"),
     articles: extractArticles(text),
     interjections: extractInterjections(text),
     urls,

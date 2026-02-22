@@ -1,34 +1,127 @@
-import nlp from 'compromise';
-import { SyntaxAnalysis } from '../types';
+import nlp from "compromise";
+import { SyntaxAnalysis, SongAnalysis } from "../types";
 import {
   extractHashtags,
   extractNumbers,
   extractUrls,
   normalizeApostrophes,
   normalizeTokenForSyntaxLookup,
-} from '../utils/syntaxPatterns';
+} from "../utils/syntaxPatterns";
+import { analyzeSong } from "../services/songAnalysisService";
+import { dictionary as cmuDict } from "cmu-pronouncing-dictionary";
+
+// Discriminated union for worker messages
+type WorkerRequest =
+  | { type: "syntax"; text: string; id: number }
+  | { type: "song"; text: string; id: number };
+
+type WorkerResponse =
+  | { type: "syntax"; result: SyntaxAnalysis; id: number }
+  | { type: "song"; result: SongAnalysis; id: number };
 
 // Static lists for high accuracy word detection
-const ARTICLES = ['a', 'an', 'the'];
+const ARTICLES = ["a", "an", "the"];
 
 const PREPOSITIONS = [
-  'in', 'on', 'at', 'to', 'for', 'with', 'by', 'from',
-  'up', 'about', 'into', 'over', 'after', 'under', 'between',
-  'through', 'during', 'before', 'behind', 'above', 'below',
-  'across', 'against', 'along', 'among', 'around', 'beside',
-  'beyond', 'despite', 'down', 'except', 'inside', 'near',
-  'off', 'onto', 'outside', 'past', 'since', 'toward',
-  'towards', 'underneath', 'until', 'upon', 'within', 'without'
+  "in",
+  "on",
+  "at",
+  "to",
+  "for",
+  "with",
+  "by",
+  "from",
+  "up",
+  "about",
+  "into",
+  "over",
+  "after",
+  "under",
+  "between",
+  "through",
+  "during",
+  "before",
+  "behind",
+  "above",
+  "below",
+  "across",
+  "against",
+  "along",
+  "among",
+  "around",
+  "beside",
+  "beyond",
+  "despite",
+  "down",
+  "except",
+  "inside",
+  "near",
+  "off",
+  "onto",
+  "outside",
+  "past",
+  "since",
+  "toward",
+  "towards",
+  "underneath",
+  "until",
+  "upon",
+  "within",
+  "without",
 ];
 
 const INTERJECTIONS = [
-  'wow', 'oh', 'ah', 'oops', 'ouch', 'yay', 'hey', 'hmm',
-  'ugh', 'phew', 'alas', 'bravo', 'hurray', 'hooray', 'yikes',
-  'ooh', 'aha', 'ahem', 'aww', 'bah', 'boo', 'duh', 'eek',
-  'gee', 'geez', 'gosh', 'ha', 'haha', 'huh', 'hurrah',
-  'jeez', 'meh', 'nah', 'nope', 'okay', 'ok', 'ow', 'psst',
-  'shh', 'shush', 'tsk', 'uh', 'um', 'whoa', 'whoops', 'yep',
-  'yes', 'yeah', 'yup', 'yo', 'hello'
+  "wow",
+  "oh",
+  "ah",
+  "oops",
+  "ouch",
+  "yay",
+  "hey",
+  "hmm",
+  "ugh",
+  "phew",
+  "alas",
+  "bravo",
+  "hurray",
+  "hooray",
+  "yikes",
+  "ooh",
+  "aha",
+  "ahem",
+  "aww",
+  "bah",
+  "boo",
+  "duh",
+  "eek",
+  "gee",
+  "geez",
+  "gosh",
+  "ha",
+  "haha",
+  "huh",
+  "hurrah",
+  "jeez",
+  "meh",
+  "nah",
+  "nope",
+  "okay",
+  "ok",
+  "ow",
+  "psst",
+  "shh",
+  "shush",
+  "tsk",
+  "uh",
+  "um",
+  "whoa",
+  "whoops",
+  "yep",
+  "yes",
+  "yeah",
+  "yup",
+  "yo",
+  "hello",
 ];
 
 // Comprehensive contraction map
@@ -109,7 +202,7 @@ function extractContractions(text: string, result: SyntaxAnalysis): void {
 
   for (const [contraction, info] of Object.entries(CONTRACTIONS)) {
     const escapedContraction = contraction.replace("'", "['']");
-    const regex = new RegExp(`\\b${escapedContraction}\\b`, 'gi');
+    const regex = new RegExp(`\\b${escapedContraction}\\b`, "gi");
 
     if (regex.test(normalizedText)) {
       const primaryType = info.types[0];
@@ -146,13 +239,13 @@ function analyzeSyntax(text: string): SyntaxAnalysis {
   const doc = nlp(text);
 
   const getUniqueWords = (tag: string): string[] => {
-    const words = doc.match(tag).out('array');
+    const words = doc.match(tag).out("array");
     return Array.from(
       new Set(
         (words as string[])
           .map((w: string) => normalizeTokenForSyntaxLookup(w))
-          .filter((w: string) => w.length > 0)
-      )
+          .filter((w: string) => w.length > 0),
+      ),
     );
   };
 
@@ -161,16 +254,16 @@ function analyzeSyntax(text: string): SyntaxAnalysis {
       .split(/\s+/)
       .map((word) => normalizeTokenForSyntaxLookup(word))
       .filter((word) => word.length > 0);
-    return Array.from(new Set(words.filter(w => ARTICLES.includes(w))));
+    return Array.from(new Set(words.filter((w) => ARTICLES.includes(w))));
   };
 
   const extractPrepositions = (text: string): string[] => {
-    const nlpPrepositions = getUniqueWords('#Preposition');
+    const nlpPrepositions = getUniqueWords("#Preposition");
     const words = text
       .split(/\s+/)
       .map((word) => normalizeTokenForSyntaxLookup(word))
       .filter((word) => word.length > 0);
-    const staticPrepositions = words.filter(w => PREPOSITIONS.includes(w));
+    const staticPrepositions = words.filter((w) => PREPOSITIONS.includes(w));
     return Array.from(new Set([...nlpPrepositions, ...staticPrepositions]));
   };
 
@@ -180,17 +273,17 @@ function analyzeSyntax(text: string): SyntaxAnalysis {
       .map((word) => normalizeTokenForSyntaxLookup(word))
       .filter((word) => word.length > 0);
     const wordSet = new Set(normalizedWords);
-    return Array.from(new Set(INTERJECTIONS.filter(i => wordSet.has(i))));
+    return Array.from(new Set(INTERJECTIONS.filter((i) => wordSet.has(i))));
   };
 
   const result: SyntaxAnalysis = {
-    nouns: getUniqueWords('#Noun'),
-    pronouns: getUniqueWords('#Pronoun'),
-    verbs: getUniqueWords('#Verb'),
-    adjectives: getUniqueWords('#Adjective'),
-    adverbs: getUniqueWords('#Adverb'),
+    nouns: getUniqueWords("#Noun"),
+    pronouns: getUniqueWords("#Pronoun"),
+    verbs: getUniqueWords("#Verb"),
+    adjectives: getUniqueWords("#Adjective"),
+    adverbs: getUniqueWords("#Adverb"),
     prepositions: extractPrepositions(text),
-    conjunctions: getUniqueWords('#Conjunction'),
+    conjunctions: getUniqueWords("#Conjunction"),
     articles: extractArticles(text),
     interjections: extractInterjections(text),
     urls,
@@ -203,9 +296,20 @@ function analyzeSyntax(text: string): SyntaxAnalysis {
   return result;
 }
 
-// Worker message handler
-self.onmessage = (e: MessageEvent<{ text: string; id: number }>) => {
-  const { text, id } = e.data;
-  const result = analyzeSyntax(text);
-  self.postMessage({ result, id });
+// Worker message handler - discriminated union protocol
+self.onmessage = (
+  e: MessageEvent<WorkerRequest | { text: string; id: number }>,
+) => {
+  const data = e.data;
+
+  // Legacy format support (no type field = syntax)
+  if (!("type" in data) || data.type === "syntax") {
+    const { text, id } = data;
+    const result = analyzeSyntax(text);
+    self.postMessage({ type: "syntax", result, id } satisfies WorkerResponse);
+  } else if (data.type === "song") {
+    const { text, id } = data;
+    const result = analyzeSong(text, cmuDict);
+    self.postMessage({ type: "song", result, id } satisfies WorkerResponse);
+  }
 };
