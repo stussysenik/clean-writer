@@ -1,16 +1,16 @@
 export type SyntaxType =
-  | 'noun'
-  | 'pronoun'
-  | 'verb'
-  | 'adjective'
-  | 'adverb'
-  | 'preposition'
-  | 'conjunction'
-  | 'article'
-  | 'interjection'
-  | 'url'
-  | 'number'
-  | 'hashtag';
+  | "noun"
+  | "pronoun"
+  | "verb"
+  | "adjective"
+  | "adverb"
+  | "preposition"
+  | "conjunction"
+  | "article"
+  | "interjection"
+  | "url"
+  | "number"
+  | "hashtag";
 
 export interface SyntaxAnalysis {
   nouns: string[];
@@ -94,9 +94,9 @@ export interface RisoTheme {
     hashtag: string;
   };
   accent: string;
-  cursor: string;        // Blinking cursor color
+  cursor: string; // Blinking cursor color
   strikethrough: string; // Strikethrough text decoration
-  selection: string;     // Text selection background (rgba)
+  selection: string; // Text selection background (rgba)
 }
 
 export interface CustomTheme extends RisoTheme {
@@ -104,4 +104,61 @@ export interface CustomTheme extends RisoTheme {
   wordVisibility: HighlightConfig;
 }
 
-export type ViewMode = 'write' | 'preview';
+export type ViewMode = "write" | "preview";
+
+// Song Mode types
+export interface SongWord {
+  text: string;
+  syllables: number;
+  rhymeKey: string; // normalized suffix for rhyme grouping
+}
+
+export interface SongLine {
+  text: string;
+  words: SongWord[];
+  totalSyllables: number;
+}
+
+export interface RhymeGroup {
+  key: string; // rhyme suffix identifier
+  words: string[];
+  colorIndex: number; // index into RHYME_COLORS palette
+  approximate?: boolean; // true when rhyme detected via suffix heuristic (not CMU dict)
+}
+
+export interface FlowMetrics {
+  rhymeDensity: number;          // % of words participating in rhymes (0-100)
+  avgSyllablesPerLine: number;   // average syllables per non-empty line
+  internalRhymeCount: number;    // count of lines with 2+ rhyming words within same line
+  multiSyllabicRhymes: number;   // rhyme groups where rhymeKey length >= 3
+  longestRhymeChain: number;     // largest single rhyme group word count
+}
+
+export interface RhymeScheme {
+  pattern: string;     // e.g. "AABB", "ABAB", "ABBA", "Free"
+  label: string;       // e.g. "Couplets", "Alternating", "Enclosed", "Free Verse"
+}
+
+export interface SongAnalysis {
+  lines: SongLine[];
+  rhymeGroups: RhymeGroup[];
+  totalSyllables: number;
+  nonLatinWarning?: boolean;
+  flowMetrics: FlowMetrics;
+  rhymeScheme: RhymeScheme;
+}
+
+// Color system types
+export type ColorHarmonyType =
+  | "complementary"
+  | "analogous"
+  | "triadic"
+  | "split-complementary"
+  | "tetradic";
+export type ColorSystemMode = "free" | "system";
+
+export interface ColorSystemConfig {
+  mode: ColorSystemMode;
+  harmonyType: ColorHarmonyType;
+  baseHue: number; // 0-360
+}

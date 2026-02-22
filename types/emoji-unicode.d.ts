@@ -1,4 +1,4 @@
-declare module 'emoji-unicode' {
+declare module "emoji-unicode" {
   /**
    * Converts an emoji to its Unicode hex code (without U+ prefix)
    * @param emoji - The emoji character to convert
