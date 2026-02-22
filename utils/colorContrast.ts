@@ -8,12 +8,16 @@
  */
 function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
   // Remove # if present
-  const cleanHex = hex.replace(/^#/, '');
+  const cleanHex = hex.replace(/^#/, "");
 
   // Handle shorthand (e.g., #fff)
-  const fullHex = cleanHex.length === 3
-    ? cleanHex.split('').map(c => c + c).join('')
-    : cleanHex;
+  const fullHex =
+    cleanHex.length === 3
+      ? cleanHex
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : cleanHex;
 
   if (fullHex.length !== 6) return null;
 
@@ -43,9 +47,12 @@ function getRelativeLuminance(hex: string): number {
   const bsRGB = b / 255;
 
   // Apply gamma correction
-  const rL = rsRGB <= 0.03928 ? rsRGB / 12.92 : Math.pow((rsRGB + 0.055) / 1.055, 2.4);
-  const gL = gsRGB <= 0.03928 ? gsRGB / 12.92 : Math.pow((gsRGB + 0.055) / 1.055, 2.4);
-  const bL = bsRGB <= 0.03928 ? bsRGB / 12.92 : Math.pow((bsRGB + 0.055) / 1.055, 2.4);
+  const rL =
+    rsRGB <= 0.03928 ? rsRGB / 12.92 : Math.pow((rsRGB + 0.055) / 1.055, 2.4);
+  const gL =
+    gsRGB <= 0.03928 ? gsRGB / 12.92 : Math.pow((gsRGB + 0.055) / 1.055, 2.4);
+  const bL =
+    bsRGB <= 0.03928 ? bsRGB / 12.92 : Math.pow((bsRGB + 0.055) / 1.055, 2.4);
 
   // Calculate luminance
   return 0.2126 * rL + 0.7152 * gL + 0.0722 * bL;
@@ -66,15 +73,23 @@ export function getContrastRatio(fg: string, bg: string): number {
 }
 
 /**
- * Check if two colors meet the minimum contrast threshold
- * Default threshold is 2.08:1 (plan requirement)
+ * Check if two colors meet the minimum contrast threshold.
+ * Default threshold is 3:1 (WCAG AA for large text / UI components).
+ * Use 4.5 for body text compliance.
  */
 export function meetsMinimumContrast(
   fg: string,
   bg: string,
-  threshold: number = 2.08
+  threshold: number = 3,
 ): boolean {
   return getContrastRatio(fg, bg) >= threshold;
+}
+
+/**
+ * Check if a hex background color is dark (luminance-based).
+ */
+export function isDarkBackground(hex: string): boolean {
+  return getRelativeLuminance(hex) < 0.18;
 }
 
 /**
@@ -112,7 +127,9 @@ export function averageHighlightColor(highlight: {
     highlight.interjection,
   ];
 
-  let totalR = 0, totalG = 0, totalB = 0;
+  let totalR = 0,
+    totalG = 0,
+    totalB = 0;
   let count = 0;
 
   for (const hex of colors) {
@@ -125,11 +142,11 @@ export function averageHighlightColor(highlight: {
     }
   }
 
-  if (count === 0) return '#888888';
+  if (count === 0) return "#888888";
 
   const avgR = Math.round(totalR / count);
   const avgG = Math.round(totalG / count);
   const avgB = Math.round(totalB / count);
 
-  return `#${avgR.toString(16).padStart(2, '0')}${avgG.toString(16).padStart(2, '0')}${avgB.toString(16).padStart(2, '0')}`;
+  return `#${avgR.toString(16).padStart(2, "0")}${avgG.toString(16).padStart(2, "0")}${avgB.toString(16).padStart(2, "0")}`;
 }

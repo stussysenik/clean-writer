@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
-import { RisoTheme, HighlightConfig, CustomTheme } from '../types';
-import { THEMES } from '../constants';
+import { useState, useEffect, useCallback } from "react";
+import { RisoTheme, HighlightConfig, CustomTheme } from "../types";
+import { THEMES } from "../constants";
 
-const CUSTOM_THEME_STORAGE_KEY = 'clean_writer_custom_theme';
+const CUSTOM_THEME_STORAGE_KEY = "clean_writer_custom_theme";
 
 interface CustomThemeState {
   baseThemeId: string;
@@ -11,9 +11,10 @@ interface CustomThemeState {
     text: string;
     cursor: string;
     selection: string;
-    highlight: Partial<RisoTheme['highlight']>;
+    highlight: Partial<RisoTheme["highlight"]>;
   }>;
   wordVisibility: HighlightConfig;
+  rhymeColorOverrides?: Record<number, string>;
 }
 
 const defaultVisibility: HighlightConfig = {
@@ -32,32 +33,35 @@ const defaultVisibility: HighlightConfig = {
 };
 
 export function useCustomTheme(baseThemeId: string) {
-  const [customState, setCustomState] = useState<CustomThemeState | null>(() => {
-    try {
-      const saved = localStorage.getItem(CUSTOM_THEME_STORAGE_KEY);
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [customState, setCustomState] = useState<CustomThemeState | null>(
+    () => {
+      try {
+        const saved = localStorage.getItem(CUSTOM_THEME_STORAGE_KEY);
+        return saved ? JSON.parse(saved) : null;
+      } catch {
+        return null;
+      }
+    },
+  );
 
   // Get base theme
-  const baseTheme = THEMES.find(t => t.id === baseThemeId) || THEMES[0];
+  const baseTheme = THEMES.find((t) => t.id === baseThemeId) || THEMES[0];
 
   // Apply overrides to create effective theme
-  const effectiveTheme: RisoTheme = customState?.baseThemeId === baseThemeId && customState?.overrides
-    ? {
-        ...baseTheme,
-        background: customState.overrides.background || baseTheme.background,
-        text: customState.overrides.text || baseTheme.text,
-        cursor: customState.overrides.cursor || baseTheme.cursor,
-        selection: customState.overrides.selection || baseTheme.selection,
-        highlight: {
-          ...baseTheme.highlight,
-          ...customState.overrides.highlight,
-        },
-      }
-    : baseTheme;
+  const effectiveTheme: RisoTheme =
+    customState?.baseThemeId === baseThemeId && customState?.overrides
+      ? {
+          ...baseTheme,
+          background: customState.overrides.background || baseTheme.background,
+          text: customState.overrides.text || baseTheme.text,
+          cursor: customState.overrides.cursor || baseTheme.cursor,
+          selection: customState.overrides.selection || baseTheme.selection,
+          highlight: {
+            ...baseTheme.highlight,
+            ...customState.overrides.highlight,
+          },
+        }
+      : baseTheme;
 
   const wordVisibility = customState?.wordVisibility || defaultVisibility;
 
@@ -65,65 +69,97 @@ export function useCustomTheme(baseThemeId: string) {
   useEffect(() => {
     try {
       if (customState) {
-        localStorage.setItem(CUSTOM_THEME_STORAGE_KEY, JSON.stringify(customState));
+        localStorage.setItem(
+          CUSTOM_THEME_STORAGE_KEY,
+          JSON.stringify(customState),
+        );
       } else {
         localStorage.removeItem(CUSTOM_THEME_STORAGE_KEY);
       }
     } catch (e) {
-      console.warn('Could not save custom theme');
+      console.warn("Could not save custom theme");
     }
   }, [customState]);
 
   // Set a specific color
-  const setColor = useCallback((
-    path: 'background' | 'text' | 'cursor' | 'selection' | keyof RisoTheme['highlight'],
-    color: string
-  ) => {
-    setCustomState(prev => {
-      const base = prev || { baseThemeId, overrides: {}, wordVisibility: defaultVisibility };
-      const highlightKeys: (keyof RisoTheme['highlight'])[] = [
-        'noun', 'pronoun', 'verb', 'adjective', 'adverb',
-        'preposition', 'conjunction', 'article', 'interjection', 'url', 'number', 'hashtag'
-      ];
+  const setColor = useCallback(
+    (
+      path:
+        | "background"
+        | "text"
+        | "cursor"
+        | "selection"
+        | keyof RisoTheme["highlight"],
+      color: string,
+    ) => {
+      setCustomState((prev) => {
+        const base = prev || {
+          baseThemeId,
+          overrides: {},
+          wordVisibility: defaultVisibility,
+        };
+        const highlightKeys: (keyof RisoTheme["highlight"])[] = [
+          "noun",
+          "pronoun",
+          "verb",
+          "adjective",
+          "adverb",
+          "preposition",
+          "conjunction",
+          "article",
+          "interjection",
+          "url",
+          "number",
+          "hashtag",
+        ];
 
-      if (highlightKeys.includes(path as keyof RisoTheme['highlight'])) {
+        if (highlightKeys.includes(path as keyof RisoTheme["highlight"])) {
+          return {
+            ...base,
+            baseThemeId,
+            overrides: {
+              ...base.overrides,
+              highlight: {
+                ...base.overrides?.highlight,
+                [path]: color,
+              },
+            },
+          };
+        }
+
         return {
           ...base,
           baseThemeId,
           overrides: {
             ...base.overrides,
-            highlight: {
-              ...base.overrides?.highlight,
-              [path]: color,
-            },
+            [path]: color,
           },
         };
-      }
-
-      return {
-        ...base,
-        baseThemeId,
-        overrides: {
-          ...base.overrides,
-          [path]: color,
-        },
-      };
-    });
-  }, [baseThemeId]);
+      });
+    },
+    [baseThemeId],
+  );
 
   // Toggle word type visibility
-  const toggleVisibility = useCallback((key: keyof HighlightConfig) => {
-    setCustomState(prev => {
-      const base = prev || { baseThemeId, overrides: {}, wordVisibility: defaultVisibility };
-      return {
-        ...base,
-        wordVisibility: {
-          ...base.wordVisibility,
-          [key]: !base.wordVisibility[key],
-        },
-      };
-    });
-  }, [baseThemeId]);
+  const toggleVisibility = useCallback(
+    (key: keyof HighlightConfig) => {
+      setCustomState((prev) => {
+        const base = prev || {
+          baseThemeId,
+          overrides: {},
+          wordVisibility: defaultVisibility,
+        };
+        return {
+          ...base,
+          wordVisibility: {
+            ...base.wordVisibility,
+            [key]: !base.wordVisibility[key],
+          },
+        };
+      });
+    },
+    [baseThemeId],
+  );
 
   // Reset to preset theme
   const resetToPreset = useCallback(() => {
@@ -131,82 +167,188 @@ export function useCustomTheme(baseThemeId: string) {
   }, []);
 
   // Reset a single color to its base theme value
-  const resetColor = useCallback((
-    path: 'background' | 'text' | 'cursor' | 'selection' | keyof RisoTheme['highlight']
-  ) => {
-    setCustomState(prev => {
-      if (!prev) return null;
+  const resetColor = useCallback(
+    (
+      path:
+        | "background"
+        | "text"
+        | "cursor"
+        | "selection"
+        | keyof RisoTheme["highlight"],
+    ) => {
+      setCustomState((prev) => {
+        if (!prev) return null;
 
-      const highlightKeys: (keyof RisoTheme['highlight'])[] = [
-        'noun', 'pronoun', 'verb', 'adjective', 'adverb',
-        'preposition', 'conjunction', 'article', 'interjection', 'url', 'number', 'hashtag'
-      ];
+        const highlightKeys: (keyof RisoTheme["highlight"])[] = [
+          "noun",
+          "pronoun",
+          "verb",
+          "adjective",
+          "adverb",
+          "preposition",
+          "conjunction",
+          "article",
+          "interjection",
+          "url",
+          "number",
+          "hashtag",
+        ];
 
-      if (highlightKeys.includes(path as keyof RisoTheme['highlight'])) {
-        // Remove the highlight override
-        const newHighlight = { ...prev.overrides?.highlight };
-        delete newHighlight[path as keyof RisoTheme['highlight']];
+        if (highlightKeys.includes(path as keyof RisoTheme["highlight"])) {
+          // Remove the highlight override
+          const newHighlight = { ...prev.overrides?.highlight };
+          delete newHighlight[path as keyof RisoTheme["highlight"]];
 
-        const newOverrides = { ...prev.overrides, highlight: newHighlight };
+          const newOverrides = { ...prev.overrides, highlight: newHighlight };
 
-        // If highlight object is empty, remove it
-        if (Object.keys(newHighlight).length === 0) {
-          delete newOverrides.highlight;
+          // If highlight object is empty, remove it
+          if (Object.keys(newHighlight).length === 0) {
+            delete newOverrides.highlight;
+          }
+
+          // If no overrides remain, clear the state
+          if (
+            Object.keys(newOverrides).length === 0 ||
+            (Object.keys(newOverrides).length === 1 && !newOverrides.highlight)
+          ) {
+            const remainingOverrides = { ...newOverrides };
+            delete remainingOverrides.highlight;
+            if (Object.keys(remainingOverrides).length === 0) {
+              return prev.wordVisibility === defaultVisibility
+                ? null
+                : {
+                    ...prev,
+                    overrides: {},
+                  };
+            }
+          }
+
+          return { ...prev, overrides: newOverrides };
         }
 
-        // If no overrides remain, clear the state
-        if (Object.keys(newOverrides).length === 0 ||
-            (Object.keys(newOverrides).length === 1 && !newOverrides.highlight)) {
-          const remainingOverrides = { ...newOverrides };
-          delete remainingOverrides.highlight;
-          if (Object.keys(remainingOverrides).length === 0) {
-            return prev.wordVisibility === defaultVisibility ? null : {
-              ...prev,
-              overrides: {},
-            };
-          }
+        // Remove the base color override
+        const newOverrides = { ...prev.overrides };
+        delete newOverrides[
+          path as "background" | "text" | "cursor" | "selection"
+        ];
+
+        // If no overrides remain, check if we should clear state
+        if (
+          Object.keys(newOverrides).length === 0 ||
+          (Object.keys(newOverrides).length === 1 &&
+            newOverrides.highlight &&
+            Object.keys(newOverrides.highlight).length === 0)
+        ) {
+          return prev.wordVisibility === defaultVisibility
+            ? null
+            : {
+                ...prev,
+                overrides: {},
+              };
         }
 
         return { ...prev, overrides: newOverrides };
-      }
-
-      // Remove the base color override
-      const newOverrides = { ...prev.overrides };
-      delete newOverrides[path as 'background' | 'text' | 'cursor' | 'selection'];
-
-      // If no overrides remain, check if we should clear state
-      if (Object.keys(newOverrides).length === 0 ||
-          (Object.keys(newOverrides).length === 1 && newOverrides.highlight && Object.keys(newOverrides.highlight).length === 0)) {
-        return prev.wordVisibility === defaultVisibility ? null : {
-          ...prev,
-          overrides: {},
-        };
-      }
-
-      return { ...prev, overrides: newOverrides };
-    });
-  }, []);
+      });
+    },
+    [],
+  );
 
   // Check if a specific color has been customized
-  const isColorCustomized = useCallback((
-    path: 'background' | 'text' | 'cursor' | 'selection' | keyof RisoTheme['highlight']
-  ): boolean => {
-    if (!customState || customState.baseThemeId !== baseThemeId) return false;
+  const isColorCustomized = useCallback(
+    (
+      path:
+        | "background"
+        | "text"
+        | "cursor"
+        | "selection"
+        | keyof RisoTheme["highlight"],
+    ): boolean => {
+      if (!customState || customState.baseThemeId !== baseThemeId) return false;
 
-    const highlightKeys: (keyof RisoTheme['highlight'])[] = [
-      'noun', 'pronoun', 'verb', 'adjective', 'adverb',
-      'preposition', 'conjunction', 'article', 'interjection', 'url', 'number', 'hashtag'
-    ];
+      const highlightKeys: (keyof RisoTheme["highlight"])[] = [
+        "noun",
+        "pronoun",
+        "verb",
+        "adjective",
+        "adverb",
+        "preposition",
+        "conjunction",
+        "article",
+        "interjection",
+        "url",
+        "number",
+        "hashtag",
+      ];
 
-    if (highlightKeys.includes(path as keyof RisoTheme['highlight'])) {
-      return customState.overrides?.highlight?.[path as keyof RisoTheme['highlight']] !== undefined;
-    }
+      if (highlightKeys.includes(path as keyof RisoTheme["highlight"])) {
+        return (
+          customState.overrides?.highlight?.[
+            path as keyof RisoTheme["highlight"]
+          ] !== undefined
+        );
+      }
 
-    return customState.overrides?.[path as 'background' | 'text' | 'cursor' | 'selection'] !== undefined;
-  }, [customState, baseThemeId]);
+      return (
+        customState.overrides?.[
+          path as "background" | "text" | "cursor" | "selection"
+        ] !== undefined
+      );
+    },
+    [customState, baseThemeId],
+  );
+
+  // Rhyme color overrides
+  const rhymeColorOverrides = customState?.baseThemeId === baseThemeId
+    ? customState?.rhymeColorOverrides
+    : undefined;
+
+  const setRhymeColor = useCallback(
+    (index: number, color: string) => {
+      setCustomState((prev) => {
+        const base = prev || {
+          baseThemeId,
+          overrides: {},
+          wordVisibility: defaultVisibility,
+        };
+        return {
+          ...base,
+          baseThemeId,
+          rhymeColorOverrides: {
+            ...base.rhymeColorOverrides,
+            [index]: color,
+          },
+        };
+      });
+    },
+    [baseThemeId],
+  );
+
+  const resetRhymeColor = useCallback(
+    (index: number) => {
+      setCustomState((prev) => {
+        if (!prev) return null;
+        const newOverrides = { ...prev.rhymeColorOverrides };
+        delete newOverrides[index];
+        return {
+          ...prev,
+          rhymeColorOverrides: Object.keys(newOverrides).length > 0 ? newOverrides : undefined,
+        };
+      });
+    },
+    [],
+  );
+
+  const isRhymeColorCustomized = useCallback(
+    (index: number): boolean => {
+      if (!customState || customState.baseThemeId !== baseThemeId) return false;
+      return customState.rhymeColorOverrides?.[index] !== undefined;
+    },
+    [customState, baseThemeId],
+  );
 
   // Check if theme has customizations
-  const hasCustomizations = customState !== null && customState.baseThemeId === baseThemeId;
+  const hasCustomizations =
+    customState !== null && customState.baseThemeId === baseThemeId;
 
   return {
     effectiveTheme,
@@ -217,6 +359,10 @@ export function useCustomTheme(baseThemeId: string) {
     resetToPreset,
     resetColor,
     isColorCustomized,
+    rhymeColorOverrides,
+    setRhymeColor,
+    resetRhymeColor,
+    isRhymeColorCustomized,
   };
 }
 

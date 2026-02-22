@@ -1,6 +1,6 @@
-import React from 'react';
-import ColorSwatch from './ColorSwatch';
-import HexInput from './HexInput';
+import React from "react";
+import ColorSwatch from "./ColorSwatch";
+import HexInput from "./HexInput";
 
 interface ColorPickerProps {
   color: string;
@@ -10,8 +10,14 @@ interface ColorPickerProps {
 }
 
 const DEFAULT_PRESETS = [
-  '#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3',
-  '#0078BF', '#F15060', '#00A95C', '#9B59B6',
+  "#FF6B6B",
+  "#4ECDC4",
+  "#FFE66D",
+  "#95E1D3",
+  "#0078BF",
+  "#F15060",
+  "#00A95C",
+  "#9B59B6",
 ];
 
 const ColorPicker: React.FC<ColorPickerProps> = ({
@@ -36,8 +42,8 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
             onChange={(e) => onChange(e.target.value)}
             className="w-11 h-11 cursor-pointer rounded-md border-0 p-0 bg-transparent"
             style={{
-              minWidth: '44px',
-              minHeight: '44px',
+              minWidth: "44px",
+              minHeight: "44px",
             }}
           />
         </div>

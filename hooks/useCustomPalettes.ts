@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
-import { RisoTheme } from '../types';
-import { THEMES } from '../constants';
+import { useState, useEffect, useCallback } from "react";
+import { RisoTheme } from "../types";
+import { THEMES } from "../constants";
 
-const CUSTOM_PALETTES_STORAGE_KEY = 'clean_writer_custom_palettes';
+const CUSTOM_PALETTES_STORAGE_KEY = "clean_writer_custom_palettes";
 
 export interface SavedPalette {
   id: string;
@@ -14,7 +14,7 @@ export interface SavedPalette {
     text: string;
     cursor: string;
     selection: string;
-    highlight: Partial<RisoTheme['highlight']>;
+    highlight: Partial<RisoTheme["highlight"]>;
   }>;
   isArchived: boolean;
 }
@@ -36,55 +36,62 @@ export function useCustomPalettes() {
   // Persist palettes to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem(CUSTOM_PALETTES_STORAGE_KEY, JSON.stringify(palettes));
+      localStorage.setItem(
+        CUSTOM_PALETTES_STORAGE_KEY,
+        JSON.stringify(palettes),
+      );
     } catch (e) {
-      console.warn('Could not save custom palettes');
+      console.warn("Could not save custom palettes");
     }
   }, [palettes]);
 
   // Save a new palette
-  const savePalette = useCallback((
-    name: string,
-    baseThemeId: string,
-    overrides: SavedPalette['overrides']
-  ): SavedPalette => {
-    const newPalette: SavedPalette = {
-      id: generateId(),
-      name,
-      createdAt: Date.now(),
-      baseThemeId,
-      overrides,
-      isArchived: false,
-    };
-    setPalettes(prev => [...prev, newPalette]);
-    return newPalette;
-  }, []);
+  const savePalette = useCallback(
+    (
+      name: string,
+      baseThemeId: string,
+      overrides: SavedPalette["overrides"],
+    ): SavedPalette => {
+      const newPalette: SavedPalette = {
+        id: generateId(),
+        name,
+        createdAt: Date.now(),
+        baseThemeId,
+        overrides,
+        isArchived: false,
+      };
+      setPalettes((prev) => [...prev, newPalette]);
+      return newPalette;
+    },
+    [],
+  );
 
   // Update an existing palette
-  const updatePalette = useCallback((
-    id: string,
-    updates: Partial<Omit<SavedPalette, 'id' | 'createdAt'>>
-  ) => {
-    setPalettes(prev =>
-      prev.map(p => (p.id === id ? { ...p, ...updates } : p))
-    );
-  }, []);
+  const updatePalette = useCallback(
+    (id: string, updates: Partial<Omit<SavedPalette, "id" | "createdAt">>) => {
+      setPalettes((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+      );
+    },
+    [],
+  );
 
   // Archive/unarchive a palette
   const archivePalette = useCallback((id: string, archived = true) => {
-    setPalettes(prev =>
-      prev.map(p => (p.id === id ? { ...p, isArchived: archived } : p))
+    setPalettes((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, isArchived: archived } : p)),
     );
   }, []);
 
   // Delete a palette permanently
   const deletePalette = useCallback((id: string) => {
-    setPalettes(prev => prev.filter(p => p.id !== id));
+    setPalettes((prev) => prev.filter((p) => p.id !== id));
   }, []);
 
   // Apply a palette and return the effective theme
   const applyPalette = useCallback((palette: SavedPalette): RisoTheme => {
-    const baseTheme = THEMES.find(t => t.id === palette.baseThemeId) || THEMES[0];
+    const baseTheme =
+      THEMES.find((t) => t.id === palette.baseThemeId) || THEMES[0];
     return {
       ...baseTheme,
       id: palette.id,
@@ -101,10 +108,10 @@ export function useCustomPalettes() {
   }, []);
 
   // Get visible (non-archived) palettes
-  const visiblePalettes = palettes.filter(p => !p.isArchived);
+  const visiblePalettes = palettes.filter((p) => !p.isArchived);
 
   // Get archived palettes
-  const archivedPalettes = palettes.filter(p => p.isArchived);
+  const archivedPalettes = palettes.filter((p) => p.isArchived);
 
   return {
     palettes,

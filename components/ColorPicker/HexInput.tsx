@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 
 interface HexInputProps {
   value: string;
@@ -16,12 +16,12 @@ const HexInput: React.FC<HexInputProps> = ({ value, onChange }) => {
     let val = e.target.value;
 
     // Ensure it starts with #
-    if (!val.startsWith('#')) {
-      val = '#' + val.replace('#', '');
+    if (!val.startsWith("#")) {
+      val = "#" + val.replace("#", "");
     }
 
     // Only allow valid hex characters
-    val = val.replace(/[^#0-9A-Fa-f]/g, '');
+    val = val.replace(/[^#0-9A-Fa-f]/g, "");
 
     // Limit to 7 characters (#RRGGBB)
     val = val.slice(0, 7);

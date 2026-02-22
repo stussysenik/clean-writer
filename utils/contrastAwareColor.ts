@@ -3,16 +3,20 @@
  * Provides functions to calculate optimal icon/text colors based on background
  */
 
-import { RisoTheme } from '../types';
+import { RisoTheme } from "../types";
 
 /**
  * Parse a hex color string to RGB values
  */
 function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
-  const cleanHex = hex.replace(/^#/, '');
-  const fullHex = cleanHex.length === 3
-    ? cleanHex.split('').map(c => c + c).join('')
-    : cleanHex;
+  const cleanHex = hex.replace(/^#/, "");
+  const fullHex =
+    cleanHex.length === 3
+      ? cleanHex
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : cleanHex;
 
   if (fullHex.length !== 6) return null;
 
@@ -38,9 +42,12 @@ export function getRelativeLuminance(hex: string): number {
   const gsRGB = g / 255;
   const bsRGB = b / 255;
 
-  const rL = rsRGB <= 0.03928 ? rsRGB / 12.92 : Math.pow((rsRGB + 0.055) / 1.055, 2.4);
-  const gL = gsRGB <= 0.03928 ? gsRGB / 12.92 : Math.pow((gsRGB + 0.055) / 1.055, 2.4);
-  const bL = bsRGB <= 0.03928 ? bsRGB / 12.92 : Math.pow((bsRGB + 0.055) / 1.055, 2.4);
+  const rL =
+    rsRGB <= 0.03928 ? rsRGB / 12.92 : Math.pow((rsRGB + 0.055) / 1.055, 2.4);
+  const gL =
+    gsRGB <= 0.03928 ? gsRGB / 12.92 : Math.pow((gsRGB + 0.055) / 1.055, 2.4);
+  const bL =
+    bsRGB <= 0.03928 ? bsRGB / 12.92 : Math.pow((bsRGB + 0.055) / 1.055, 2.4);
 
   return 0.2126 * rL + 0.7152 * gL + 0.0722 * bL;
 }
@@ -65,7 +72,7 @@ export function getContrastRatio(fg: string, bg: string): number {
 export function getContrastAwareColor(
   backgroundColor: string,
   preferredColor: string,
-  minContrast: number = 2.08
+  minContrast: number = 2.08,
 ): string {
   const ratio = getContrastRatio(preferredColor, backgroundColor);
 
@@ -75,7 +82,7 @@ export function getContrastAwareColor(
 
   // Fallback: use light or dark based on background luminance
   const bgLuminance = getRelativeLuminance(backgroundColor);
-  return bgLuminance > 0.5 ? '#1A1A1A' : '#F5F5F5';
+  return bgLuminance > 0.5 ? "#1A1A1A" : "#F5F5F5";
 }
 
 /**
@@ -97,7 +104,10 @@ export function getIconColor(theme: RisoTheme): string {
  * Get muted icon color (for inactive states)
  * Ensures minimum contrast while being visually subdued
  */
-export function getMutedIconColor(theme: RisoTheme, opacity: number = 0.6): string {
+export function getMutedIconColor(
+  theme: RisoTheme,
+  opacity: number = 0.6,
+): string {
   const baseColor = getIconColor(theme);
   const rgb = hexToRgb(baseColor);
 
