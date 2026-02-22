@@ -1,13 +1,15 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 
-test.describe('Mobile Touch UX', () => {
+test.describe("Mobile Touch UX", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await page.goto("/");
   });
 
-  test('all toolbar buttons have minimum 44px tap targets', async ({ page }) => {
+  test("all toolbar buttons have minimum 44px tap targets", async ({
+    page,
+  }) => {
     // Get all buttons in the toolbar area
-    const buttons = page.locator('footer button');
+    const buttons = page.locator("footer button");
     const count = await buttons.count();
 
     for (let i = 0; i < count; i++) {
@@ -15,28 +17,34 @@ test.describe('Mobile Touch UX', () => {
       const box = await button.boundingBox();
 
       if (box) {
-        expect(box.width, `Button ${i} width should be >= 44px`).toBeGreaterThanOrEqual(44);
-        expect(box.height, `Button ${i} height should be >= 44px`).toBeGreaterThanOrEqual(44);
+        expect(
+          box.width,
+          `Button ${i} width should be >= 44px`,
+        ).toBeGreaterThanOrEqual(44);
+        expect(
+          box.height,
+          `Button ${i} height should be >= 44px`,
+        ).toBeGreaterThanOrEqual(44);
       }
     }
   });
 
-  test('touch buttons have touch-manipulation CSS', async ({ page }) => {
-    const buttons = page.locator('footer button');
+  test("touch buttons have touch-manipulation CSS", async ({ page }) => {
+    const buttons = page.locator("footer button");
     const count = await buttons.count();
 
     for (let i = 0; i < count; i++) {
       const button = buttons.nth(i);
       const touchAction = await button.evaluate(
-        (el) => getComputedStyle(el).touchAction
+        (el) => getComputedStyle(el).touchAction,
       );
 
-      expect(touchAction).toContain('manipulation');
+      expect(touchAction).toContain("manipulation");
     }
   });
 
-  test('toolbar buttons do not overlap', async ({ page }) => {
-    const buttons = page.locator('footer button');
+  test("toolbar buttons do not overlap", async ({ page }) => {
+    const buttons = page.locator("footer button");
     const count = await buttons.count();
     const boxes: { x: number; y: number; width: number; height: number }[] = [];
 
@@ -56,18 +64,26 @@ test.describe('Mobile Touch UX', () => {
         const overlapsX = a.x < b.x + b.width && a.x + a.width > b.x;
         const overlapsY = a.y < b.y + b.height && a.y + a.height > b.y;
 
-        expect(overlapsX && overlapsY, `Buttons ${i} and ${j} should not overlap`).toBeFalsy();
+        expect(
+          overlapsX && overlapsY,
+          `Buttons ${i} and ${j} should not overlap`,
+        ).toBeFalsy();
       }
     }
   });
 
-  test('theme selector circles are touchable on mobile', async ({ page, isMobile }) => {
+  test("theme selector circles are touchable on mobile", async ({
+    page,
+    isMobile,
+  }) => {
     if (!isMobile) {
       test.skip();
       return;
     }
 
-    const themeButtons = page.locator('[title="Classic"], [title="Blueprint"], [title="Midnight"], [title="Sepia"], [title="Ink"]');
+    const themeButtons = page.locator(
+      '[title="Classic"], [title="Blueprint"], [title="Midnight"], [title="Sepia"], [title="Ink"]',
+    );
     const count = await themeButtons.count();
 
     expect(count).toBe(5);
@@ -84,8 +100,8 @@ test.describe('Mobile Touch UX', () => {
     }
   });
 
-  test('textarea receives focus on touch', async ({ page }) => {
-    const textarea = page.locator('textarea');
+  test("textarea receives focus on touch", async ({ page }) => {
+    const textarea = page.locator("textarea");
     await textarea.tap();
     await expect(textarea).toBeFocused();
   });
