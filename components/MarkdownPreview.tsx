@@ -1,20 +1,23 @@
-import React from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import { RisoTheme } from '../types';
+import React from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { RisoTheme } from "../types";
 
 interface MarkdownPreviewProps {
   content: string;
   theme: RisoTheme;
 }
 
-const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ content, theme }) => {
+const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
+  content,
+  theme,
+}) => {
   return (
-    <div 
+    <div
       className="w-full h-full p-12 overflow-y-auto prose max-w-none"
-      style={{ 
+      style={{
         color: theme.text,
-        fontFamily: '"Space Mono", monospace' 
+        fontFamily: '"Space Mono", monospace',
       }}
     >
       <style>{`
@@ -26,7 +29,7 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({ content, theme }) => 
         .prose blockquote { border-left-color: ${theme.accent}; color: ${theme.highlight.adjective}; }
       `}</style>
       <ReactMarkdown remarkPlugins={[remarkGfm]}>
-        {content || '*Nothing here yet...*'}
+        {content || "*Nothing here yet...*"}
       </ReactMarkdown>
     </div>
   );

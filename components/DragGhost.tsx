@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 interface DragGhostProps {
   color: string;
@@ -21,7 +21,9 @@ const DragGhost: React.FC<DragGhostProps> = ({
   originalPosition,
 }) => {
   const [smoothPosition, setSmoothPosition] = useState(position);
-  const [animationState, setAnimationState] = useState<'appearing' | 'following' | 'deleting' | 'rejected'>('appearing');
+  const [animationState, setAnimationState] = useState<
+    "appearing" | "following" | "deleting" | "rejected"
+  >("appearing");
   const rafRef = useRef<number | null>(null);
   const targetRef = useRef(position);
 
@@ -35,7 +37,7 @@ const DragGhost: React.FC<DragGhostProps> = ({
     if (!isVisible) return;
 
     const animate = () => {
-      setSmoothPosition(prev => {
+      setSmoothPosition((prev) => {
         const dx = targetRef.current.x - prev.x;
         const dy = targetRef.current.y - prev.y;
         const easing = 0.15; // Smooth lag effect
@@ -60,60 +62,71 @@ const DragGhost: React.FC<DragGhostProps> = ({
   // Handle animation states
   useEffect(() => {
     if (isDeleting) {
-      setAnimationState('deleting');
+      setAnimationState("deleting");
     } else if (isRejected) {
-      setAnimationState('rejected');
+      setAnimationState("rejected");
     } else if (isVisible) {
-      setAnimationState('appearing');
-      const timer = setTimeout(() => setAnimationState('following'), 200);
+      setAnimationState("appearing");
+      const timer = setTimeout(() => setAnimationState("following"), 200);
       return () => clearTimeout(timer);
     }
   }, [isVisible, isDeleting, isRejected]);
 
-  if (!isVisible && animationState !== 'deleting' && animationState !== 'rejected') {
+  if (
+    !isVisible &&
+    animationState !== "deleting" &&
+    animationState !== "rejected"
+  ) {
     return null;
   }
 
   const getTransform = () => {
     switch (animationState) {
-      case 'appearing':
-        return 'translate(-50%, -50%) scale(1.2)';
-      case 'following':
+      case "appearing":
+        return "translate(-50%, -50%) scale(1.2)";
+      case "following":
         return isOverTrash
-          ? 'translate(-50%, -50%) scale(1.0)'
-          : 'translate(-50%, -50%) scale(1.2)';
-      case 'deleting':
-        return 'translate(-50%, 100px) scale(0)';
-      case 'rejected':
-        return 'translate(-50%, -50%) scale(1.0)';
+          ? "translate(-50%, -50%) scale(1.0)"
+          : "translate(-50%, -50%) scale(1.2)";
+      case "deleting":
+        return "translate(-50%, 100px) scale(0)";
+      case "rejected":
+        return "translate(-50%, -50%) scale(1.0)";
       default:
-        return 'translate(-50%, -50%) scale(1.2)';
+        return "translate(-50%, -50%) scale(1.2)";
     }
   };
 
   const ghostStyle: React.CSSProperties = {
-    position: 'fixed',
-    left: animationState === 'rejected' && originalPosition ? originalPosition.x : smoothPosition.x,
-    top: animationState === 'rejected' && originalPosition ? originalPosition.y : smoothPosition.y,
+    position: "fixed",
+    left:
+      animationState === "rejected" && originalPosition
+        ? originalPosition.x
+        : smoothPosition.x,
+    top:
+      animationState === "rejected" && originalPosition
+        ? originalPosition.y
+        : smoothPosition.y,
     width: 40,
     height: 40,
-    borderRadius: '50%',
+    borderRadius: "50%",
     backgroundColor: color,
-    pointerEvents: 'none',
+    pointerEvents: "none",
     zIndex: 9999,
     transform: getTransform(),
-    opacity: animationState === 'deleting' ? 0 : isOverTrash ? 0.7 : 0.9,
+    opacity: animationState === "deleting" ? 0 : isOverTrash ? 0.7 : 0.9,
     boxShadow: isOverTrash
       ? `0 8px 32px rgba(239, 68, 68, 0.5), inset 0 0 0 3px rgba(239, 68, 68, 0.5)`
-      : '0 12px 40px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.2)',
-    transition: animationState === 'appearing'
-      ? 'transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 200ms ease-out'
-      : animationState === 'deleting'
-      ? 'transform 400ms cubic-bezier(0.55, 0.085, 0.68, 0.53), opacity 400ms ease-out, top 400ms cubic-bezier(0.55, 0.085, 0.68, 0.53)'
-      : animationState === 'rejected'
-      ? 'all 500ms cubic-bezier(0.34, 1.56, 0.64, 1)'
-      : 'transform 150ms ease-out, box-shadow 150ms ease-out, opacity 150ms ease-out',
-    willChange: 'transform, left, top',
+      : "0 12px 40px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.2)",
+    transition:
+      animationState === "appearing"
+        ? "transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 200ms ease-out"
+        : animationState === "deleting"
+          ? "transform 400ms cubic-bezier(0.55, 0.085, 0.68, 0.53), opacity 400ms ease-out, top 400ms cubic-bezier(0.55, 0.085, 0.68, 0.53)"
+          : animationState === "rejected"
+            ? "all 500ms cubic-bezier(0.34, 1.56, 0.64, 1)"
+            : "transform 150ms ease-out, box-shadow 150ms ease-out, opacity 150ms ease-out",
+    willChange: "transform, left, top",
   };
 
   return createPortal(
@@ -121,18 +134,18 @@ const DragGhost: React.FC<DragGhostProps> = ({
       {/* Inner highlight for 3D effect */}
       <div
         style={{
-          position: 'absolute',
-          top: '15%',
-          left: '20%',
-          width: '30%',
-          height: '30%',
-          borderRadius: '50%',
-          background: 'rgba(255, 255, 255, 0.4)',
-          filter: 'blur(2px)',
+          position: "absolute",
+          top: "15%",
+          left: "20%",
+          width: "30%",
+          height: "30%",
+          borderRadius: "50%",
+          background: "rgba(255, 255, 255, 0.4)",
+          filter: "blur(2px)",
         }}
       />
     </div>,
-    document.body
+    document.body,
   );
 };
 

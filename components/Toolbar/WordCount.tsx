@@ -1,5 +1,5 @@
-import React from 'react';
-import { RisoTheme } from '../../types';
+import React from "react";
+import { RisoTheme } from "../../types";
 
 interface WordCountProps {
   count: number;

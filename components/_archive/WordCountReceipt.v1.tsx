@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
-import { RisoTheme, SyntaxAnalysis, HighlightConfig } from '../../types';
-import TouchButton from '../TouchButton';
+import React, { useState, useMemo } from "react";
+import { RisoTheme, SyntaxAnalysis, HighlightConfig } from "../../types";
+import TouchButton from "../TouchButton";
 
 interface WordCountReceiptProps {
   count: number;
@@ -14,7 +14,7 @@ interface WordTypeCount {
   key: string;
   label: string;
   count: number;
-  colorKey: keyof RisoTheme['highlight'];
+  colorKey: keyof RisoTheme["highlight"];
 }
 
 const WordCountReceipt: React.FC<WordCountReceiptProps> = ({
@@ -35,63 +35,75 @@ const WordCountReceipt: React.FC<WordCountReceiptProps> = ({
 
     const counts: WordTypeCount[] = [
       {
-        key: 'nouns',
-        label: 'Nouns',
-        count: syntaxData.nouns.filter(w => wordSet.has(w.toLowerCase())).length,
-        colorKey: 'noun',
+        key: "nouns",
+        label: "Nouns",
+        count: syntaxData.nouns.filter((w) => wordSet.has(w.toLowerCase()))
+          .length,
+        colorKey: "noun",
       },
       {
-        key: 'verbs',
-        label: 'Verbs',
-        count: syntaxData.verbs.filter(w => wordSet.has(w.toLowerCase())).length,
-        colorKey: 'verb',
+        key: "verbs",
+        label: "Verbs",
+        count: syntaxData.verbs.filter((w) => wordSet.has(w.toLowerCase()))
+          .length,
+        colorKey: "verb",
       },
       {
-        key: 'adjectives',
-        label: 'Adj',
-        count: syntaxData.adjectives.filter(w => wordSet.has(w.toLowerCase())).length,
-        colorKey: 'adjective',
+        key: "adjectives",
+        label: "Adj",
+        count: syntaxData.adjectives.filter((w) => wordSet.has(w.toLowerCase()))
+          .length,
+        colorKey: "adjective",
       },
       {
-        key: 'adverbs',
-        label: 'Adv',
-        count: syntaxData.adverbs.filter(w => wordSet.has(w.toLowerCase())).length,
-        colorKey: 'adverb',
+        key: "adverbs",
+        label: "Adv",
+        count: syntaxData.adverbs.filter((w) => wordSet.has(w.toLowerCase()))
+          .length,
+        colorKey: "adverb",
       },
       {
-        key: 'pronouns',
-        label: 'Pron',
-        count: syntaxData.pronouns.filter(w => wordSet.has(w.toLowerCase())).length,
-        colorKey: 'pronoun',
+        key: "pronouns",
+        label: "Pron",
+        count: syntaxData.pronouns.filter((w) => wordSet.has(w.toLowerCase()))
+          .length,
+        colorKey: "pronoun",
       },
       {
-        key: 'prepositions',
-        label: 'Prep',
-        count: syntaxData.prepositions.filter(w => wordSet.has(w.toLowerCase())).length,
-        colorKey: 'preposition',
+        key: "prepositions",
+        label: "Prep",
+        count: syntaxData.prepositions.filter((w) =>
+          wordSet.has(w.toLowerCase()),
+        ).length,
+        colorKey: "preposition",
       },
       {
-        key: 'conjunctions',
-        label: 'Conj',
-        count: syntaxData.conjunctions.filter(w => wordSet.has(w.toLowerCase())).length,
-        colorKey: 'conjunction',
+        key: "conjunctions",
+        label: "Conj",
+        count: syntaxData.conjunctions.filter((w) =>
+          wordSet.has(w.toLowerCase()),
+        ).length,
+        colorKey: "conjunction",
       },
       {
-        key: 'articles',
-        label: 'Art',
-        count: syntaxData.articles.filter(w => wordSet.has(w.toLowerCase())).length,
-        colorKey: 'article',
+        key: "articles",
+        label: "Art",
+        count: syntaxData.articles.filter((w) => wordSet.has(w.toLowerCase()))
+          .length,
+        colorKey: "article",
       },
       {
-        key: 'interjections',
-        label: 'Intj',
-        count: syntaxData.interjections.filter(w => wordSet.has(w.toLowerCase())).length,
-        colorKey: 'interjection',
+        key: "interjections",
+        label: "Intj",
+        count: syntaxData.interjections.filter((w) =>
+          wordSet.has(w.toLowerCase()),
+        ).length,
+        colorKey: "interjection",
       },
     ];
 
     // Only return counts that are > 0 and enabled in highlight config
-    return counts.filter(c => {
+    return counts.filter((c) => {
       const configKey = c.key as keyof HighlightConfig;
       return c.count > 0 && (!highlightConfig || highlightConfig[configKey]);
     });
@@ -103,14 +115,14 @@ const WordCountReceipt: React.FC<WordCountReceiptProps> = ({
     <div
       className="bg-black/5 rounded-lg backdrop-blur-sm flex-shrink-0 transition-all duration-200"
       style={{
-        fontFamily: 'monospace',
+        fontFamily: "monospace",
       }}
     >
       {/* Main count - clickable to expand */}
       <TouchButton
         onClick={() => hasBreakdown && setIsExpanded(!isExpanded)}
         className={`px-3 py-1 md:px-4 md:py-2 flex items-center gap-2 w-full ${
-          hasBreakdown ? 'cursor-pointer hover:bg-black/5' : ''
+          hasBreakdown ? "cursor-pointer hover:bg-black/5" : ""
         }`}
         disabled={!hasBreakdown}
       >
@@ -126,7 +138,9 @@ const WordCountReceipt: React.FC<WordCountReceiptProps> = ({
         {hasBreakdown && (
           <span
             className="ml-auto text-xs opacity-50 transition-transform duration-200"
-            style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}
+            style={{
+              transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
+            }}
           >
             ▼
           </span>
@@ -157,9 +171,7 @@ const WordCountReceipt: React.FC<WordCountReceiptProps> = ({
                 >
                   {label}
                 </span>
-                <span className="opacity-70 tabular-nums">
-                  {typeCount}x
-                </span>
+                <span className="opacity-70 tabular-nums">{typeCount}x</span>
               </div>
             ))}
           </div>

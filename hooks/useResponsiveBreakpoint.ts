@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from "react";
 
-export type ScreenSize = 'mobile' | 'desktop';
+export type ScreenSize = "mobile" | "desktop";
 
 const DESKTOP_BREAKPOINT = 1024;
 
@@ -14,7 +14,7 @@ export function useResponsiveBreakpoint(): {
   isMobile: boolean;
 } {
   const [width, setWidth] = useState(() => {
-    if (typeof window === 'undefined') return 0;
+    if (typeof window === "undefined") return 0;
     return window.innerWidth;
   });
 
@@ -26,18 +26,18 @@ export function useResponsiveBreakpoint(): {
     // Set initial value
     handleResize();
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const screenSize = useMemo<ScreenSize>(() => {
-    return width >= DESKTOP_BREAKPOINT ? 'desktop' : 'mobile';
+    return width >= DESKTOP_BREAKPOINT ? "desktop" : "mobile";
   }, [width]);
 
   return {
     screenSize,
-    isDesktop: screenSize === 'desktop',
-    isMobile: screenSize === 'mobile',
+    isDesktop: screenSize === "desktop",
+    isMobile: screenSize === "mobile",
   };
 }
 

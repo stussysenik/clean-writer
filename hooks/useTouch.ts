@@ -1,6 +1,6 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef } from "react";
 
-type HapticIntensity = 'light' | 'medium' | 'heavy';
+type HapticIntensity = "light" | "medium" | "heavy";
 
 interface UseTouchOptions {
   onTap?: () => void;
@@ -19,7 +19,7 @@ export function useTouch(options: UseTouchOptions = {}) {
   const {
     onTap,
     onLongPress,
-    hapticFeedback = 'light',
+    hapticFeedback = "light",
     longPressDelay = 500,
   } = options;
 
@@ -28,11 +28,14 @@ export function useTouch(options: UseTouchOptions = {}) {
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const didLongPress = useRef(false);
 
-  const triggerHaptic = useCallback((intensity: HapticIntensity = hapticFeedback) => {
-    if ('vibrate' in navigator) {
-      navigator.vibrate(HAPTIC_PATTERNS[intensity]);
-    }
-  }, [hapticFeedback]);
+  const triggerHaptic = useCallback(
+    (intensity: HapticIntensity = hapticFeedback) => {
+      if ("vibrate" in navigator) {
+        navigator.vibrate(HAPTIC_PATTERNS[intensity]);
+      }
+    },
+    [hapticFeedback],
+  );
 
   const clearLongPressTimer = useCallback(() => {
     if (longPressTimer.current) {
@@ -41,42 +44,48 @@ export function useTouch(options: UseTouchOptions = {}) {
     }
   }, []);
 
-  const onTouchStart = useCallback((e: React.TouchEvent) => {
-    if (e.touches.length === 1) {
-      touchStartPos.current = {
-        x: e.touches[0].clientX,
-        y: e.touches[0].clientY,
-      };
-      isTouching.current = true;
-      didLongPress.current = false;
+  const onTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (e.touches.length === 1) {
+        touchStartPos.current = {
+          x: e.touches[0].clientX,
+          y: e.touches[0].clientY,
+        };
+        isTouching.current = true;
+        didLongPress.current = false;
 
-      // Start long press timer if handler provided
-      if (onLongPress) {
-        longPressTimer.current = setTimeout(() => {
-          if (isTouching.current && touchStartPos.current) {
-            didLongPress.current = true;
-            triggerHaptic('medium');
-            onLongPress();
-          }
-        }, longPressDelay);
+        // Start long press timer if handler provided
+        if (onLongPress) {
+          longPressTimer.current = setTimeout(() => {
+            if (isTouching.current && touchStartPos.current) {
+              didLongPress.current = true;
+              triggerHaptic("medium");
+              onLongPress();
+            }
+          }, longPressDelay);
+        }
       }
-    }
-  }, [onLongPress, longPressDelay, triggerHaptic]);
+    },
+    [onLongPress, longPressDelay, triggerHaptic],
+  );
 
-  const onTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!touchStartPos.current || !isTouching.current) return;
+  const onTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (!touchStartPos.current || !isTouching.current) return;
 
-    const touch = e.touches[0];
-    const dx = Math.abs(touch.clientX - touchStartPos.current.x);
-    const dy = Math.abs(touch.clientY - touchStartPos.current.y);
+      const touch = e.touches[0];
+      const dx = Math.abs(touch.clientX - touchStartPos.current.x);
+      const dy = Math.abs(touch.clientY - touchStartPos.current.y);
 
-    // If moved more than 10px, cancel both tap and long press
-    if (dx > 10 || dy > 10) {
-      isTouching.current = false;
-      touchStartPos.current = null;
-      clearLongPressTimer();
-    }
-  }, [clearLongPressTimer]);
+      // If moved more than 10px, cancel both tap and long press
+      if (dx > 10 || dy > 10) {
+        isTouching.current = false;
+        touchStartPos.current = null;
+        clearLongPressTimer();
+      }
+    },
+    [clearLongPressTimer],
+  );
 
   const onTouchEnd = useCallback(() => {
     clearLongPressTimer();

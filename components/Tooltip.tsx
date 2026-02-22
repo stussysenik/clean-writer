@@ -1,11 +1,11 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 
 interface TooltipProps {
   content: string;
   shortcut?: string;
   children: React.ReactNode;
-  position?: 'top' | 'bottom';
+  position?: "top" | "bottom";
   delay?: number;
   disabled?: boolean;
 }
@@ -19,12 +19,15 @@ const Tooltip: React.FC<TooltipProps> = ({
   content,
   shortcut,
   children,
-  position = 'top',
+  position = "top",
   delay = 300,
   disabled = false,
 }) => {
   const [isVisible, setIsVisible] = useState(false);
-  const [tooltipPosition, setTooltipPosition] = useState<Position>({ top: 0, left: 0 });
+  const [tooltipPosition, setTooltipPosition] = useState<Position>({
+    top: 0,
+    left: 0,
+  });
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -42,7 +45,7 @@ const Tooltip: React.FC<TooltipProps> = ({
     left = triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2;
 
     // Position above or below
-    if (position === 'top') {
+    if (position === "top") {
       top = triggerRect.top - tooltipRect.height - 8;
     } else {
       top = triggerRect.bottom + 8;
@@ -111,7 +114,7 @@ const Tooltip: React.FC<TooltipProps> = ({
       style={{
         top: tooltipPosition.top,
         left: tooltipPosition.left,
-        animation: 'fadeIn 0.15s ease-out',
+        animation: "fadeIn 0.15s ease-out",
       }}
     >
       {displayText}

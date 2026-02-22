@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { RisoTheme, SyntaxAnalysis } from '../types';
+import React, { useState, useRef, useEffect } from "react";
+import { RisoTheme, SyntaxAnalysis } from "../types";
 
 interface AnalysisDrawerProps {
   syntaxData: SyntaxAnalysis;
@@ -8,15 +8,35 @@ interface AnalysisDrawerProps {
 }
 
 const WORD_TYPE_CONFIG = [
-  { key: 'nouns', label: 'Nouns', abbrev: 'n', colorKey: 'noun' },
-  { key: 'verbs', label: 'Verbs', abbrev: 'v', colorKey: 'verb' },
-  { key: 'adjectives', label: 'Adjectives', abbrev: 'adj', colorKey: 'adjective' },
-  { key: 'adverbs', label: 'Adverbs', abbrev: 'adv', colorKey: 'adverb' },
-  { key: 'pronouns', label: 'Pronouns', abbrev: 'pron', colorKey: 'pronoun' },
-  { key: 'prepositions', label: 'Prepositions', abbrev: 'prep', colorKey: 'preposition' },
-  { key: 'conjunctions', label: 'Conjunctions', abbrev: 'conj', colorKey: 'conjunction' },
-  { key: 'articles', label: 'Articles', abbrev: 'art', colorKey: 'article' },
-  { key: 'interjections', label: 'Interjections', abbrev: 'int', colorKey: 'interjection' },
+  { key: "nouns", label: "Nouns", abbrev: "n", colorKey: "noun" },
+  { key: "verbs", label: "Verbs", abbrev: "v", colorKey: "verb" },
+  {
+    key: "adjectives",
+    label: "Adjectives",
+    abbrev: "adj",
+    colorKey: "adjective",
+  },
+  { key: "adverbs", label: "Adverbs", abbrev: "adv", colorKey: "adverb" },
+  { key: "pronouns", label: "Pronouns", abbrev: "pron", colorKey: "pronoun" },
+  {
+    key: "prepositions",
+    label: "Prepositions",
+    abbrev: "prep",
+    colorKey: "preposition",
+  },
+  {
+    key: "conjunctions",
+    label: "Conjunctions",
+    abbrev: "conj",
+    colorKey: "conjunction",
+  },
+  { key: "articles", label: "Articles", abbrev: "art", colorKey: "article" },
+  {
+    key: "interjections",
+    label: "Interjections",
+    abbrev: "int",
+    colorKey: "interjection",
+  },
 ] as const;
 
 const AnalysisDrawer: React.FC<AnalysisDrawerProps> = ({
@@ -30,23 +50,22 @@ const AnalysisDrawer: React.FC<AnalysisDrawerProps> = ({
   const startXRef = useRef(0);
   const startTranslateRef = useRef(0);
 
-  const wordCount = content.trim() === '' ? 0 : content.trim().split(/\s+/).length;
+  const wordCount =
+    content.trim() === "" ? 0 : content.trim().split(/\s+/).length;
 
   // Get counts for each word type
   const getCounts = () => {
-    return WORD_TYPE_CONFIG.map(config => ({
+    return WORD_TYPE_CONFIG.map((config) => ({
       ...config,
       count: syntaxData[config.key as keyof SyntaxAnalysis].length,
-    })).filter(item => item.count > 0);
+    })).filter((item) => item.count > 0);
   };
 
   const counts = getCounts();
 
   // Build equation string
   const buildEquation = () => {
-    return counts
-      .map(item => `${item.count}${item.abbrev}`)
-      .join(' + ');
+    return counts.map((item) => `${item.count}${item.abbrev}`).join(" + ");
   };
 
   // Handle touch/mouse drag
@@ -60,7 +79,10 @@ const AnalysisDrawer: React.FC<AnalysisDrawerProps> = ({
     if (!isDragging || !drawerRef.current) return;
 
     const delta = startXRef.current - clientX;
-    const newTranslate = Math.max(0, Math.min(280, startTranslateRef.current + delta));
+    const newTranslate = Math.max(
+      0,
+      Math.min(280, startTranslateRef.current + delta),
+    );
     drawerRef.current.style.transform = `translateX(${280 - newTranslate}px)`;
   };
 
@@ -83,7 +105,7 @@ const AnalysisDrawer: React.FC<AnalysisDrawerProps> = ({
     }
 
     // Reset to proper position
-    drawerRef.current.style.transform = '';
+    drawerRef.current.style.transform = "";
     setIsDragging(false);
   };
 
@@ -116,26 +138,30 @@ const AnalysisDrawer: React.FC<AnalysisDrawerProps> = ({
     };
 
     if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
     }
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
     };
   }, [isDragging, isOpen]);
 
   // Close on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (isOpen && drawerRef.current && !drawerRef.current.contains(e.target as Node)) {
+      if (
+        isOpen &&
+        drawerRef.current &&
+        !drawerRef.current.contains(e.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
 
   // Don't render if no content
@@ -145,10 +171,10 @@ const AnalysisDrawer: React.FC<AnalysisDrawerProps> = ({
     <div
       ref={drawerRef}
       className={`fixed right-0 top-1/2 -translate-y-1/2 z-50 flex transition-transform duration-300 ease-out ${
-        isDragging ? 'transition-none' : ''
+        isDragging ? "transition-none" : ""
       }`}
       style={{
-        transform: isOpen ? 'translateX(0)' : 'translateX(280px)',
+        transform: isOpen ? "translateX(0)" : "translateX(280px)",
       }}
     >
       {/* Tab Handle */}
@@ -160,8 +186,8 @@ const AnalysisDrawer: React.FC<AnalysisDrawerProps> = ({
         onTouchEnd={handleTouchEnd}
         onMouseDown={handleMouseDown}
         style={{
-          writingMode: 'vertical-rl',
-          textOrientation: 'mixed',
+          writingMode: "vertical-rl",
+          textOrientation: "mixed",
         }}
       >
         <div
@@ -170,10 +196,10 @@ const AnalysisDrawer: React.FC<AnalysisDrawerProps> = ({
             backgroundColor: theme.background,
             color: theme.text,
             borderLeft: `3px solid ${theme.accent}`,
-            boxShadow: '-2px 0 8px rgba(0,0,0,0.1)',
+            boxShadow: "-2px 0 8px rgba(0,0,0,0.1)",
           }}
         >
-          <span className="rotate-180">{isOpen ? '→' : '←'}</span>
+          <span className="rotate-180">{isOpen ? "→" : "←"}</span>
           <span className="rotate-180">Analysis</span>
         </div>
       </div>
@@ -184,26 +210,38 @@ const AnalysisDrawer: React.FC<AnalysisDrawerProps> = ({
         style={{
           backgroundColor: theme.background,
           color: theme.text,
-          boxShadow: '-4px 0 12px rgba(0,0,0,0.15)',
+          boxShadow: "-4px 0 12px rgba(0,0,0,0.15)",
         }}
       >
         {/* Receipt Header */}
-        <div className="px-4 pt-4 pb-2 text-center border-b border-dashed" style={{ borderColor: `${theme.text}30` }}>
-          <div className="text-xs tracking-[0.3em] uppercase opacity-60 mb-1">Word Analysis</div>
+        <div
+          className="px-4 pt-4 pb-2 text-center border-b border-dashed"
+          style={{ borderColor: `${theme.text}30` }}
+        >
+          <div className="text-xs tracking-[0.3em] uppercase opacity-60 mb-1">
+            Word Analysis
+          </div>
           <div className="text-2xl font-bold">{wordCount}</div>
           <div className="text-xs opacity-60">words total</div>
         </div>
 
         {/* Breakdown */}
         <div className="px-4 py-3">
-          <div className="text-[10px] uppercase tracking-wider opacity-50 mb-2">Breakdown</div>
+          <div className="text-[10px] uppercase tracking-wider opacity-50 mb-2">
+            Breakdown
+          </div>
           <div className="space-y-1.5">
-            {counts.map(item => (
+            {counts.map((item) => (
               <div key={item.key} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span
                     className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: theme.highlight[item.colorKey as keyof typeof theme.highlight] }}
+                    style={{
+                      backgroundColor:
+                        theme.highlight[
+                          item.colorKey as keyof typeof theme.highlight
+                        ],
+                    }}
                   />
                   <span className="opacity-80">{item.label}</span>
                 </div>
@@ -218,8 +256,13 @@ const AnalysisDrawer: React.FC<AnalysisDrawerProps> = ({
 
         {/* Equation */}
         {counts.length > 0 && (
-          <div className="px-4 py-3 border-t border-dashed" style={{ borderColor: `${theme.text}30` }}>
-            <div className="text-[10px] uppercase tracking-wider opacity-50 mb-2">Equation</div>
+          <div
+            className="px-4 py-3 border-t border-dashed"
+            style={{ borderColor: `${theme.text}30` }}
+          >
+            <div className="text-[10px] uppercase tracking-wider opacity-50 mb-2">
+              Equation
+            </div>
             <div
               className="text-xs p-2 rounded overflow-x-auto whitespace-nowrap"
               style={{ backgroundColor: `${theme.text}08` }}

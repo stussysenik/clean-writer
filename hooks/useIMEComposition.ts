@@ -1,14 +1,19 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef } from "react";
 
 interface UseIMECompositionResult {
   isComposing: boolean;
   compositionValue: string;
   handleCompositionStart: () => void;
-  handleCompositionUpdate: (e: React.CompositionEvent<HTMLTextAreaElement>) => void;
-  handleCompositionEnd: (e: React.CompositionEvent<HTMLTextAreaElement>, callback: (value: string) => void) => void;
+  handleCompositionUpdate: (
+    e: React.CompositionEvent<HTMLTextAreaElement>,
+  ) => void;
+  handleCompositionEnd: (
+    e: React.CompositionEvent<HTMLTextAreaElement>,
+    callback: (value: string) => void,
+  ) => void;
   handleChange: (
     e: React.ChangeEvent<HTMLTextAreaElement>,
-    callback: (value: string) => void
+    callback: (value: string) => void,
   ) => void;
 }
 
@@ -26,33 +31,33 @@ interface UseIMECompositionResult {
  */
 export function useIMEComposition(): UseIMECompositionResult {
   const [isComposing, setIsComposing] = useState(false);
-  const [compositionValue, setCompositionValue] = useState('');
-  const lastCompositionValueRef = useRef<string>('');
+  const [compositionValue, setCompositionValue] = useState("");
+  const lastCompositionValueRef = useRef<string>("");
 
   const handleCompositionStart = useCallback(() => {
     setIsComposing(true);
-    setCompositionValue('');
+    setCompositionValue("");
   }, []);
 
   const handleCompositionUpdate = useCallback(
     (e: React.CompositionEvent<HTMLTextAreaElement>) => {
       // Track the current composition value (in-progress text)
-      setCompositionValue(e.data || '');
-      lastCompositionValueRef.current = e.data || '';
+      setCompositionValue(e.data || "");
+      lastCompositionValueRef.current = e.data || "";
     },
-    []
+    [],
   );
 
   const handleCompositionEnd = useCallback(
     (
       e: React.CompositionEvent<HTMLTextAreaElement>,
-      callback: (value: string) => void
+      callback: (value: string) => void,
     ) => {
       setIsComposing(false);
-      setCompositionValue('');
+      setCompositionValue("");
 
       // The final composed value
-      const finalValue = e.data || '';
+      const finalValue = e.data || "";
 
       // For some browsers/IMEs, we need to manually append the composed text
       // This handles the case where onChange fires before compositionend
@@ -60,15 +65,15 @@ export function useIMEComposition(): UseIMECompositionResult {
         callback(finalValue);
       }
 
-      lastCompositionValueRef.current = '';
+      lastCompositionValueRef.current = "";
     },
-    []
+    [],
   );
 
   const handleChange = useCallback(
     (
       e: React.ChangeEvent<HTMLTextAreaElement>,
-      callback: (value: string) => void
+      callback: (value: string) => void,
     ) => {
       // During IME composition, don't update state to avoid double characters
       // The final value will be set in onCompositionEnd
@@ -76,7 +81,7 @@ export function useIMEComposition(): UseIMECompositionResult {
         callback(e.target.value);
       }
     },
-    [isComposing]
+    [isComposing],
   );
 
   return {

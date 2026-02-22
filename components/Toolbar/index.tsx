@@ -1,6 +1,6 @@
-import React from 'react';
-import { RisoTheme, ViewMode, HighlightConfig } from '../../types';
-import ActionButtons from './ActionButtons';
+import React from "react";
+import { RisoTheme, ViewMode, HighlightConfig } from "../../types";
+import ActionButtons from "./ActionButtons";
 
 interface ToolbarProps {
   theme: RisoTheme;
@@ -42,9 +42,9 @@ const Toolbar: React.FC<ToolbarProps> = ({
     <footer
       className="absolute bottom-0 left-0 right-0 flex flex-col-reverse md:flex-row justify-between items-start md:items-end z-50 pointer-events-none"
       style={{
-        padding: '13px',
-        paddingBottom: 'max(13px, env(safe-area-inset-bottom))',
-        gap: '13px',
+        padding: "13px",
+        paddingBottom: "max(13px, env(safe-area-inset-bottom))",
+        gap: "13px",
       }}
     >
       {/* Left: Interactive Tools */}

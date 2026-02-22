@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from "react";
 
 interface VirtualKeyboardState {
   isKeyboardOpen: boolean;
@@ -31,25 +31,25 @@ export function useVirtualKeyboard(): VirtualKeyboardState {
 
   // Check for reduced motion preference
   const reducedMotion = useMemo(() => {
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   }, []);
 
   // Debounce helper for resize events
-  const debounce = useCallback(<T extends (...args: Parameters<T>) => void>(
-    fn: T,
-    ms: number
-  ) => {
-    let timeoutId: ReturnType<typeof setTimeout>;
-    return (...args: Parameters<T>) => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => fn(...args), ms);
-    };
-  }, []);
+  const debounce = useCallback(
+    <T extends (...args: Parameters<T>) => void>(fn: T, ms: number) => {
+      let timeoutId: ReturnType<typeof setTimeout>;
+      return (...args: Parameters<T>) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => fn(...args), ms);
+      };
+    },
+    [],
+  );
 
   useEffect(() => {
     // Use VirtualKeyboard API if available (Chrome 94+)
-    if ('virtualKeyboard' in navigator && navigator.virtualKeyboard) {
+    if ("virtualKeyboard" in navigator && navigator.virtualKeyboard) {
       const vk = navigator.virtualKeyboard;
 
       // Enable overlay mode so we get geometry info
@@ -64,13 +64,13 @@ export function useVirtualKeyboard(): VirtualKeyboardState {
         });
       };
 
-      vk.addEventListener('geometrychange', handleGeometryChange);
+      vk.addEventListener("geometrychange", handleGeometryChange);
 
       // Check initial state
       handleGeometryChange();
 
       return () => {
-        vk.removeEventListener('geometrychange', handleGeometryChange);
+        vk.removeEventListener("geometrychange", handleGeometryChange);
       };
     }
 
@@ -112,7 +112,7 @@ export function useVirtualKeyboard(): VirtualKeyboardState {
       : debounce(updateKeyboardState, 100);
 
     // Handle viewport resize
-    viewport.addEventListener('resize', debouncedUpdate);
+    viewport.addEventListener("resize", debouncedUpdate);
 
     // Also handle orientation changes which reset initial height
     const handleOrientationChange = () => {
@@ -123,14 +123,14 @@ export function useVirtualKeyboard(): VirtualKeyboardState {
       }, 300);
     };
 
-    window.addEventListener('orientationchange', handleOrientationChange);
+    window.addEventListener("orientationchange", handleOrientationChange);
 
     // Initial check
     updateKeyboardState();
 
     return () => {
-      viewport.removeEventListener('resize', debouncedUpdate);
-      window.removeEventListener('orientationchange', handleOrientationChange);
+      viewport.removeEventListener("resize", debouncedUpdate);
+      window.removeEventListener("orientationchange", handleOrientationChange);
     };
   }, [reducedMotion, debounce]);
 

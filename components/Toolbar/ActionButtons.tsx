@@ -1,9 +1,17 @@
-import React, { useState } from 'react';
-import { RisoTheme, ViewMode } from '../../types';
-import { IconEyeOpen, IconEyeClosed, IconStrike, IconDownload, IconTrash, IconWidth, IconMagicClean } from './Icons';
-import TouchButton from '../TouchButton';
-import Tooltip from '../Tooltip';
-import { getIconColor } from '../../utils/contrastAwareColor';
+import React, { useState } from "react";
+import { RisoTheme, ViewMode } from "../../types";
+import {
+  IconEyeOpen,
+  IconEyeClosed,
+  IconStrike,
+  IconDownload,
+  IconTrash,
+  IconWidth,
+  IconMagicClean,
+} from "./Icons";
+import TouchButton from "../TouchButton";
+import Tooltip from "../Tooltip";
+import { getIconColor } from "../../utils/contrastAwareColor";
 
 interface ActionButtonsProps {
   theme: RisoTheme;
@@ -30,7 +38,7 @@ interface ActionButtonProps {
   tooltip: string;
   className?: string;
   ariaLabel?: string;
-  'data-testid'?: string;
+  "data-testid"?: string;
 }
 
 const ActionButton: React.FC<ActionButtonProps> = ({
@@ -42,9 +50,9 @@ const ActionButton: React.FC<ActionButtonProps> = ({
   icon,
   label,
   tooltip,
-  className = '',
+  className = "",
   ariaLabel,
-  'data-testid': dataTestId,
+  "data-testid": dataTestId,
 }) => (
   <Tooltip content={tooltip} position="top" delay={400}>
     <TouchButton
@@ -54,14 +62,18 @@ const ActionButton: React.FC<ActionButtonProps> = ({
       onTouchStart={onTouchStart}
       disabled={disabled}
       className={`flex flex-col items-center justify-center gap-0.5 p-2 rounded-xl transition-all duration-150 hover:bg-current/5 ${
-        disabled ? 'opacity-30 cursor-not-allowed' : 'opacity-60 hover:opacity-100'
+        disabled
+          ? "opacity-30 cursor-not-allowed"
+          : "opacity-60 hover:opacity-100"
       } ${className}`}
       title={tooltip}
       aria-label={ariaLabel || tooltip}
       data-testid={dataTestId}
     >
       <span className="flex items-center justify-center">{icon}</span>
-      <span className="text-[9px] uppercase tracking-wider font-medium hidden sm:block">{label}</span>
+      <span className="text-[9px] uppercase tracking-wider font-medium hidden sm:block">
+        {label}
+      </span>
     </TouchButton>
   </Tooltip>
 );
@@ -83,13 +95,18 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   const iconColor = getIconColor(theme);
 
   return (
-    <div className="flex flex-wrap gap-1 md:gap-2 items-center" style={{ color: iconColor }}>
+    <div
+      className="flex flex-wrap gap-1 md:gap-2 items-center"
+      style={{ color: iconColor }}
+    >
       <ActionButton
         onClick={onToggleView}
-        icon={viewMode === 'write' ? <IconEyeOpen /> : <IconEyeClosed />}
-        label={viewMode === 'write' ? 'Preview' : 'Edit'}
-        tooltip={viewMode === 'write' ? 'Preview markdown' : 'Back to editing'}
-        ariaLabel={viewMode === 'write' ? 'Preview markdown' : 'Switch to edit mode'}
+        icon={viewMode === "write" ? <IconEyeOpen /> : <IconEyeClosed />}
+        label={viewMode === "write" ? "Preview" : "Edit"}
+        tooltip={viewMode === "write" ? "Preview markdown" : "Back to editing"}
+        ariaLabel={
+          viewMode === "write" ? "Preview markdown" : "Switch to edit mode"
+        }
       />
 
       <ActionButton
@@ -97,7 +114,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         onMouseDown={(e) => e.preventDefault()}
         onPointerDown={onStrikethroughPointerDown}
         onTouchStart={onStrikethroughPointerDown}
-        disabled={viewMode === 'preview'}
+        disabled={viewMode === "preview"}
         icon={<IconStrike />}
         label="Strike"
         tooltip="Apply strikethrough to selected text"
@@ -138,14 +155,20 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
           <TouchButton
             onClick={() => setShowWidthControl(!showWidthControl)}
             className={`flex flex-col items-center justify-center gap-0.5 p-2 rounded-xl transition-all duration-150 hover:bg-current/5 ${
-              showWidthControl ? 'opacity-100 bg-current/5' : 'opacity-60 hover:opacity-100'
+              showWidthControl
+                ? "opacity-100 bg-current/5"
+                : "opacity-60 hover:opacity-100"
             }`}
             title="Adjust line width"
             aria-label="Adjust line width"
             aria-expanded={showWidthControl}
           >
-            <span className="flex items-center justify-center"><IconWidth /></span>
-            <span className="text-[9px] uppercase tracking-wider font-medium hidden sm:block">Width</span>
+            <span className="flex items-center justify-center">
+              <IconWidth />
+            </span>
+            <span className="text-[9px] uppercase tracking-wider font-medium hidden sm:block">
+              Width
+            </span>
           </TouchButton>
         </Tooltip>
 
