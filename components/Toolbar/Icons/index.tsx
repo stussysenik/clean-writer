@@ -8,6 +8,7 @@ import {
   WidthIcon,
   GearIcon,
   InfoCircledIcon,
+  ReaderIcon,
 } from "@radix-ui/react-icons";
 
 // Icon size constants for consistent sizing across the app
@@ -164,3 +165,6 @@ export const IconSettings = () => <GearIcon width={24} height={24} />;
 
 // Info icon for legend
 export const IconInfo = () => <InfoCircledIcon width={20} height={20} />;
+
+// Sample text icon
+export const IconSample = () => <ReaderIcon width={24} height={24} />;

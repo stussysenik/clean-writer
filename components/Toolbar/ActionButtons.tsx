@@ -8,6 +8,7 @@ import {
   IconTrash,
   IconWidth,
   IconMagicClean,
+  IconSample,
 } from "./Icons";
 import TouchButton from "../TouchButton";
 import Tooltip from "../Tooltip";
@@ -25,6 +26,7 @@ interface ActionButtonsProps {
   onExport: () => void;
   onClear: () => void;
   onWidthChange: (width: number) => void;
+  onSampleText?: () => void;
 }
 
 interface ActionButtonProps {
@@ -90,6 +92,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   onExport,
   onClear,
   onWidthChange,
+  onSampleText,
 }) => {
   const [showWidthControl, setShowWidthControl] = useState(false);
   const iconColor = getIconColor(theme);
@@ -139,6 +142,16 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         tooltip="Download as markdown file"
         ariaLabel="Export markdown file"
       />
+
+      {onSampleText && (
+        <ActionButton
+          onClick={onSampleText}
+          icon={<IconSample />}
+          label="Sample"
+          tooltip="Load sample text"
+          ariaLabel="Load sample text"
+        />
+      )}
 
       <ActionButton
         onClick={onClear}

@@ -19,6 +19,7 @@ interface ToolbarProps {
   // Solo mode props
   soloMode?: keyof HighlightConfig | null;
   onSoloToggle?: (key: keyof HighlightConfig | null) => void;
+  onSampleText?: () => void;
 }
 
 const Toolbar: React.FC<ToolbarProps> = ({
@@ -37,6 +38,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
   onToggleHighlight,
   soloMode = null,
   onSoloToggle,
+  onSampleText,
 }) => {
   return (
     <footer
@@ -62,6 +64,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
           onExport={onExport}
           onClear={onClear}
           onWidthChange={onWidthChange}
+          onSampleText={onSampleText}
         />
       </div>
     </footer>
