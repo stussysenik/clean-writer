@@ -20,6 +20,8 @@ Complete documentation for Clean Typewriter Experience - a distraction-free writ
 12. [Build Identity & Deployment](#build-identity--deployment)
 13. [Golden Ratio Spacing](#golden-ratio-spacing)
 14. [Keyboard Shortcuts](#keyboard-shortcuts)
+15. [Theme Drag Reorder](#theme-drag-reorder)
+16. [Sample Text](#sample-text)
 
 ---
 
@@ -70,7 +72,7 @@ clean-writer/
 ├── components/
 │   ├── Typewriter.tsx         # Main editor component
 │   ├── MarkdownPreview.tsx    # Markdown renderer
-│   ├── ConfirmDialog.tsx      # Modal dialog
+│   ├── ConfirmDialog.tsx      # Parameterized modal dialog (title, message, labels)
 │   ├── TouchButton.tsx        # Mobile-friendly button
 │   ├── Tooltip.tsx            # Hover/focus tooltip
 │   ├── UnifiedSyntaxPanel/

@@ -732,7 +732,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
       {/* Backdrop (Visual Layer) */}
       <div
         ref={backdropRef}
-        className="absolute inset-0 px-[13px] pt-[34px] pb-[89px] md:px-[21px] md:pt-[34px] lg:px-[34px] lg:pt-[55px] whitespace-pre-wrap break-words pointer-events-none z-0 overflow-hidden"
+        className="absolute inset-0 px-[13px] pt-[55px] pb-[89px] md:px-[21px] md:pt-[55px] lg:px-[34px] lg:pt-[55px] whitespace-pre-wrap break-words pointer-events-none z-0 overflow-hidden"
         style={{
           fontFamily,
           fontSize,
@@ -762,7 +762,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
         <div
           ref={selectionOverlayRef}
           data-testid="persisted-selection-overlay"
-          className="absolute inset-0 px-[13px] pt-[34px] pb-[89px] md:px-[21px] md:pt-[34px] lg:px-[34px] lg:pt-[55px] whitespace-pre-wrap break-words pointer-events-none z-[5] overflow-hidden"
+          className="absolute inset-0 px-[13px] pt-[55px] pb-[89px] md:px-[21px] md:pt-[55px] lg:px-[34px] lg:pt-[55px] whitespace-pre-wrap break-words pointer-events-none z-[5] overflow-hidden"
           style={{
             fontFamily,
             fontSize,
@@ -807,7 +807,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
         inputMode="text"
         enterKeyHint="enter"
         autoFocus
-        className="absolute inset-0 w-full h-full px-[13px] pt-[34px] pb-[89px] md:px-[21px] md:pt-[34px] lg:px-[34px] lg:pt-[55px] bg-transparent resize-none border-none outline-none z-10 whitespace-pre-wrap break-words overflow-y-auto"
+        className="absolute inset-0 w-full h-full px-[13px] pt-[55px] pb-[89px] md:px-[21px] md:pt-[55px] lg:px-[34px] lg:pt-[55px] bg-transparent resize-none border-none outline-none z-10 whitespace-pre-wrap break-words overflow-y-auto"
         style={{
           fontFamily,
           fontSize,

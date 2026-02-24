@@ -38,6 +38,9 @@ Open [http://localhost:3000](http://localhost:3000)
 | **Song Mode** | Syllable counting, rhyme scheme detection (CMU dictionary), per-line density coloring, syllable annotations |
 | **Interactive Rhymes** | Hover preview, click toggle, double-click solo for rhyme groups (same interaction model as word types) |
 | **Section Headings** | Collapsible RHYMES and LINES sections in song panel with persistent state |
+| **Drag Reorder Themes** | @dnd-kit sortable drag-and-drop for theme ordering (grip handle, no long-press delay) |
+| **Drag-to-Delete** | Smooth drag ghost with ref-based position tracking (zero React re-renders during drag) |
+| **Sample Text** | Toolbar button to load a Little Prince excerpt on demand (with confirmation dialog) |
 | **Collapsible Breakdown** | Toggle word type list with colored indicator |
 | **Golden Ratio Spacing** | φ-based spacing (8→13→21→34→55→89px) for harmonious layouts |
 | **Theme-Aware UI** | All buttons/controls adapt to light/dark themes |

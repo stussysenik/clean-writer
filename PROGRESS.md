@@ -6,6 +6,14 @@ Changelog and development progress for Clean Typewriter Experience t.
 
 ## Latest Release
 
+### v2.0.0 - Drag Reorder Library, Trash Jitter Fix, Sample Text Button
+
+**Release Date:** February 24, 2026
+
+Replaced custom long-press drag-reorder with @dnd-kit/sortable for immediate grip-handle dragging, eliminated trash bin drag-to-delete jitter via ref-based position tracking (zero React re-renders during drag), and added a toolbar Sample button with confirmation dialog to load a longer Little Prince excerpt.
+
+---
+
 ### v1.9.0 - Interactive Rhyme View, Quick Stats Interactions, Section Headings
 
 **Release Date:** February 22, 2026
@@ -71,6 +79,45 @@ Major update adding extended theme colors, mobile-first touch UX, and full PWA s
 ---
 
 ## Changelog
+
+### ✅ Phase 14: Drag Reorder Library, Trash Jitter Fix, Sample Text Button
+
+Three improvements: better theme reordering, smoother drag-to-delete, and on-demand sample text.
+
+**What shipped:**
+- **@dnd-kit sortable reorder:**
+  - Replaced custom long-press drag with `@dnd-kit/core` + `@dnd-kit/sortable`
+  - `PointerSensor` with `activationConstraint: { distance: 5 }` — immediate drag on 5px move
+  - Drag listeners attached only to grip SVG handle (checkbox clicks still work)
+  - Removed red/pink left accent bars, "Hold to reorder" hint, absolute positioning
+  - Clean flow layout with `SortableContext` + `verticalListSortingStrategy`
+- **Trash bin jitter fix:**
+  - Added `dragPositionRef` (useRef) — position updates bypass React state during drag
+  - `handleDragMove` only calls `setDragState` when `isOverTrash` boundary changes
+  - Cached `window.innerHeight` in `cachedScreenHeightRef` at drag start
+  - `DragGhost` reads from `positionRef`, writes directly to DOM via `ghostRef.current.style`
+  - Eliminated `smoothPosition` state and `targetRef` — zero React re-renders during drag
+- **Sample text button:**
+  - Parameterized `ConfirmDialog` with optional `title`, `message`, `confirmLabel`, `cancelLabel`
+  - Expanded `FRESH_LOAD_TEXT` to ~2 paragraphs of The Little Prince
+  - Added "Sample" toolbar button (ReaderIcon) between Export and Clear
+  - Confirmation dialog warns before replacing content
+  - Fresh install auto-loads the sample text (no localStorage key → fallback)
+
+**Dependencies added:**
+- `@dnd-kit/core@6.3.1`
+- `@dnd-kit/sortable@10.0.0`
+- `@dnd-kit/utilities@3.2.2`
+
+**Key files modified:**
+- `components/ThemeCustomizer/index.tsx` — rewritten ThemesTab with dnd-kit
+- `App.tsx` — drag ref optimization, sample text state/handlers, expanded excerpt
+- `components/DragGhost.tsx` — ref-based position, direct DOM writes
+- `components/ConfirmDialog.tsx` — parameterized props
+- `components/Toolbar/index.tsx` — thread onSampleText
+- `components/Toolbar/ActionButtons.tsx` — Sample button
+- `components/Toolbar/Icons/index.tsx` — IconSample (ReaderIcon)
+- `package.json` — @dnd-kit dependencies
 
 ### ✅ Phase 13: Interactive Rhyme View, Quick Stats Interactions, Section Headings
 
@@ -563,6 +610,7 @@ Fixed the broken origami paper-fold animation and added UX improvements.
 
 | Version | Date | Summary |
 |---------|------|---------|
+| 2.0.0 | Feb 2026 | Drag reorder library, trash jitter fix, sample text button |
 | 1.9.0 | Feb 2026 | Interactive rhyme view, quick stats interactions, section headings |
 | 1.8.0 | Feb 2026 | Song Mode, Tufte panel polish, theme dot clipping fix |
 | 1.7.0 | Feb 2026 | Locked selection UX, clean stats UI, build metadata placement |
