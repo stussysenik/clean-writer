@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 interface DragGhostProps {
   color: string;
   position: { x: number; y: number };
+  positionRef?: React.RefObject<{ x: number; y: number }>;
   isVisible: boolean;
   isOverTrash: boolean;
   isDeleting?: boolean;
@@ -14,39 +15,46 @@ interface DragGhostProps {
 const DragGhost: React.FC<DragGhostProps> = ({
   color,
   position,
+  positionRef,
   isVisible,
   isOverTrash,
   isDeleting = false,
   isRejected = false,
   originalPosition,
 }) => {
-  const [smoothPosition, setSmoothPosition] = useState(position);
   const [animationState, setAnimationState] = useState<
     "appearing" | "following" | "deleting" | "rejected"
   >("appearing");
   const rafRef = useRef<number | null>(null);
-  const targetRef = useRef(position);
+  const ghostRef = useRef<HTMLDivElement>(null);
+  const smoothRef = useRef({ x: position.x, y: position.y });
 
-  // Update target position
+  // Initialize smooth position when becoming visible
   useEffect(() => {
-    targetRef.current = position;
-  }, [position]);
+    if (isVisible) {
+      const target = positionRef ? positionRef.current : position;
+      smoothRef.current = { x: target.x, y: target.y };
+    }
+  }, [isVisible]);
 
-  // Smooth position following with easing
+  // Smooth position following with easing — direct DOM writes, zero re-renders
   useEffect(() => {
     if (!isVisible) return;
 
     const animate = () => {
-      setSmoothPosition((prev) => {
-        const dx = targetRef.current.x - prev.x;
-        const dy = targetRef.current.y - prev.y;
-        const easing = 0.15; // Smooth lag effect
+      const target = positionRef ? positionRef.current : position;
+      const dx = target.x - smoothRef.current.x;
+      const dy = target.y - smoothRef.current.y;
+      const easing = 0.15;
 
-        return {
-          x: prev.x + dx * easing,
-          y: prev.y + dy * easing,
-        };
-      });
+      smoothRef.current.x += dx * easing;
+      smoothRef.current.y += dy * easing;
+
+      if (ghostRef.current) {
+        ghostRef.current.style.left = `${smoothRef.current.x}px`;
+        ghostRef.current.style.top = `${smoothRef.current.y}px`;
+      }
+
       rafRef.current = requestAnimationFrame(animate);
     };
 
@@ -57,7 +65,7 @@ const DragGhost: React.FC<DragGhostProps> = ({
         cancelAnimationFrame(rafRef.current);
       }
     };
-  }, [isVisible]);
+  }, [isVisible, positionRef, position]);
 
   // Handle animation states
   useEffect(() => {
@@ -65,12 +73,17 @@ const DragGhost: React.FC<DragGhostProps> = ({
       setAnimationState("deleting");
     } else if (isRejected) {
       setAnimationState("rejected");
+      // For rejected, snap to original position via style
+      if (ghostRef.current && originalPosition) {
+        ghostRef.current.style.left = `${originalPosition.x}px`;
+        ghostRef.current.style.top = `${originalPosition.y}px`;
+      }
     } else if (isVisible) {
       setAnimationState("appearing");
       const timer = setTimeout(() => setAnimationState("following"), 200);
       return () => clearTimeout(timer);
     }
-  }, [isVisible, isDeleting, isRejected]);
+  }, [isVisible, isDeleting, isRejected, originalPosition]);
 
   if (
     !isVisible &&
@@ -97,16 +110,16 @@ const DragGhost: React.FC<DragGhostProps> = ({
     }
   };
 
+  const initPos = positionRef ? positionRef.current : position;
+
   const ghostStyle: React.CSSProperties = {
     position: "fixed",
-    left:
-      animationState === "rejected" && originalPosition
-        ? originalPosition.x
-        : smoothPosition.x,
-    top:
-      animationState === "rejected" && originalPosition
-        ? originalPosition.y
-        : smoothPosition.y,
+    left: animationState === "rejected" && originalPosition
+      ? originalPosition.x
+      : initPos.x,
+    top: animationState === "rejected" && originalPosition
+      ? originalPosition.y
+      : initPos.y,
     width: 40,
     height: 40,
     borderRadius: "50%",
@@ -130,7 +143,7 @@ const DragGhost: React.FC<DragGhostProps> = ({
   };
 
   return createPortal(
-    <div style={ghostStyle}>
+    <div ref={ghostRef} style={ghostStyle}>
       {/* Inner highlight for 3D effect */}
       <div
         style={{

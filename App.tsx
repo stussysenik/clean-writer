@@ -67,10 +67,22 @@ const NUMBER_KEY_MAP: { [key: string]: keyof HighlightConfig } = {
 
 const UTF8_DISPLAY_STORAGE_KEY = "clean_writer_utf8_display_enabled";
 
+const FRESH_LOAD_TEXT = `"It is the time you have wasted for your rose that makes your rose so important."
+
+"People have forgotten this truth," the fox said. "But you must not forget it. You become responsible forever for what you have tamed. You are responsible for your rose."
+
+"What is essential is invisible to the eye," the little prince repeated, so that he would be sure to remember. "It is the time you have wasted for your rose that makes your rose so important."
+
+The little prince went away, to look again at the roses. "You are not at all like my rose," he said. "As yet you are nothing. No one has tamed you, and you have tamed no one. You are like my fox when I first knew him. He was only a fox like a hundred thousand other foxes. But I have made him my friend, and now he is unique in all the world."
+
+— Antoine de Saint-Exupéry, The Little Prince`;
+
 const App: React.FC = () => {
   const [content, setContent] = useState<string>(() => {
     try {
-      return localStorage.getItem("riso_flow_content") || "";
+      const saved = localStorage.getItem("riso_flow_content");
+      if (saved !== null) return saved;
+      return FRESH_LOAD_TEXT;
     } catch (e) {
       console.warn("Could not access local storage");
       return "";
@@ -168,6 +180,7 @@ const App: React.FC = () => {
 
   const fluidFontSize = "clamp(18px, 10px + 1.1vw, 24px)";
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
+  const [isSampleDialogOpen, setIsSampleDialogOpen] = useState(false);
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
   const [utf8DisplayEnabled, setUtf8DisplayEnabled] = useState<boolean>(() => {
     try {
@@ -317,6 +330,10 @@ const App: React.FC = () => {
   const { saveSelection, getSavedSelection, savedSelection, clearSelection } =
     useSelectionPersistence(textareaRef);
 
+  // Ref-based position tracking for drag (avoids 60fps setState calls)
+  const dragPositionRef = useRef({ x: 0, y: 0 });
+  const cachedScreenHeightRef = useRef(0);
+
   // Enhanced drag state with position tracking
   const [dragState, setDragState] = useState<{
     isDragging: boolean;
@@ -350,18 +367,14 @@ const App: React.FC = () => {
     [orderedThemes, hiddenThemeIds],
   );
 
-  // Check if pointer is over trash zone
-  const checkTrashZoneHit = useCallback((clientY: number) => {
-    const screenHeight = window.innerHeight;
-    return clientY > screenHeight - 140;
-  }, []);
-
   // Enhanced drag handlers
   const handleDragStart = useCallback(
     (
       themeInfo: { id: string; color: string; isPreset: boolean },
       position: { x: number; y: number },
     ) => {
+      dragPositionRef.current = position;
+      cachedScreenHeightRef.current = window.innerHeight;
       setDragState({
         isDragging: true,
         draggedTheme: themeInfo,
@@ -378,15 +391,21 @@ const App: React.FC = () => {
 
   const handleDragMove = useCallback(
     (position: { x: number; y: number }) => {
-      const isOverTrash = checkTrashZoneHit(position.y);
-      setDragState((prev) => ({
-        ...prev,
-        position,
-        isOverTrash,
-      }));
-      setTrashState(isOverTrash ? "hover" : "idle");
+      // Update ref (no re-render) — DragGhost reads this via positionRef
+      dragPositionRef.current = position;
+
+      // Only call setState when the trash boundary changes
+      const isOverTrash = position.y > cachedScreenHeightRef.current - 140;
+      setDragState((prev) => {
+        if (prev.isOverTrash === isOverTrash) return prev;
+        return { ...prev, isOverTrash };
+      });
+      setTrashState((prev) => {
+        const next = isOverTrash ? "hover" : "idle";
+        return prev === next ? prev : next;
+      });
     },
-    [checkTrashZoneHit],
+    [],
   );
 
   const handleDragEnd = useCallback(() => {
@@ -863,6 +882,15 @@ const App: React.FC = () => {
     setIsClearDialogOpen(false);
   };
 
+  const handleSampleTextRequest = () => {
+    setIsSampleDialogOpen(true);
+  };
+
+  const handleConfirmSampleText = () => {
+    setContent(FRESH_LOAD_TEXT);
+    setIsSampleDialogOpen(false);
+  };
+
   const handleStrikethrough = useCallback(() => {
     // Try to get selection from ref first, then fallback to DOM query
     const textarea = textareaRef.current || document.querySelector("textarea");
@@ -931,7 +959,7 @@ const App: React.FC = () => {
       {/* Top fade — navbar visual zone */}
       <div
         data-overlap-ignore
-        className="absolute top-0 left-0 right-0 h-[89px] pointer-events-none z-[59]"
+        className="absolute top-0 left-0 right-0 h-[144px] pointer-events-none z-[59]"
         style={{
           background: `linear-gradient(to bottom, ${currentTheme.background} 0%, ${currentTheme.background}00 100%)`,
         }}
@@ -951,6 +979,23 @@ const App: React.FC = () => {
         onConfirm={handleConfirmClear}
         onCancel={() => setIsClearDialogOpen(false)}
         theme={currentTheme}
+      />
+
+      <ConfirmDialog
+        isOpen={isSampleDialogOpen}
+        onConfirm={handleConfirmSampleText}
+        onCancel={() => setIsSampleDialogOpen(false)}
+        theme={currentTheme}
+        title="Load Sample Text?"
+        message={
+          <>
+            This will replace your current content with a sample excerpt. <br />
+            <span className="opacity-50 text-xs uppercase tracking-wider">
+              Your existing text will be lost.
+            </span>
+          </>
+        }
+        confirmLabel="LOAD SAMPLE"
       />
 
       <ThemeCustomizer
@@ -999,6 +1044,7 @@ const App: React.FC = () => {
       <DragGhost
         color={dragState.draggedTheme?.color || "#888"}
         position={dragState.position}
+        positionRef={dragPositionRef}
         isVisible={isDragging}
         isOverTrash={isDraggingOverTrash}
         isDeleting={isDeleting}
@@ -1063,7 +1109,7 @@ const App: React.FC = () => {
 
       {/* Main Area */}
       <main
-        className="flex-1 w-full h-full relative z-10 pt-[72px] md:pt-[72px] lg:pt-[89px] transition-all duration-300 ease-in-out"
+        className="flex-1 w-full h-full relative z-10 pt-[89px] md:pt-[89px] lg:pt-[89px] transition-all duration-300 ease-in-out"
         style={{
           paddingRight: isDesktop && content.length > 0 ? 360 : undefined,
         }}
@@ -1146,6 +1192,7 @@ const App: React.FC = () => {
         onToggleHighlight={toggleHighlight}
         soloMode={soloMode}
         onSoloToggle={handleSoloToggle}
+        onSampleText={handleSampleTextRequest}
       />
     </div>
   );
