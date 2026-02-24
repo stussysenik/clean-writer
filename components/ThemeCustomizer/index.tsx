@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { RisoTheme, ColorSystemMode, ColorHarmonyType } from "../../types";
 import {
   BUILD_IDENTITY,
@@ -14,6 +14,21 @@ import {
 import { generateHarmonyColors, generateOklchHarmony } from "../../utils/colorHarmony";
 import HexInput from "../ColorPicker/HexInput";
 import TouchButton from "../TouchButton";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 // Reset icon component
 const IconReset: React.FC<{ size?: number }> = ({ size = 16 }) => (
@@ -184,8 +199,90 @@ const CompactColorRow: React.FC<{
   );
 };
 
-const THEME_ITEM_HEIGHT = 52;
-const THEME_LONG_PRESS_MS = 400;
+/** Single sortable theme item */
+const SortableThemeItem: React.FC<{
+  t: typeof THEMES[number];
+  isHidden: boolean;
+  onToggleThemeVisibility: (id: string) => void;
+  theme: RisoTheme;
+  canDrag: boolean;
+}> = ({ t, isHidden, onToggleThemeVisibility, theme, canDrag }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: t.id });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : isHidden ? 0.4 : 1,
+    zIndex: isDragging ? 50 : undefined,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="select-none">
+      <label
+        className="flex items-center gap-2 p-3 rounded-lg hover:bg-current/5 cursor-pointer transition-colors"
+        style={{ minHeight: "44px" }}
+      >
+        {canDrag && (
+          <svg
+            width="10"
+            height="14"
+            viewBox="0 0 10 14"
+            className="flex-shrink-0 transition-opacity cursor-grab active:cursor-grabbing"
+            style={{ opacity: 0.4, color: theme.text, touchAction: "none" }}
+            {...attributes}
+            {...listeners}
+          >
+            <circle cx="3" cy="2" r="1.2" fill="currentColor"/>
+            <circle cx="7" cy="2" r="1.2" fill="currentColor"/>
+            <circle cx="3" cy="7" r="1.2" fill="currentColor"/>
+            <circle cx="7" cy="7" r="1.2" fill="currentColor"/>
+            <circle cx="3" cy="12" r="1.2" fill="currentColor"/>
+            <circle cx="7" cy="12" r="1.2" fill="currentColor"/>
+          </svg>
+        )}
+        <input
+          type="checkbox"
+          checked={!isHidden}
+          onChange={() => onToggleThemeVisibility(t.id)}
+          className="w-4 h-4 rounded border-2 border-current/30 bg-transparent accent-current flex-shrink-0"
+        />
+        <span
+          className="w-5 h-5 rounded-full flex-shrink-0 border"
+          style={{
+            backgroundColor: t.accent,
+            borderColor: `${t.text}30`,
+          }}
+        />
+        <div className="flex items-center gap-1.5 flex-1">
+          <span className="text-sm font-medium">{t.name}</span>
+          <div
+            className="flex flex-wrap ml-auto"
+            style={{ gap: "1px", maxWidth: "48px" }}
+          >
+            {WORD_TYPE_LABELS.map(({ key }) => (
+              <span
+                key={key}
+                className="rounded-full"
+                style={{
+                  width: "6px",
+                  height: "6px",
+                  backgroundColor: t.highlight[key as keyof typeof t.highlight],
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      </label>
+    </div>
+  );
+};
 
 /** Draggable themes list for the Themes tab */
 const ThemesTab: React.FC<{
@@ -195,7 +292,6 @@ const ThemesTab: React.FC<{
   themeOrder?: string[];
   onReorderThemes?: (fromIndex: number, toIndex: number) => void;
 }> = ({ theme, hiddenThemeIds, onToggleThemeVisibility, themeOrder, onReorderThemes }) => {
-  // Ordered themes list
   const orderedThemeList = useMemo(() => {
     if (!themeOrder) return THEMES;
     return [...THEMES].sort((a, b) => {
@@ -205,264 +301,46 @@ const ThemesTab: React.FC<{
     });
   }, [themeOrder]);
 
-  // Drag state
-  const [draggedId, setDraggedId] = useState<string | null>(null);
-  const [dragOffset, setDragOffset] = useState(0);
-  const [itemPositions, setItemPositions] = useState<Record<string, number>>({});
-  const longPressRef = useRef<NodeJS.Timeout | null>(null);
-  const dragStartYRef = useRef(0);
-  const orderRef = useRef(orderedThemeList.map((t) => t.id));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+  );
 
-  // Keep orderRef in sync
-  useEffect(() => {
-    orderRef.current = orderedThemeList.map((t) => t.id);
-  }, [orderedThemeList]);
-
-  // Initialize positions
-  useEffect(() => {
-    const pos: Record<string, number> = {};
-    orderedThemeList.forEach((t, i) => {
-      pos[t.id] = i * THEME_ITEM_HEIGHT;
-    });
-    setItemPositions(pos);
-  }, [orderedThemeList]);
-
-  const handleDragStart = useCallback((id: string, clientY: number) => {
-    setDraggedId(id);
-    dragStartYRef.current = clientY;
-    setDragOffset(0);
-    const pos: Record<string, number> = {};
-    orderRef.current.forEach((tid, i) => {
-      pos[tid] = i * THEME_ITEM_HEIGHT;
-    });
-    setItemPositions(pos);
-  }, []);
-
-  const handleDragMove = useCallback((clientY: number) => {
-    if (!draggedId || !onReorderThemes) return;
-    const offset = clientY - dragStartYRef.current;
-    setDragOffset(offset);
-
-    const order = orderRef.current;
-    const currentIndex = order.indexOf(draggedId);
-    const newPosition = currentIndex * THEME_ITEM_HEIGHT + offset;
-    const newIndex = Math.max(0, Math.min(order.length - 1, Math.round(newPosition / THEME_ITEM_HEIGHT)));
-
-    if (newIndex !== currentIndex) {
-      onReorderThemes(currentIndex, newIndex);
-      // Synchronously update orderRef so the next drag frame reads the correct order
-      const updated = [...orderRef.current];
-      updated.splice(currentIndex, 1);
-      updated.splice(newIndex, 0, draggedId);
-      orderRef.current = updated;
-      dragStartYRef.current = clientY - (newIndex * THEME_ITEM_HEIGHT - currentIndex * THEME_ITEM_HEIGHT) + (offset - (newIndex - currentIndex) * THEME_ITEM_HEIGHT);
-    }
-
-    // Update positions with collision effect
-    const pos: Record<string, number> = {};
-    const updatedOrder = orderRef.current;
-    const draggedIndex = updatedOrder.indexOf(draggedId);
-    const draggedPosition = draggedIndex * THEME_ITEM_HEIGHT + offset;
-
-    updatedOrder.forEach((tid, index) => {
-      if (tid === draggedId) {
-        pos[tid] = draggedPosition;
-      } else {
-        const basePos = index * THEME_ITEM_HEIGHT;
-        const itemCenter = basePos + THEME_ITEM_HEIGHT / 2;
-        const draggedCenter = draggedPosition + THEME_ITEM_HEIGHT / 2;
-        const dist = itemCenter - draggedCenter;
-        const absDist = Math.abs(dist);
-        const collisionRadius = THEME_ITEM_HEIGHT * 1.5;
-        if (absDist < collisionRadius) {
-          const pushStrength = (1 - absDist / collisionRadius) * 16;
-          pos[tid] = basePos + (dist > 0 ? 1 : -1) * pushStrength;
-        } else {
-          pos[tid] = basePos;
-        }
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id || !onReorderThemes) return;
+      const oldIndex = orderedThemeList.findIndex((t) => t.id === active.id);
+      const newIndex = orderedThemeList.findIndex((t) => t.id === over.id);
+      if (oldIndex !== -1 && newIndex !== -1) {
+        onReorderThemes(oldIndex, newIndex);
       }
-    });
-    setItemPositions(pos);
-  }, [draggedId, onReorderThemes]);
+    },
+    [orderedThemeList, onReorderThemes],
+  );
 
-  const handleDragEnd = useCallback(() => {
-    setDraggedId(null);
-    setDragOffset(0);
-    const pos: Record<string, number> = {};
-    orderRef.current.forEach((tid, i) => {
-      pos[tid] = i * THEME_ITEM_HEIGHT;
-    });
-    setItemPositions(pos);
-  }, []);
-
-  const handlePointerDown = useCallback((id: string, e: React.MouseEvent | React.TouchEvent) => {
-    if (!onReorderThemes) return;
-    const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
-    dragStartYRef.current = clientY;
-    longPressRef.current = setTimeout(() => {
-      handleDragStart(id, clientY);
-    }, THEME_LONG_PRESS_MS);
-  }, [onReorderThemes, handleDragStart]);
-
-  const handlePointerUp = useCallback(() => {
-    if (longPressRef.current) {
-      clearTimeout(longPressRef.current);
-      longPressRef.current = null;
-    }
-    if (draggedId) handleDragEnd();
-  }, [draggedId, handleDragEnd]);
-
-  const handlePointerMove = useCallback((e: React.MouseEvent | React.TouchEvent) => {
-    if (draggedId) {
-      const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
-      handleDragMove(clientY);
-    } else if (longPressRef.current) {
-      const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
-      if (Math.abs(clientY - dragStartYRef.current) > 10) {
-        clearTimeout(longPressRef.current);
-        longPressRef.current = null;
-      }
-    }
-  }, [draggedId, handleDragMove]);
-
-  // Global listeners for drag
-  useEffect(() => {
-    if (!draggedId) return;
-    const handleMove = (e: MouseEvent | TouchEvent) => {
-      const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
-      handleDragMove(clientY);
-    };
-    const handleUp = () => handleDragEnd();
-    document.addEventListener("mousemove", handleMove);
-    document.addEventListener("mouseup", handleUp);
-    document.addEventListener("touchmove", handleMove);
-    document.addEventListener("touchend", handleUp);
-    return () => {
-      document.removeEventListener("mousemove", handleMove);
-      document.removeEventListener("mouseup", handleUp);
-      document.removeEventListener("touchmove", handleMove);
-      document.removeEventListener("touchend", handleUp);
-    };
-  }, [draggedId, handleDragMove, handleDragEnd]);
-
-  useEffect(() => {
-    return () => {
-      if (longPressRef.current) clearTimeout(longPressRef.current);
-    };
-  }, []);
+  const themeIds = useMemo(() => orderedThemeList.map((t) => t.id), [orderedThemeList]);
 
   return (
     <section className="py-4">
       <h3 className="text-xs font-medium uppercase tracking-widest mb-1 opacity-50">
         Visible Presets
       </h3>
-      {onReorderThemes && !draggedId && (
-        <p className="text-[10px] opacity-30 italic mb-2" style={{ color: theme.text }}>
-          Hold to reorder
-        </p>
-      )}
-      <div
-        className="relative"
-        style={{ height: orderedThemeList.length * THEME_ITEM_HEIGHT }}
-      >
-        {orderedThemeList.map((t, index) => {
-          const isHidden = hiddenThemeIds.includes(t.id);
-          const isDragging = draggedId === t.id;
-          const basePos = index * THEME_ITEM_HEIGHT;
-          const currentPos = itemPositions[t.id] ?? basePos;
-          const displacement = currentPos - basePos;
-          const isBeingPushed = !isDragging && draggedId && Math.abs(displacement) > 2;
-
-          return (
-            <div
-              key={t.id}
-              className={`absolute left-0 right-0 select-none ${isDragging ? "z-50 cursor-grabbing" : "z-10 cursor-grab"}`}
-              style={{
-                height: THEME_ITEM_HEIGHT,
-                transform: `translateY(${currentPos}px) scale(${isDragging ? 1.03 : 1})`,
-                transition: isDragging
-                  ? "box-shadow 150ms ease, scale 150ms ease"
-                  : "transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 200ms ease",
-                backgroundColor: isDragging ? theme.background : "transparent",
-                boxShadow: isDragging
-                  ? "0 8px 30px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.1)"
-                  : isBeingPushed
-                    ? "0 2px 8px rgba(0,0,0,0.05)"
-                    : "none",
-                borderRadius: "8px",
-                border: isDragging ? `1px solid ${theme.accent}30` : "1px solid transparent",
-              }}
-              onMouseDown={(e) => { e.stopPropagation(); handlePointerDown(t.id, e); }}
-              onTouchStart={(e) => handlePointerDown(t.id, e)}
-              onMouseMove={handlePointerMove}
-              onTouchMove={handlePointerMove}
-              onMouseUp={handlePointerUp}
-              onTouchEnd={handlePointerUp}
-            >
-              <label
-                className="flex items-center gap-2 p-3 rounded-lg hover:bg-current/5 cursor-pointer transition-colors h-full"
-                style={{ minHeight: "44px" }}
-                onClick={(e) => {
-                  if (isDragging) { e.preventDefault(); return; }
-                }}
-              >
-                {/* Grip handle */}
-                {onReorderThemes && (
-                  <svg
-                    width="10"
-                    height="14"
-                    viewBox="0 0 10 14"
-                    className="flex-shrink-0 transition-opacity"
-                    style={{
-                      opacity: isDragging ? 1 : 0.25,
-                      color: isDragging ? theme.accent : theme.text,
-                    }}
-                  >
-                    <circle cx="3" cy="2" r="1.2" fill="currentColor"/>
-                    <circle cx="7" cy="2" r="1.2" fill="currentColor"/>
-                    <circle cx="3" cy="7" r="1.2" fill="currentColor"/>
-                    <circle cx="7" cy="7" r="1.2" fill="currentColor"/>
-                    <circle cx="3" cy="12" r="1.2" fill="currentColor"/>
-                    <circle cx="7" cy="12" r="1.2" fill="currentColor"/>
-                  </svg>
-                )}
-                <input
-                  type="checkbox"
-                  checked={!isHidden}
-                  onChange={() => onToggleThemeVisibility(t.id)}
-                  className="w-4 h-4 rounded border-2 border-current/30 bg-transparent accent-current flex-shrink-0"
-                />
-                <span
-                  className="w-5 h-5 rounded-full flex-shrink-0 border"
-                  style={{
-                    backgroundColor: t.accent,
-                    borderColor: `${t.text}30`,
-                  }}
-                />
-                <div className="flex items-center gap-1.5 flex-1">
-                  <span className="text-sm font-medium">{t.name}</span>
-                  <div
-                    className="flex flex-wrap ml-auto"
-                    style={{ gap: "1px", maxWidth: "48px" }}
-                  >
-                    {WORD_TYPE_LABELS.map(({ key }) => (
-                      <span
-                        key={key}
-                        className="rounded-full"
-                        style={{
-                          width: "6px",
-                          height: "6px",
-                          backgroundColor: t.highlight[key as keyof typeof t.highlight],
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </label>
-            </div>
-          );
-        })}
-      </div>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={themeIds} strategy={verticalListSortingStrategy}>
+          <div className="space-y-0">
+            {orderedThemeList.map((t) => (
+              <SortableThemeItem
+                key={t.id}
+                t={t}
+                isHidden={hiddenThemeIds.includes(t.id)}
+                onToggleThemeVisibility={onToggleThemeVisibility}
+                theme={theme}
+                canDrag={!!onReorderThemes}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
     </section>
   );
 };
