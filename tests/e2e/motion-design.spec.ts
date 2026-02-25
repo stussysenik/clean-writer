@@ -403,6 +403,78 @@ test.describe("Motion Design", () => {
     });
   });
 
+  test.describe("Hidden Native Caret", () => {
+    test.use({ viewport: { width: 1280, height: 800 } });
+
+    test("textarea caretColor is transparent", async ({ page }) => {
+      const textarea = page.locator("textarea");
+      await textarea.click();
+
+      const caretColor = await textarea.evaluate(
+        (el) => getComputedStyle(el).caretColor,
+      );
+
+      // Should be transparent (rgba(0,0,0,0))
+      expect(caretColor).toBe("rgba(0, 0, 0, 0)");
+    });
+  });
+
+  test.describe("Preview Mode", () => {
+    test.use({ viewport: { width: 1280, height: 800 } });
+
+    test("preview cursor exists and has background color", async ({ page }) => {
+      // Type some content first
+      await page.locator("textarea").click();
+      await page
+        .locator("textarea")
+        .pressSequentially("Hello world", { delay: 10 });
+      await page.waitForTimeout(300);
+
+      // Toggle to preview mode via eye icon button
+      const previewBtn = page.locator('button:has-text("Preview")');
+      await previewBtn.click();
+      await page.waitForTimeout(300);
+
+      const previewCursor = page.locator('[data-testid="preview-cursor"]');
+      await expect(previewCursor).toBeVisible();
+
+      const bgColor = await previewCursor.evaluate(
+        (el) => getComputedStyle(el).backgroundColor,
+      );
+      expect(bgColor).not.toBe("rgba(0, 0, 0, 0)");
+      expect(bgColor).not.toBe("transparent");
+    });
+
+    test("preview headings inherit parent color (no syntax colors)", async ({
+      page,
+    }) => {
+      // Type markdown heading
+      await page.locator("textarea").click();
+      await page
+        .locator("textarea")
+        .pressSequentially("# My Heading", { delay: 10 });
+      await page.waitForTimeout(300);
+
+      // Toggle to preview mode
+      const previewBtn = page.locator('button:has-text("Preview")');
+      await previewBtn.click();
+      await page.waitForTimeout(300);
+
+      // Get the parent text color
+      const parentColor = await page
+        .locator(".prose")
+        .evaluate((el) => getComputedStyle(el).color);
+
+      // Get the heading color
+      const headingColor = await page
+        .locator(".prose h1")
+        .evaluate((el) => getComputedStyle(el).color);
+
+      // Heading should inherit parent color (monochrome)
+      expect(headingColor).toBe(parentColor);
+    });
+  });
+
   test.describe("Color Consistency", () => {
     test.use({ viewport: { width: 1280, height: 800 } });
 

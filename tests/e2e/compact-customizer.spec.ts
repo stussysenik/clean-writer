@@ -71,4 +71,24 @@ test.describe("Compact Customizer", () => {
     await fontHeading.click();
     await expect(page.locator("text=The quick brown fox jumps")).toHaveCount(1);
   });
+
+  test("word type labels are not truncated", async ({ page }) => {
+    // Open customizer
+    const gearBtn = page.locator('button[title="Customize Theme"]');
+    await gearBtn.click();
+    await expect(page.locator('h2:has-text("Customize Theme")')).toBeVisible();
+
+    // Find word type label spans (10px uppercase tracking-wide)
+    const wordTypeLabels = page.locator(
+      ".text-\\[10px\\].uppercase.tracking-wide.opacity-60",
+    );
+    const count = await wordTypeLabels.count();
+
+    for (let i = 0; i < count; i++) {
+      const textOverflow = await wordTypeLabels
+        .nth(i)
+        .evaluate((el) => getComputedStyle(el).textOverflow);
+      expect(textOverflow).not.toBe("ellipsis");
+    }
+  });
 });

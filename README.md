@@ -24,7 +24,7 @@ Open [http://localhost:3000](http://localhost:3000)
 | **Typewriter Mode** | Forward-only typing (no backspace) for focused writing |
 | **Syntax Highlighting** | Nouns/verbs/adjectives + URLs, numbers, hashtags (Web Worker, O(1) lookups) |
 | **Theme Presets** | Classic, Blueprint, Midnight, Paper, Sepia, Terminal, Ocean, Forest, Flexoki |
-| **Markdown Preview** | Toggle with eye icon |
+| **Markdown Preview** | Lo-fi monochrome preview with blinking cursor (eye icon toggle) |
 | **Strikethrough** | Select text → click ~~S~~ button (selection stays visually frozen on mobile until action) |
 | **Magic Clean** | Removes complete `~~...~~` blocks for clean writing |
 | **Export** | Download as `.md` file |
@@ -41,6 +41,7 @@ Open [http://localhost:3000](http://localhost:3000)
 | **Drag Reorder Themes** | @dnd-kit sortable drag-and-drop for theme ordering (grip handle, no long-press delay) |
 | **Drag-to-Delete** | Smooth drag ghost with ref-based position tracking (zero React re-renders during drag) |
 | **Sample Text** | Toolbar button to load a Little Prince excerpt on demand (with confirmation dialog) |
+| **Ghost Cursor** | Custom blinking cursor (530ms) color-matched to syntax; native caret hidden |
 | **Collapsible Breakdown** | Toggle word type list with colored indicator |
 | **Golden Ratio Spacing** | φ-based spacing (8→13→21→34→55→89px) for harmonious layouts |
 | **Theme-Aware UI** | All buttons/controls adapt to light/dark themes |

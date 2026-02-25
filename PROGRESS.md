@@ -6,6 +6,14 @@ Changelog and development progress for Clean Typewriter Experience t.
 
 ## Latest Release
 
+### v2.1.0 - Custom Cursor, Label Truncation Fix, Lo-Fi Preview
+
+**Release Date:** February 25, 2026
+
+Hidden native browser caret (transparent caretColor) so only the custom ghost cursor is visible, fixed word type and song color label truncation in settings (ORANGE/PURPLE/YELLOW now show fully), and reworked MarkdownPreview to monochrome lo-fi mode with a blinking cursor matching the editor's 530ms rhythm.
+
+---
+
 ### v2.0.0 - Drag Reorder Library, Trash Jitter Fix, Sample Text Button
 
 **Release Date:** February 24, 2026

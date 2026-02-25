@@ -813,8 +813,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
           fontSize,
           lineHeight: songMode && showSyllableAnnotations ? "2.4" : "1.6",
           color: "transparent",
-          caretColor: lastWordColor, // Garfield cursor: caret color matches last typed word's syntax
-          transition: "caret-color 0.3s ease",
+          caretColor: "transparent",
           opacity: 1,
         }}
         placeholder="Type here..."
