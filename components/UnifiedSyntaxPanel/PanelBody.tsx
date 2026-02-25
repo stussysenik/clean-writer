@@ -15,6 +15,7 @@ import {
 } from "../../types";
 import { getWordTypeOccurrences } from "../../services/localSyntaxService";
 import TouchButton from "../TouchButton";
+import WordCount from "../Toolbar/WordCount";
 
 interface PanelBodyProps {
   theme: RisoTheme;
@@ -480,17 +481,7 @@ const PanelBody: React.FC<PanelBodyProps> = ({
     >
       {/* Word Count Header */}
       <div className="w-full px-[21px] py-[21px] flex items-center justify-between">
-        <div className="flex items-baseline gap-[13px] min-w-0">
-          <span
-            className="text-5xl font-bold tracking-tighter tabular-nums"
-            style={{ color: theme.text }}
-          >
-            {wordCount}
-          </span>
-          <span className="text-sm uppercase tracking-widest opacity-50 font-medium">
-            words
-          </span>
-        </div>
+        <WordCount count={wordCount} theme={theme} />
         <div className="flex items-center gap-2 flex-shrink-0">
           {/* Song Mode toggle pill */}
           {onToggleSongMode && (
