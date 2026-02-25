@@ -1020,35 +1020,6 @@ const App: React.FC = () => {
         )}
       </div>
 
-      {/* Line Width Control — Left Edge */}
-      <div className="fixed left-0 top-[120px] z-40 pointer-events-none">
-        <div className="pointer-events-auto liquid-glass flex flex-col items-center gap-2 p-3" style={{
-          borderTopLeftRadius: 0,
-          borderBottomLeftRadius: 0,
-          border: `1px solid ${currentTheme.text}15`,
-          borderLeft: 'none',
-        }}>
-          <input
-            type="range"
-            min="300"
-            max="1400"
-            step="50"
-            value={maxWidth}
-            onChange={(e) => setMaxWidth(Number(e.target.value))}
-            className="w-20 h-1 rounded-lg appearance-none cursor-pointer"
-            style={{
-              accentColor: currentTheme.accent,
-              background: `linear-gradient(to right, ${currentTheme.accent} 0%, ${currentTheme.accent} ${((maxWidth - 300) / 1100) * 100}%, ${currentTheme.text}20 ${((maxWidth - 300) / 1100) * 100}%, ${currentTheme.text}20 100%)`,
-            }}
-            aria-label="Line width"
-            title="Line width"
-          />
-          <span className="text-[9px] opacity-50 tabular-nums font-mono" style={{ color: currentTheme.text }}>
-            {maxWidth}
-          </span>
-        </div>
-      </div>
-
       {/* Main Area */}
       <main
         className="flex-1 w-full h-full relative z-10 pt-[89px] md:pt-[89px] lg:pt-[89px] transition-all duration-300 ease-in-out"

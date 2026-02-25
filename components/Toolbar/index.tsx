@@ -60,6 +60,38 @@ const Toolbar: React.FC<ToolbarProps> = ({
           onSampleText={onSampleText}
         />
       </div>
+
+      {/* Right: Line Width Control */}
+      <div className="flex flex-col gap-2 pointer-events-auto">
+        <div
+          className="liquid-glass flex flex-row md:flex-col items-center gap-2 p-3 rounded-xl"
+          style={{
+            border: `1px solid ${theme.text}15`,
+          }}
+        >
+          <input
+            type="range"
+            min="300"
+            max="1400"
+            step="50"
+            value={maxWidth}
+            onChange={(e) => onWidthChange(Number(e.target.value))}
+            className="w-20 h-1 rounded-lg appearance-none cursor-pointer"
+            style={{
+              accentColor: theme.accent,
+              background: `linear-gradient(to right, ${theme.accent} 0%, ${theme.accent} ${pct}%, ${theme.text}20 ${pct}%, ${theme.text}20 100%)`,
+            }}
+            aria-label="Line width"
+            title="Line width"
+          />
+          <span
+            className="text-[9px] opacity-50 tabular-nums font-mono"
+            style={{ color: theme.text }}
+          >
+            {maxWidth}
+          </span>
+        </div>
+      </div>
     </footer>
   );
 };
