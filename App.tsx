@@ -877,14 +877,6 @@ const App: React.FC = () => {
         }}
       />
 
-      {/* Bottom fade — toolbar visual zone */}
-      <div
-        data-overlap-ignore
-        className="absolute bottom-0 left-0 right-0 h-[89px] pointer-events-none z-[49]"
-        style={{
-          background: `linear-gradient(to top, ${currentTheme.background} 0%, ${currentTheme.background}00 100%)`,
-        }}
-      />
 
       <ConfirmDialog
         isOpen={isClearDialogOpen}
