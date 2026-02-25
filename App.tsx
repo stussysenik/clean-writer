@@ -1031,7 +1031,7 @@ const App: React.FC = () => {
             className="mx-auto h-full relative z-10 transition-[max-width] duration-300 ease-in-out px-4 py-8 md:px-0 md:py-0"
             style={{ maxWidth: maxWidth }}
           >
-            <MarkdownPreview content={content} theme={currentTheme} />
+            <MarkdownPreview content={content} theme={currentTheme} onBackToEdit={toggleViewMode} />
           </div>
         )}
       </main>

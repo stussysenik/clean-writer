@@ -227,7 +227,9 @@ const SortableThemeItem: React.FC<{
     <div ref={setNodeRef} style={style} className="select-none">
       <div
         className="flex items-center gap-2 p-3 rounded-lg hover:bg-current/5 transition-colors"
-        style={{ minHeight: "44px" }}
+        style={{ minHeight: "44px", touchAction: "none" }}
+        {...(canDrag ? attributes : {})}
+        {...(canDrag ? listeners : {})}
       >
         {canDrag && (
           <svg
@@ -235,9 +237,7 @@ const SortableThemeItem: React.FC<{
             height="14"
             viewBox="0 0 10 14"
             className="flex-shrink-0 transition-opacity cursor-grab active:cursor-grabbing"
-            style={{ opacity: 0.4, color: theme.text, touchAction: "none" }}
-            {...attributes}
-            {...listeners}
+            style={{ opacity: 0.4, color: theme.text }}
           >
             <circle cx="3" cy="2" r="1.2" fill="currentColor"/>
             <circle cx="7" cy="2" r="1.2" fill="currentColor"/>
@@ -327,7 +327,7 @@ const ThemesTab: React.FC<{
       </h3>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={themeIds} strategy={verticalListSortingStrategy}>
-          <div className="space-y-0">
+          <div className="space-y-1">
             {orderedThemeList.map((t) => (
               <SortableThemeItem
                 key={t.id}
@@ -704,14 +704,14 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                   <h3 className="text-xs font-medium uppercase tracking-widest mb-3 opacity-50">
                     Word Type Colors
                   </h3>
-                  <div className="grid grid-cols-3 gap-x-2 gap-y-2">
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-3">
                     {WORD_TYPE_LABELS.map(({ key, short }) => (
-                      <div key={key} className="flex items-center gap-1.5">
+                      <div key={key} className="flex items-center gap-1.5" style={{ minHeight: "44px" }}>
                         <span
                           className="w-3 h-3 rounded-full flex-shrink-0"
                           style={{ backgroundColor: theme.highlight[key] }}
                         />
-                        <span className="text-[10px] uppercase tracking-wide opacity-60 flex-shrink-0">
+                        <span className="text-xs uppercase tracking-wide opacity-60 flex-shrink-0">
                           {short}
                         </span>
                         <input

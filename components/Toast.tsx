@@ -113,14 +113,16 @@ const Toast: React.FC<ToastProps> = ({
 
   return (
     <div
-      className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] pointer-events-auto"
+      className="fixed top-20 left-1/2 -translate-x-1/2 z-[100] pointer-events-none"
       style={{
         animation: "toastSlideIn 300ms cubic-bezier(0.34, 1.56, 0.64, 1)",
       }}
+      role="status"
+      aria-live="polite"
     >
       <div
         onClick={onDismiss}
-        className="flex items-center gap-3 px-5 py-3 rounded-2xl text-white font-medium shadow-lg cursor-pointer hover:opacity-90 transition-opacity"
+        className="flex items-center gap-3 px-5 py-3 rounded-2xl text-white font-medium shadow-lg cursor-pointer hover:opacity-90 transition-opacity pointer-events-auto"
         style={{
           backgroundColor: getBackgroundColor(),
           boxShadow: `0 8px 32px ${getBackgroundColor()}40`,

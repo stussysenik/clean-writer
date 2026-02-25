@@ -24,6 +24,10 @@ interface ThemeSelectorProps {
 
 // Long-press threshold for showing delete badge (mobile)
 const LONG_PRESS_MS = 400;
+// Double-tap threshold
+const DOUBLE_TAP_MS = 300;
+// Swipe threshold
+const SWIPE_THRESHOLD_PX = 50;
 
 // Small red X badge for deleting a theme (module-scope to avoid re-creation)
 const DeleteBadge = ({ onClick }: { onClick: (e: React.MouseEvent) => void }) => (
@@ -98,10 +102,26 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
   const longPressRef = useRef<NodeJS.Timeout | null>(null);
   const movedRef = useRef(false);
 
+  // Double-tap state
+  const lastTapTimeRef = useRef<number>(0);
+  const lastTapTargetRef = useRef<string | null>(null);
+  const tapDelayTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Swipe state
+  const touchStartXRef = useRef<number>(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const clearTimer = useCallback(() => {
     if (longPressRef.current) {
       clearTimeout(longPressRef.current);
       longPressRef.current = null;
+    }
+  }, []);
+
+  const clearTapTimer = useCallback(() => {
+    if (tapDelayTimerRef.current) {
+      clearTimeout(tapDelayTimerRef.current);
+      tapDelayTimerRef.current = null;
     }
   }, []);
 
@@ -113,7 +133,63 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
     return () => { clearTimeout(id); window.removeEventListener("pointerdown", dismiss); };
   }, [showDeleteBadges]);
 
-  useEffect(() => clearTimer, [clearTimer]);
+  useEffect(() => {
+    clearTimer();
+    return clearTapTimer;
+  }, [clearTimer, clearTapTimer]);
+
+  // Handle theme click with double-tap detection
+  const handleThemeClick = useCallback((id: string, isPreset: boolean) => {
+    const now = Date.now();
+    const timeSinceLastTap = now - lastTapTimeRef.current;
+    const isSameTarget = lastTapTargetRef.current === id;
+
+    // Clear any pending single-tap action
+    clearTapTimer();
+
+    // Double-tap detected
+    if (timeSinceLastTap < DOUBLE_TAP_MS && isSameTarget && canDelete && onDeleteTheme) {
+      onDeleteTheme(id, isPreset);
+      lastTapTimeRef.current = 0;
+      lastTapTargetRef.current = null;
+      return;
+    }
+
+    // Single tap - delay to allow for double-tap
+    lastTapTimeRef.current = now;
+    lastTapTargetRef.current = id;
+
+    tapDelayTimerRef.current = setTimeout(() => {
+      if (isPreset) {
+        onThemeChange(id);
+      }
+    }, DOUBLE_TAP_MS);
+  }, [canDelete, onDeleteTheme, onThemeChange, clearTapTimer]);
+
+  // Handle palette click (no double-tap needed for palettes)
+  const handlePaletteClick = useCallback((palette: SavedPalette) => {
+    const now = Date.now();
+    const timeSinceLastTap = now - lastTapTimeRef.current;
+    const isSameTarget = lastTapTargetRef.current === palette.id;
+
+    clearTapTimer();
+
+    // Double-tap to delete
+    if (timeSinceLastTap < DOUBLE_TAP_MS && isSameTarget && onDeleteTheme) {
+      onDeleteTheme(palette.id, false);
+      lastTapTimeRef.current = 0;
+      lastTapTargetRef.current = null;
+      return;
+    }
+
+    // Single tap - select palette
+    lastTapTimeRef.current = now;
+    lastTapTargetRef.current = palette.id;
+
+    tapDelayTimerRef.current = setTimeout(() => {
+      onPaletteSelect?.(palette);
+    }, DOUBLE_TAP_MS);
+  }, [onPaletteSelect, onDeleteTheme, clearTapTimer]);
 
   const pointerHandlers = {
     onPointerDown: useCallback(() => {
@@ -139,8 +215,44 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
     [onDeleteTheme],
   );
 
+  // Swipe navigation
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartXRef.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    const touchEndX = e.changedTouches[0].clientX;
+    const deltaX = touchEndX - touchStartXRef.current;
+
+    if (Math.abs(deltaX) > SWIPE_THRESHOLD_PX) {
+      // Find current index
+      const currentIndex = visibleThemes.findIndex((t) => t.id === themeId && !activePaletteId);
+
+      if (currentIndex !== -1) {
+        if (deltaX > 0) {
+          // Swipe right - previous theme
+          const prevIndex = currentIndex - 1;
+          if (prevIndex >= 0) {
+            onThemeChange(visibleThemes[prevIndex].id);
+          }
+        } else {
+          // Swipe left - next theme
+          const nextIndex = currentIndex + 1;
+          if (nextIndex < visibleThemes.length) {
+            onThemeChange(visibleThemes[nextIndex].id);
+          }
+        }
+      }
+    }
+  }, [visibleThemes, themeId, activePaletteId, onThemeChange]);
+
   return (
-    <div className="max-w-[256px] md:max-w-[336px] max-h-[122px] overflow-hidden p-[8px]">
+    <div
+      ref={containerRef}
+      className="max-w-[256px] md:max-w-[336px] max-h-[122px] overflow-hidden p-[8px]"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       <div className="flex gap-3 flex-wrap items-center">
         {visibleThemes.map((t) => (
           <SwatchCircle
@@ -148,7 +260,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
             isSelected={themeId === t.id && !activePaletteId}
             isPreset canDelete={canDelete}
             currentTheme={currentTheme} showBadge={showDeleteBadges}
-            onClick={() => onThemeChange(t.id)}
+            onClick={() => handleThemeClick(t.id, true)}
             onDelete={handleDelete}
             pointerHandlers={pointerHandlers}
           />
@@ -167,7 +279,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
               isSelected={activePaletteId === palette.id}
               isPreset={false} canDelete dashed
               currentTheme={currentTheme} showBadge={showDeleteBadges}
-              onClick={() => onPaletteSelect?.(palette)}
+              onClick={() => handlePaletteClick(palette)}
               onDelete={handleDelete}
               pointerHandlers={pointerHandlers}
             />

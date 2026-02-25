@@ -59,3 +59,12 @@
   min-width: var(--touch-min);
   min-height: var(--touch-min);
 }
+
+/* Frosted glass pill effect */
+.liquid-glass {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: rgba(128, 128, 128, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0.75rem;
+}
