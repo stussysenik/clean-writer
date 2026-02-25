@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React from "react";
 import { RisoTheme } from "../../types";
 
 interface WordCountProps {
@@ -7,31 +7,9 @@ interface WordCountProps {
 }
 
 const WordCount: React.FC<WordCountProps> = ({ count, theme }) => {
-  const [faded, setFaded] = useState(false);
-  const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const prevCountRef = useRef(count);
-
-  useEffect(() => {
-    if (count !== prevCountRef.current) {
-      setFaded(false);
-      prevCountRef.current = count;
-    }
-
-    if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
-    fadeTimerRef.current = setTimeout(() => setFaded(true), 2000);
-
-    return () => {
-      if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
-    };
-  }, [count]);
-
   return (
     <div
-      className="liquid-glass px-3 py-1 md:px-4 md:py-2 flex-shrink-0 transition-opacity duration-500"
-      style={{
-        opacity: faded ? 0.4 : 1,
-        border: `1px solid ${theme.text}15`,
-      }}
+      className="px-3 py-1 md:px-4 md:py-2 flex-shrink-0"
       role="status"
       aria-live="polite"
     >

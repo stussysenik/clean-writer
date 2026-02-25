@@ -38,6 +38,8 @@ import Toast from "./components/Toast";
 import TouchButton from "./components/TouchButton";
 import Tooltip from "./components/Tooltip";
 import HelpModal from "./components/HelpModal";
+import MobileWelcome from "./components/MobileWelcome";
+import Kbd from "./components/Kbd";
 import { IconSettings } from "./components/Toolbar/Icons";
 import useCustomTheme from "./hooks/useCustomTheme";
 import useCustomPalettes, { SavedPalette } from "./hooks/useCustomPalettes";
@@ -183,6 +185,7 @@ const App: React.FC = () => {
   const [isSampleDialogOpen, setIsSampleDialogOpen] = useState(false);
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [showMobileWelcome, setShowMobileWelcome] = useState(false);
   const [utf8DisplayEnabled, setUtf8DisplayEnabled] = useState<boolean>(() => {
     try {
       return localStorage.getItem(UTF8_DISPLAY_STORAGE_KEY) === "true";
@@ -530,6 +533,23 @@ const App: React.FC = () => {
 
   // Responsive breakpoint for desktop panel padding & shortcut overlay
   const { isDesktop, isMobile } = useResponsiveBreakpoint();
+
+  // First-time mobile welcome popup
+  useEffect(() => {
+    if (!isMobile) return;
+    try {
+      if (localStorage.getItem("clean_writer_mobile_welcome_seen") === "true") return;
+    } catch { return; }
+    const timer = setTimeout(() => setShowMobileWelcome(true), 1000);
+    return () => clearTimeout(timer);
+  }, [isMobile]);
+
+  const dismissMobileWelcome = useCallback(() => {
+    setShowMobileWelcome(false);
+    try {
+      localStorage.setItem("clean_writer_mobile_welcome_seen", "true");
+    } catch {}
+  }, []);
 
   // Hold-Tab cheat sheet state
   const [tabHeld, setTabHeld] = useState(false);
@@ -983,6 +1003,7 @@ const App: React.FC = () => {
               <TouchButton
                 onClick={() => setIsHelpOpen(true)}
                 className="p-2.5 rounded-xl hover:bg-current/5 transition-all duration-200"
+                aria-label="Help and shortcuts"
                 style={{
                   color: getIconColor(currentTheme),
                 }}
@@ -1104,6 +1125,11 @@ const App: React.FC = () => {
         onSampleText={handleSampleTextRequest}
       />
 
+      {/* Mobile Welcome Popup */}
+      {showMobileWelcome && (
+        <MobileWelcome theme={currentTheme} onDismiss={dismissMobileWelcome} />
+      )}
+
       {/* Hold-Tab shortcut cheat sheet */}
       {tabHeld && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center pointer-events-none">
@@ -1123,8 +1149,8 @@ const App: React.FC = () => {
               Keyboard Shortcuts
             </h3>
             <div
-              className="grid gap-2 text-sm"
-              style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", gridTemplateColumns: "auto 1fr" }}
+              className="grid gap-2 text-sm items-center"
+              style={{ gridTemplateColumns: "auto 1fr" }}
             >
               {[
                 [isMac ? "⌘⇧X" : "Ctrl+Shift+X", "Strikethrough"],
@@ -1134,11 +1160,8 @@ const App: React.FC = () => {
                 ["1 – 9", "Toggle word types"],
               ].map(([key, desc]) => (
                 <React.Fragment key={key}>
-                  <span
-                    className="font-bold text-right pr-3"
-                    style={{ color: currentTheme.accent, opacity: 0.85 }}
-                  >
-                    {key}
+                  <span className="text-right pr-3">
+                    <Kbd theme={currentTheme}>{key}</Kbd>
                   </span>
                   <span style={{ opacity: 0.7 }}>{desc}</span>
                 </React.Fragment>

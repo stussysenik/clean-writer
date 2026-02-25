@@ -15,6 +15,7 @@ import {
 } from "../../types";
 import { getWordTypeOccurrences } from "../../services/localSyntaxService";
 import TouchButton from "../TouchButton";
+import Kbd from "../Kbd";
 import WordCount from "../Toolbar/WordCount";
 
 interface PanelBodyProps {
@@ -1156,19 +1157,9 @@ const PanelBody: React.FC<PanelBodyProps> = ({
           ) : (
             <>
               Press{" "}
-              <kbd
-                className="px-1.5 py-0.5 rounded border text-[10px] font-bold mx-0.5"
-                style={{ borderColor: `${theme.text}20` }}
-              >
-                1
-              </kbd>
-              -
-              <kbd
-                className="px-1.5 py-0.5 rounded border text-[10px] font-bold mx-0.5"
-                style={{ borderColor: `${theme.text}20` }}
-              >
-                9
-              </kbd>{" "}
+              <Kbd theme={theme}>1</Kbd>
+              {" - "}
+              <Kbd theme={theme}>9</Kbd>{" "}
               to toggle
             </>
           )}

@@ -1,7 +1,6 @@
 import React from "react";
 import { RisoTheme, ViewMode } from "../../types";
 import ActionButtons from "./ActionButtons";
-import { getIconColor } from "../../utils/contrastAwareColor";
 
 interface ToolbarProps {
   theme: RisoTheme;
@@ -33,20 +32,50 @@ const Toolbar: React.FC<ToolbarProps> = ({
   onSampleText,
 }) => {
   const pct = ((maxWidth - 300) / 1100) * 100;
-  const iconColor = getIconColor(theme);
 
   return (
     <footer
-      className="absolute bottom-0 left-0 right-0 flex flex-col-reverse md:flex-row justify-between items-start md:items-end z-50 pointer-events-none"
+      className="absolute bottom-0 left-0 right-0 flex flex-col items-stretch z-50 pointer-events-none"
       style={{
         padding: "13px",
         paddingBottom: "max(13px, env(safe-area-inset-bottom))",
-        gap: "13px",
+        gap: "8px",
       }}
     >
-      {/* Left: Interactive Tools */}
-      <div className="flex flex-col gap-2 pointer-events-auto w-full md:w-auto">
-        {/* Main Actions Row */}
+      {/* Line Width Slider — full-width bar above actions */}
+      <div className="flex items-center gap-3 px-3 py-2 pointer-events-auto self-center rounded-xl"
+        style={{
+          backgroundColor: `${theme.background}80`,
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+        }}
+      >
+        <input
+          type="range"
+          min="300"
+          max="1400"
+          step="50"
+          value={maxWidth}
+          onChange={(e) => onWidthChange(Number(e.target.value))}
+          className="w-28 md:w-36 h-1 rounded-lg appearance-none cursor-pointer touch-manipulation"
+          /* min touch target via padding; visual track stays 4px */
+          style={{
+            accentColor: theme.accent,
+            background: `linear-gradient(to right, ${theme.accent} 0%, ${theme.accent} ${pct}%, ${theme.text}20 ${pct}%, ${theme.text}20 100%)`,
+          }}
+          aria-label="Line width"
+          title="Line width"
+        />
+        <span
+          className="text-[9px] opacity-50 tabular-nums font-mono pointer-events-none"
+          style={{ color: theme.text }}
+        >
+          {maxWidth}px
+        </span>
+      </div>
+
+      {/* Action Buttons — bottom row */}
+      <div className="pointer-events-auto">
         <ActionButtons
           theme={theme}
           viewMode={viewMode}
@@ -59,38 +88,6 @@ const Toolbar: React.FC<ToolbarProps> = ({
           onClear={onClear}
           onSampleText={onSampleText}
         />
-      </div>
-
-      {/* Right: Line Width Control */}
-      <div className="flex flex-col gap-2 pointer-events-auto">
-        <div
-          className="liquid-glass flex flex-row md:flex-col items-center gap-2 p-3 rounded-xl"
-          style={{
-            border: `1px solid ${theme.text}15`,
-          }}
-        >
-          <input
-            type="range"
-            min="300"
-            max="1400"
-            step="50"
-            value={maxWidth}
-            onChange={(e) => onWidthChange(Number(e.target.value))}
-            className="w-20 h-1 rounded-lg appearance-none cursor-pointer"
-            style={{
-              accentColor: theme.accent,
-              background: `linear-gradient(to right, ${theme.accent} 0%, ${theme.accent} ${pct}%, ${theme.text}20 ${pct}%, ${theme.text}20 100%)`,
-            }}
-            aria-label="Line width"
-            title="Line width"
-          />
-          <span
-            className="text-[9px] opacity-50 tabular-nums font-mono"
-            style={{ color: theme.text }}
-          >
-            {maxWidth}
-          </span>
-        </div>
       </div>
     </footer>
   );

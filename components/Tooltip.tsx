@@ -15,6 +15,11 @@ interface Position {
   left: number;
 }
 
+// Detect primary touch device (no fine pointer = phone/tablet)
+const isTouchPrimary = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia("(pointer: coarse)").matches;
+
 const Tooltip: React.FC<TooltipProps> = ({
   content,
   shortcut,
@@ -31,6 +36,8 @@ const Tooltip: React.FC<TooltipProps> = ({
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
+  // Track recent touch to suppress focus-triggered tooltips
+  const recentTouchRef = useRef(false);
 
   const updatePosition = useCallback(() => {
     if (!triggerRef.current || !tooltipRef.current) return;
@@ -71,11 +78,17 @@ const Tooltip: React.FC<TooltipProps> = ({
   }, [position]);
 
   const showTooltip = useCallback(() => {
-    if (disabled) return;
+    if (disabled || isTouchPrimary()) return;
     timeoutRef.current = setTimeout(() => {
       setIsVisible(true);
     }, delay);
   }, [delay, disabled]);
+
+  const showTooltipFromFocus = useCallback(() => {
+    // Suppress tooltip when focus follows a recent touch event
+    if (recentTouchRef.current) return;
+    showTooltip();
+  }, [showTooltip]);
 
   const hideTooltip = useCallback(() => {
     if (timeoutRef.current) {
@@ -84,6 +97,15 @@ const Tooltip: React.FC<TooltipProps> = ({
     }
     setIsVisible(false);
   }, []);
+
+  const handleTouchStart = useCallback(() => {
+    recentTouchRef.current = true;
+    hideTooltip();
+    // Reset after a short window
+    setTimeout(() => {
+      recentTouchRef.current = false;
+    }, 500);
+  }, [hideTooltip]);
 
   // Update position when tooltip becomes visible
   useEffect(() => {
@@ -128,8 +150,9 @@ const Tooltip: React.FC<TooltipProps> = ({
         className="inline-flex"
         onMouseEnter={showTooltip}
         onMouseLeave={hideTooltip}
-        onFocus={showTooltip}
+        onFocus={showTooltipFromFocus}
         onBlur={hideTooltip}
+        onTouchStart={handleTouchStart}
       >
         {children}
       </div>

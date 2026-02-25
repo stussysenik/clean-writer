@@ -1,6 +1,7 @@
 import React from "react";
 import { RisoTheme } from "../types";
 import TouchButton from "./TouchButton";
+import Kbd from "./Kbd";
 
 interface HelpModalProps {
   isOpen: boolean;
@@ -61,39 +62,27 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose, theme, isMac }) 
           <div className="space-y-2 text-sm">
             <div className="flex justify-between items-center py-2 border-b border-current/10">
               <span className="opacity-70">Strikethrough text</span>
-              <kbd className="px-2 py-1 rounded text-xs font-mono" style={{ backgroundColor: `${theme.text}10` }}>
-                {cmdKey}+Shift+X
-              </kbd>
+              <Kbd theme={theme}>{cmdKey}+Shift+X</Kbd>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-current/10">
               <span className="opacity-70">Clean struck text</span>
-              <kbd className="px-2 py-1 rounded text-xs font-mono" style={{ backgroundColor: `${theme.text}10` }}>
-                {cmdKey}+Shift+K
-              </kbd>
+              <Kbd theme={theme}>{cmdKey}+Shift+K</Kbd>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-current/10">
               <span className="opacity-70">Toggle preview</span>
-              <kbd className="px-2 py-1 rounded text-xs font-mono" style={{ backgroundColor: `${theme.text}10` }}>
-                {cmdKey}+Shift+P
-              </kbd>
+              <Kbd theme={theme}>{cmdKey}+Shift+P</Kbd>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-current/10">
               <span className="opacity-70">Export markdown</span>
-              <kbd className="px-2 py-1 rounded text-xs font-mono" style={{ backgroundColor: `${theme.text}10` }}>
-                {cmdKey}+Shift+E
-              </kbd>
+              <Kbd theme={theme}>{cmdKey}+Shift+E</Kbd>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-current/10">
               <span className="opacity-70">Toggle word types</span>
-              <kbd className="px-2 py-1 rounded text-xs font-mono" style={{ backgroundColor: `${theme.text}10` }}>
-                1-9
-              </kbd>
+              <Kbd theme={theme}>1-9</Kbd>
             </div>
             <div className="flex justify-between items-center py-2">
               <span className="opacity-70">Show shortcuts</span>
-              <kbd className="px-2 py-1 rounded text-xs font-mono" style={{ backgroundColor: `${theme.text}10` }}>
-                Hold Tab
-              </kbd>
+              <Kbd theme={theme}>Hold Tab</Kbd>
             </div>
           </div>
         </section>
@@ -125,7 +114,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose, theme, isMac }) 
             <div className="py-2">
               <div className="font-medium mb-1">Line Width</div>
               <div className="opacity-70 text-xs">
-                Use the slider on the left edge to adjust text column width (zoom in/out)
+                Use the slider in the bottom toolbar to adjust text column width
               </div>
             </div>
           </div>
