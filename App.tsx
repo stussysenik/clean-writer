@@ -648,8 +648,8 @@ const App: React.FC = () => {
   }, [toggleHighlight]);
 
   // Stable ref for action shortcuts (avoids re-registering listener on content changes)
-  const shortcutActionsRef = useRef({ handleStrikethrough, handleCleanStrikethroughs, handleExport });
-  shortcutActionsRef.current = { handleStrikethrough, handleCleanStrikethroughs, handleExport };
+  // NOTE: initialized empty — assigned after the callbacks are declared below (TDZ safety)
+  const shortcutActionsRef = useRef<{ handleStrikethrough: () => void; handleCleanStrikethroughs: () => void; handleExport: () => void }>(null!);
 
   // Global keyboard shortcuts: Cmd/Ctrl + Shift + letter
   useEffect(() => {
@@ -987,6 +987,9 @@ const App: React.FC = () => {
       setContent(cleaned);
     }
   }, [content]);
+
+  // Assign action refs now that all callbacks are declared (see useRef above)
+  shortcutActionsRef.current = { handleStrikethrough, handleCleanStrikethroughs, handleExport };
 
   return (
     <div
