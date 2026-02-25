@@ -46,25 +46,6 @@ const Toolbar: React.FC<ToolbarProps> = ({
     >
       {/* Left: Interactive Tools */}
       <div className="flex flex-col gap-2 pointer-events-auto w-full md:w-auto">
-        {/* Width slider — always visible */}
-        <div className="flex items-center gap-2 px-1" style={{ color: iconColor }}>
-          <input
-            type="range"
-            min="300"
-            max="1400"
-            step="50"
-            value={maxWidth}
-            onChange={(e) => onWidthChange(Number(e.target.value))}
-            className="w-24 h-1 rounded-lg appearance-none cursor-pointer"
-            style={{
-              accentColor: theme.accent,
-              background: `linear-gradient(to right, ${theme.accent} 0%, ${theme.accent} ${pct}%, ${theme.text}20 ${pct}%, ${theme.text}20 100%)`,
-            }}
-            aria-label="Line width"
-          />
-          <span className="text-[10px] opacity-40 tabular-nums">{maxWidth}px</span>
-        </div>
-
         {/* Main Actions Row */}
         <ActionButtons
           theme={theme}
