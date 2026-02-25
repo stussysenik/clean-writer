@@ -180,10 +180,63 @@ const App: React.FC = () => {
     },
   );
 
-  const fluidFontSize = "clamp(18px, 10px + 1.1vw, 24px)";
+  const [fontSizeOffset, setFontSizeOffset] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem("clean_writer_font_size_offset");
+      if (saved !== null) {
+        const val = parseInt(saved, 10);
+        if (!isNaN(val) && val >= -6 && val <= 12) return val;
+      }
+      return 0;
+    } catch {
+      return 0;
+    }
+  });
+
+  const [customThemeNames, setCustomThemeNames] = useState<Record<string, string>>(() => {
+    try {
+      const saved = localStorage.getItem("clean_writer_theme_names");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (typeof parsed === "object" && parsed !== null) return parsed;
+      }
+      return {};
+    } catch {
+      return {};
+    }
+  });
+
+  const fluidFontSize = fontSizeOffset === 0
+    ? "clamp(18px, 10px + 1.1vw, 24px)"
+    : `calc(clamp(18px, 10px + 1.1vw, 24px) + ${fontSizeOffset}px)`;
+
+  const handleFontSizeChange = useCallback((offset: number) => {
+    const clamped = Math.max(-6, Math.min(12, offset));
+    setFontSizeOffset(clamped);
+  }, []);
+
+  const handleSelectThemeForEditing = useCallback((id: string) => {
+    setThemeId(id);
+    setActivePaletteId(null);
+    setCustomizerInitialTab("colors");
+  }, []);
+
+  const handleThemeRename = useCallback((themeId: string, newName: string) => {
+    setCustomThemeNames(prev => {
+      const next = { ...prev };
+      if (newName.trim()) {
+        next[themeId] = newName.trim();
+      } else {
+        delete next[themeId];
+      }
+      return next;
+    });
+  }, []);
+
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
   const [isSampleDialogOpen, setIsSampleDialogOpen] = useState(false);
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
+  const [customizerInitialTab, setCustomizerInitialTab] = useState<string | null>(null);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [showMobileWelcome, setShowMobileWelcome] = useState(false);
   const [utf8DisplayEnabled, setUtf8DisplayEnabled] = useState<boolean>(() => {
@@ -718,6 +771,24 @@ const App: React.FC = () => {
     }
   }, [rhymeBoldEnabled]);
 
+  // Persist fontSizeOffset
+  useEffect(() => {
+    try {
+      localStorage.setItem("clean_writer_font_size_offset", String(fontSizeOffset));
+    } catch (e) {
+      console.warn("Could not save font size offset");
+    }
+  }, [fontSizeOffset]);
+
+  // Persist customThemeNames
+  useEffect(() => {
+    try {
+      localStorage.setItem("clean_writer_theme_names", JSON.stringify(customThemeNames));
+    } catch (e) {
+      console.warn("Could not save theme names");
+    }
+  }, [customThemeNames]);
+
   // Overlap debug utility (zero cost when inactive — just a keydown listener)
   useEffect(() => {
     initOverlapDebug();
@@ -963,6 +1034,11 @@ const App: React.FC = () => {
         onRhymeHighlightRadiusChange={setRhymeHighlightRadius}
         rhymeBoldEnabled={rhymeBoldEnabled}
         onRhymeBoldEnabledChange={setRhymeBoldEnabled}
+        customThemeNames={customThemeNames}
+        onThemeRename={handleThemeRename}
+        onSelectThemeForEditing={handleSelectThemeForEditing}
+        initialTab={customizerInitialTab}
+        onInitialTabConsumed={() => setCustomizerInitialTab(null)}
       />
 
       {/* Toast for warnings */}
@@ -1115,6 +1191,8 @@ const App: React.FC = () => {
         viewMode={viewMode}
         maxWidth={maxWidth}
         hasStrikethroughs={hasStrikethroughs}
+        fontSizeOffset={fontSizeOffset}
+        onFontSizeChange={handleFontSizeChange}
         onToggleView={toggleViewMode}
         onStrikethrough={handleStrikethrough}
         onStrikethroughPointerDown={handleStrikethroughPointerDown}

@@ -7,28 +7,103 @@ export const BUILD_TRACK = __BUILD_TRACK__;
 export const BUILD_HASH = __BUILD_HASH__;
 export const BUILD_IDENTITY = `${BUILD_NUMBER} · ${BUILD_TRACK} · ${BUILD_HASH}`;
 
+export const FONT_CATEGORIES = ["Mono", "Sans-serif", "Serif", "Handwriting"] as const;
+export type FontCategory = (typeof FONT_CATEGORIES)[number];
+
 export const FONT_OPTIONS = [
+  // Mono
   {
     id: "courier-prime",
     name: "Courier Prime",
     family: '"Courier Prime", monospace',
+    category: "Mono" as FontCategory,
   },
-  { id: "space-mono", name: "Space Mono", family: '"Space Mono", monospace' },
+  {
+    id: "space-mono",
+    name: "Space Mono",
+    family: '"Space Mono", monospace',
+    category: "Mono" as FontCategory,
+  },
   {
     id: "jetbrains",
     name: "JetBrains Mono",
     family: '"JetBrains Mono", monospace',
+    category: "Mono" as FontCategory,
   },
-  { id: "inter", name: "Inter", family: '"Inter", sans-serif' },
+  {
+    id: "fira-code",
+    name: "Fira Code",
+    family: '"Fira Code", monospace',
+    category: "Mono" as FontCategory,
+  },
+  {
+    id: "ibm-plex-mono",
+    name: "IBM Plex Mono",
+    family: '"IBM Plex Mono", monospace',
+    category: "Mono" as FontCategory,
+  },
+  // Sans-serif
+  {
+    id: "inter",
+    name: "Inter",
+    family: '"Inter", sans-serif',
+    category: "Sans-serif" as FontCategory,
+  },
+  {
+    id: "dm-sans",
+    name: "DM Sans",
+    family: '"DM Sans", sans-serif',
+    category: "Sans-serif" as FontCategory,
+  },
+  {
+    id: "plus-jakarta",
+    name: "Plus Jakarta Sans",
+    family: '"Plus Jakarta Sans", sans-serif',
+    category: "Sans-serif" as FontCategory,
+  },
   {
     id: "helvetica",
     name: "Helvetica",
     family: 'Helvetica, "Helvetica Neue", Arial, sans-serif',
+    category: "Sans-serif" as FontCategory,
   },
   {
     id: "system",
     name: "System",
     family: "system-ui, -apple-system, sans-serif",
+    category: "Sans-serif" as FontCategory,
+  },
+  // Serif
+  {
+    id: "lora",
+    name: "Lora",
+    family: '"Lora", serif',
+    category: "Serif" as FontCategory,
+  },
+  {
+    id: "merriweather",
+    name: "Merriweather",
+    family: '"Merriweather", serif',
+    category: "Serif" as FontCategory,
+  },
+  {
+    id: "playfair",
+    name: "Playfair Display",
+    family: '"Playfair Display", serif',
+    category: "Serif" as FontCategory,
+  },
+  {
+    id: "eb-garamond",
+    name: "EB Garamond",
+    family: '"EB Garamond", serif',
+    category: "Serif" as FontCategory,
+  },
+  // Handwriting
+  {
+    id: "caveat",
+    name: "Caveat",
+    family: '"Caveat", cursive',
+    category: "Handwriting" as FontCategory,
   },
 ] as const;
 

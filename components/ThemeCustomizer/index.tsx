@@ -1,8 +1,10 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { RisoTheme, ColorSystemMode, ColorHarmonyType } from "../../types";
 import {
   BUILD_IDENTITY,
   FONT_OPTIONS,
+  FONT_CATEGORIES,
+  FontCategory,
   FontId,
   THEMES,
 } from "../../constants";
@@ -76,6 +78,15 @@ interface ThemeCustomizerProps {
   onSetRhymeColor?: (index: number, color: string) => void;
   onResetRhymeColor?: (index: number) => void;
   isRhymeColorCustomized?: (index: number) => boolean;
+  rhymeHighlightRadius?: number;
+  onRhymeHighlightRadiusChange?: (radius: number) => void;
+  rhymeBoldEnabled?: boolean;
+  onRhymeBoldEnabledChange?: (enabled: boolean) => void;
+  customThemeNames?: Record<string, string>;
+  onThemeRename?: (themeId: string, newName: string) => void;
+  onSelectThemeForEditing?: (themeId: string) => void;
+  initialTab?: string | null;
+  onInitialTabConsumed?: () => void;
 }
 
 const RHYME_COLOR_LABELS = [
@@ -207,7 +218,14 @@ const SortableThemeItem: React.FC<{
   onToggleThemeVisibility: (id: string) => void;
   theme: RisoTheme;
   canDrag: boolean;
-}> = ({ t, isHidden, onToggleThemeVisibility, theme, canDrag }) => {
+  displayName?: string;
+  onRename?: (themeId: string, newName: string) => void;
+  onSelectForEditing?: (themeId: string) => void;
+}> = ({ t, isHidden, onToggleThemeVisibility, theme, canDrag, displayName, onRename, onSelectForEditing }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const {
     attributes,
     listeners,
@@ -234,11 +252,33 @@ const SortableThemeItem: React.FC<{
     zIndex: isDragging ? 50 : undefined,
   };
 
+  const name = displayName || t.name;
+
+  const startEditing = () => {
+    setEditValue(name);
+    setIsEditing(true);
+    setTimeout(() => inputRef.current?.select(), 0);
+  };
+
+  const commitEdit = () => {
+    setIsEditing(false);
+    if (onRename && editValue.trim() !== name) {
+      onRename(t.id, editValue.trim() || "");
+    }
+  };
+
+  const handleRowClick = () => {
+    if (!isEditing && onSelectForEditing) {
+      onSelectForEditing(t.id);
+    }
+  };
+
   return (
     <div ref={setNodeRef} style={style} className="select-none">
       <div
-        className="flex items-center gap-2 p-3 rounded-lg hover:bg-current/5 transition-colors"
+        className="flex items-center gap-2 p-3 rounded-lg hover:bg-current/5 transition-colors cursor-pointer"
         style={{ minHeight: "44px", touchAction: "none" }}
+        onClick={handleRowClick}
       >
         {canDrag && (
           <div
@@ -246,6 +286,7 @@ const SortableThemeItem: React.FC<{
             style={{ width: "28px", height: "44px", touchAction: "none" }}
             {...attributes}
             {...listeners}
+            onClick={(e) => e.stopPropagation()}
           >
             <svg
               width="10"
@@ -263,12 +304,12 @@ const SortableThemeItem: React.FC<{
             </svg>
           </div>
         )}
-        <label className="flex items-center gap-2 flex-1 cursor-pointer">
+        <label className="flex items-center gap-2 flex-1" onClick={(e) => e.stopPropagation()}>
           <input
             type="checkbox"
             checked={!isHidden}
             onChange={() => onToggleThemeVisibility(t.id)}
-            className="w-5 h-5 rounded flex-shrink-0"
+            className="w-5 h-5 rounded flex-shrink-0 cursor-pointer"
             style={{
               accentColor: checkboxAccent,
               borderWidth: "2px",
@@ -282,27 +323,50 @@ const SortableThemeItem: React.FC<{
               boxShadow: dotShadow,
             }}
           />
-          <div className="flex items-center gap-1.5 flex-1">
-            <span className="text-sm font-medium">{t.name}</span>
-            <div
-              className="flex flex-wrap ml-auto"
-              style={{ gap: "2px", maxWidth: "52px" }}
-            >
-              {WORD_TYPE_LABELS.map(({ key }) => (
-                <span
-                  key={key}
-                  className="rounded-full"
-                  style={{
-                    width: "7px",
-                    height: "7px",
-                    backgroundColor: t.highlight[key as keyof typeof t.highlight],
-                    boxShadow: dotShadow,
-                  }}
-                />
-              ))}
-            </div>
-          </div>
         </label>
+        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+          {isEditing ? (
+            <input
+              ref={inputRef}
+              type="text"
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onBlur={commitEdit}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commitEdit();
+                if (e.key === "Escape") { setIsEditing(false); }
+              }}
+              onClick={(e) => e.stopPropagation()}
+              className="text-sm font-medium bg-transparent border-b border-current/30 outline-none px-0 py-0 w-full"
+              style={{ color: theme.text }}
+            />
+          ) : (
+            <span
+              className="text-sm font-medium truncate"
+              onDoubleClick={(e) => { e.stopPropagation(); startEditing(); }}
+              title="Double-click to rename"
+            >
+              {name}
+            </span>
+          )}
+          <div
+            className="flex flex-wrap flex-shrink-0"
+            style={{ gap: "2px", maxWidth: "52px" }}
+          >
+            {WORD_TYPE_LABELS.map(({ key }) => (
+              <span
+                key={key}
+                className="rounded-full"
+                style={{
+                  width: "7px",
+                  height: "7px",
+                  backgroundColor: t.highlight[key as keyof typeof t.highlight],
+                  boxShadow: dotShadow,
+                }}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -315,7 +379,10 @@ const ThemesTab: React.FC<{
   onToggleThemeVisibility: (id: string) => void;
   themeOrder?: string[];
   onReorderThemes?: (fromIndex: number, toIndex: number) => void;
-}> = ({ theme, hiddenThemeIds, onToggleThemeVisibility, themeOrder, onReorderThemes }) => {
+  customThemeNames?: Record<string, string>;
+  onThemeRename?: (themeId: string, newName: string) => void;
+  onSelectThemeForEditing?: (themeId: string) => void;
+}> = ({ theme, hiddenThemeIds, onToggleThemeVisibility, themeOrder, onReorderThemes, customThemeNames, onThemeRename, onSelectThemeForEditing }) => {
   const orderedThemeList = useMemo(() => {
     if (!themeOrder) return THEMES;
     return [...THEMES].sort((a, b) => {
@@ -350,6 +417,7 @@ const ThemesTab: React.FC<{
       <h3 className="text-xs font-medium uppercase tracking-widest mb-1 opacity-50">
         Visible Presets
       </h3>
+      <p className="text-[10px] opacity-30 mb-2">Click to edit colors. Double-click name to rename.</p>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={themeIds} strategy={verticalListSortingStrategy}>
           <div className="space-y-1">
@@ -361,6 +429,9 @@ const ThemesTab: React.FC<{
                 onToggleThemeVisibility={onToggleThemeVisibility}
                 theme={theme}
                 canDrag={!!onReorderThemes}
+                displayName={customThemeNames?.[t.id]}
+                onRename={onThemeRename}
+                onSelectForEditing={onSelectThemeForEditing}
               />
             ))}
           </div>
@@ -369,6 +440,12 @@ const ThemesTab: React.FC<{
     </section>
   );
 };
+
+/** Group fonts by category */
+const groupedFonts = FONT_CATEGORIES.map((cat) => ({
+  category: cat,
+  fonts: FONT_OPTIONS.filter((f) => f.category === cat),
+}));
 
 const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
   isOpen,
@@ -398,17 +475,38 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
   onSetRhymeColor,
   onResetRhymeColor,
   isRhymeColorCustomized,
+  customThemeNames,
+  onThemeRename,
+  onSelectThemeForEditing,
+  initialTab,
+  onInitialTabConsumed,
 }) => {
   const [activeTab, setActiveTab] = useState<TabId>("colors");
   const [paletteName, setPaletteName] = useState("");
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const [savedPaletteName, setSavedPaletteName] = useState("");
 
+  // Handle initialTab from parent (e.g. click theme row -> switch to colors)
+  useEffect(() => {
+    if (initialTab && isOpen) {
+      setActiveTab(initialTab as TabId);
+      onInitialTabConsumed?.();
+    }
+  }, [initialTab, isOpen, onInitialTabConsumed]);
+
   // Live harmony preview — recomputes reactively as hue slider moves
   const harmonyPreview = useMemo(() => {
     if (colorSystemMode !== "system") return null;
     return generateHarmonyColors(colorBaseHue, colorHarmonyType, theme.background);
   }, [colorSystemMode, colorBaseHue, colorHarmonyType, theme.background]);
+
+  // Handle theme select for editing (activate + switch to colors tab)
+  const handleSelectForEditing = useCallback((themeId: string) => {
+    if (onSelectThemeForEditing) {
+      onSelectThemeForEditing(themeId);
+    }
+    setActiveTab("colors");
+  }, [onSelectThemeForEditing]);
 
   if (!isOpen) return null;
 
@@ -953,28 +1051,32 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
           {/* Typography Tab */}
           {activeTab === "typography" && (
             <section className="py-4">
-              <h3 className="text-xs font-medium uppercase tracking-widest mb-3 opacity-50">
-                Font Family
-              </h3>
-              <div className="space-y-1">
-                {FONT_OPTIONS.map((font) => (
-                  <button
-                    key={font.id}
-                    onClick={() => onFontChange(font.id)}
-                    className={`w-full text-left px-3 py-3 rounded-lg transition-all ${
-                      currentFontId === font.id
-                        ? "ring-1 ring-current bg-current/5"
-                        : "hover:bg-current/5"
-                    }`}
-                    style={{ fontFamily: font.family, minHeight: "44px" }}
-                  >
-                    <span className="font-medium text-sm">{font.name}</span>
-                    <span className="block text-xs opacity-50">
-                      The quick brown fox jumps over the lazy dog
-                    </span>
-                  </button>
-                ))}
-              </div>
+              {groupedFonts.map(({ category, fonts }) => (
+                <div key={category} className="mb-4">
+                  <h3 className="text-[10px] font-semibold uppercase tracking-[0.15em] mb-1.5 opacity-40">
+                    {category}
+                  </h3>
+                  <div className="space-y-1">
+                    {fonts.map((font) => (
+                      <button
+                        key={font.id}
+                        onClick={() => onFontChange(font.id)}
+                        className={`w-full text-left px-3 py-2.5 rounded-lg transition-all ${
+                          currentFontId === font.id
+                            ? "ring-1 ring-current bg-current/5"
+                            : "hover:bg-current/5"
+                        }`}
+                        style={{ fontFamily: font.family, minHeight: "44px" }}
+                      >
+                        <span className="font-bold text-base">{font.name}</span>
+                        <span className="block text-xs opacity-40">
+                          The quick brown fox jumps over the lazy dog
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </section>
           )}
 
@@ -986,6 +1088,9 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
               onToggleThemeVisibility={onToggleThemeVisibility}
               themeOrder={themeOrder}
               onReorderThemes={onReorderThemes}
+              customThemeNames={customThemeNames}
+              onThemeRename={onThemeRename}
+              onSelectThemeForEditing={handleSelectForEditing}
             />
           )}
 
