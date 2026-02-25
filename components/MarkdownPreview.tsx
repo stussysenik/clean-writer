@@ -49,18 +49,45 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
       />
 
       {onBackToEdit && (
-        <div className="mt-16 mb-8 flex justify-center">
-          <button
-            onClick={onBackToEdit}
-            className="liquid-glass px-6 py-3 text-sm font-medium uppercase tracking-widest transition-all duration-200 hover:scale-105 active:scale-95"
-            style={{
-              color: theme.text,
-              border: `1px solid ${theme.text}20`,
-            }}
-          >
-            ← Back to editing
-          </button>
-        </div>
+        <>
+          {/* Desktop: inline button after content */}
+          <div className="hidden md:flex mt-16 mb-8 justify-center">
+            <button
+              onClick={onBackToEdit}
+              className="liquid-glass px-6 py-3 text-sm font-medium uppercase tracking-widest transition-all duration-200 hover:scale-105 active:scale-95"
+              style={{
+                color: theme.text,
+                border: `1px solid ${theme.text}20`,
+              }}
+            >
+              ← Back to editing
+            </button>
+          </div>
+
+          {/* Mobile: sticky button at bottom */}
+          <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 pointer-events-none">
+            <div
+              className="flex justify-center pointer-events-auto"
+              style={{
+                padding: "13px",
+                paddingBottom: "max(13px, env(safe-area-inset-bottom))",
+              }}
+            >
+              <button
+                onClick={onBackToEdit}
+                className="liquid-glass px-8 py-4 text-sm font-bold uppercase tracking-widest transition-all duration-200 active:scale-95 touch-manipulation"
+                style={{
+                  color: theme.text,
+                  border: `2px solid ${theme.text}30`,
+                  minHeight: "44px",
+                  boxShadow: `0 8px 24px ${theme.text}15`,
+                }}
+              >
+                ← Back to editing
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
