@@ -54,96 +54,47 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose, theme, isMac }) 
           </TouchButton>
         </div>
 
-        {/* Desktop Shortcuts */}
-        <section className="mb-6">
+        {/* Shortcuts */}
+        <section className="mb-5">
           <h3 className="text-sm font-bold uppercase tracking-wider opacity-50 mb-3">
-            Desktop Shortcuts
+            Shortcuts
           </h3>
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between items-center py-2 border-b border-current/10">
-              <span className="opacity-70">Strikethrough text</span>
+            <div className="flex justify-between items-center py-1.5 border-b border-current/10">
+              <span className="opacity-70">Strikethrough</span>
               <Kbd theme={theme}>{cmdKey}+Shift+X</Kbd>
             </div>
-            <div className="flex justify-between items-center py-2 border-b border-current/10">
+            <div className="flex justify-between items-center py-1.5 border-b border-current/10">
               <span className="opacity-70">Clean struck text</span>
               <Kbd theme={theme}>{cmdKey}+Shift+K</Kbd>
             </div>
-            <div className="flex justify-between items-center py-2 border-b border-current/10">
-              <span className="opacity-70">Toggle preview</span>
+            <div className="flex justify-between items-center py-1.5 border-b border-current/10">
+              <span className="opacity-70">Preview</span>
               <Kbd theme={theme}>{cmdKey}+Shift+P</Kbd>
             </div>
-            <div className="flex justify-between items-center py-2 border-b border-current/10">
-              <span className="opacity-70">Export markdown</span>
-              <Kbd theme={theme}>{cmdKey}+Shift+E</Kbd>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b border-current/10">
+            <div className="flex justify-between items-center py-1.5">
               <span className="opacity-70">Toggle word types</span>
               <Kbd theme={theme}>1-9</Kbd>
             </div>
-            <div className="flex justify-between items-center py-2">
-              <span className="opacity-70">Show shortcuts</span>
-              <Kbd theme={theme}>Hold Tab</Kbd>
-            </div>
           </div>
         </section>
 
-        {/* Mobile Gestures */}
-        <section className="mb-6">
+        {/* Mobile */}
+        <section className="mb-5">
           <h3 className="text-sm font-bold uppercase tracking-wider opacity-50 mb-3">
-            Mobile Tips
+            Mobile
           </h3>
-          <div className="space-y-3 text-sm">
-            <div className="py-2 border-b border-current/10">
-              <div className="font-medium mb-1">Delete Text</div>
-              <div className="opacity-70 text-xs">
-                Select text → tap strikethrough icon → tap "Clean" button to permanently remove
-              </div>
-            </div>
-            <div className="py-2 border-b border-current/10">
-              <div className="font-medium mb-1">Switch Themes</div>
-              <div className="opacity-70 text-xs">
-                Tap a color dot to switch instantly, or swipe left/right to cycle through themes
-              </div>
-            </div>
-            <div className="py-2 border-b border-current/10">
-              <div className="font-medium mb-1">Manage Themes</div>
-              <div className="opacity-70 text-xs">
-                Open Settings (⚙️) → Themes tab to reorder, hide, or customize colors
-              </div>
-            </div>
-            <div className="py-2">
-              <div className="font-medium mb-1">Line Width</div>
-              <div className="opacity-70 text-xs">
-                Use the slider in the bottom toolbar to adjust text column width
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* General Tips */}
-        <section>
-          <h3 className="text-sm font-bold uppercase tracking-wider opacity-50 mb-3">
-            Features
-          </h3>
-          <ul className="space-y-2 text-sm opacity-70">
-            <li className="flex gap-2">
-              <span style={{ color: theme.accent }}>•</span>
-              <span>Click word type buttons (right panel) to toggle highlighting</span>
-            </li>
-            <li className="flex gap-2">
-              <span style={{ color: theme.accent }}>•</span>
-              <span>Your work auto-saves to browser storage</span>
-            </li>
-            <li className="flex gap-2">
-              <span style={{ color: theme.accent }}>•</span>
-              <span>Export to markdown file for use anywhere</span>
-            </li>
-            <li className="flex gap-2">
-              <span style={{ color: theme.accent }}>•</span>
-              <span>Song mode analyzes rhyme patterns and syllables</span>
-            </li>
+          <ul className="space-y-1.5 text-sm opacity-70">
+            <li>Select text + tap strikethrough to mark, then "Clean" to remove</li>
+            <li>Tap a color dot to switch themes, swipe to cycle</li>
+            <li>Open Settings to reorder, hide, or customize themes</li>
           </ul>
         </section>
+
+        {/* Privacy */}
+        <p className="text-xs opacity-50 text-center">
+          Your work stays in your browser — nothing leaves this device.
+        </p>
       </div>
     </>
   );

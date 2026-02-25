@@ -37,13 +37,13 @@ const Toolbar: React.FC<ToolbarProps> = ({
     <footer
       className="absolute bottom-0 left-0 right-0 flex flex-col items-stretch z-50 pointer-events-none"
       style={{
-        padding: "13px",
-        paddingBottom: "max(13px, env(safe-area-inset-bottom))",
-        gap: "8px",
+        padding: "8px 13px",
+        paddingBottom: "max(8px, env(safe-area-inset-bottom))",
+        gap: "4px",
       }}
     >
-      {/* Line Width Slider — full-width bar above actions */}
-      <div className="flex items-center gap-3 px-3 py-2 pointer-events-auto self-center rounded-xl"
+      {/* Line Width Slider — full-width bar above actions (hidden on mobile in preview mode) */}
+      <div className={`flex items-center gap-3 px-3 py-2 pointer-events-auto self-center rounded-xl${viewMode === "preview" ? " hidden md:flex" : ""}`}
         style={{
           backgroundColor: `${theme.background}80`,
           backdropFilter: "blur(8px)",

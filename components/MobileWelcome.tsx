@@ -40,19 +40,15 @@ const MobileWelcome: React.FC<MobileWelcomeProps> = ({ theme, onDismiss }) => {
       <ul className="space-y-2 text-xs opacity-70">
         <li className="flex gap-2">
           <span style={{ color: theme.accent }}>~</span>
+          <span>Your writing stays on this device — nothing is sent to the cloud</span>
+        </li>
+        <li className="flex gap-2">
+          <span style={{ color: theme.accent }}>~</span>
           <span>Select text + tap strikethrough to mark for deletion</span>
         </li>
         <li className="flex gap-2">
-          <span style={{ color: theme.accent }}>~</span>
-          <span>Swipe theme dots to cycle colors</span>
-        </li>
-        <li className="flex gap-2">
           <span style={{ color: theme.accent }}>?</span>
-          <span>Tap <strong>?</strong> for all tips and shortcuts</span>
-        </li>
-        <li className="flex gap-2">
-          <span style={{ color: theme.accent }}>~</span>
-          <span>Your work auto-saves to this device</span>
+          <span>Tap <strong>?</strong> for tips and shortcuts</span>
         </li>
       </ul>
       <TouchButton

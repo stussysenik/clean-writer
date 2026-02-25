@@ -6,7 +6,6 @@ export const BUILD_NUMBER = `v${__APP_VERSION__}`;
 export const BUILD_TRACK = __BUILD_TRACK__;
 export const BUILD_HASH = __BUILD_HASH__;
 export const BUILD_IDENTITY = `${BUILD_NUMBER} · ${BUILD_TRACK} · ${BUILD_HASH}`;
-export const BUILD_WORDISM = "Build wordism: Write clean, ship loud.";
 
 export const FONT_OPTIONS = [
   {
