@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import { RisoTheme, SyntaxSets, HighlightConfig, SongAnalysis } from "../types";
 import { useIMEComposition } from "../hooks/useIMEComposition";
+import { useBlinkCursor } from "../hooks/useBlinkCursor";
 import {
   isHashtagToken,
   isNumberToken,
@@ -39,25 +40,6 @@ interface TypewriterProps {
   hoveredRhymeKey?: string | null;
   disabledRhymeKeys?: Set<string>;
 }
-
-// Map from HighlightConfig key to syntax category key for color lookup
-const HIGHLIGHT_TO_COLOR_KEY: Record<
-  keyof HighlightConfig,
-  keyof RisoTheme["highlight"]
-> = {
-  nouns: "noun",
-  pronouns: "pronoun",
-  verbs: "verb",
-  adjectives: "adjective",
-  adverbs: "adverb",
-  prepositions: "preposition",
-  conjunctions: "conjunction",
-  articles: "article",
-  interjections: "interjection",
-  urls: "url",
-  numbers: "number",
-  hashtags: "hashtag",
-};
 
 // Known non-text keys to reject (control, navigation, function keys).
 // Everything else is treated as text input, which correctly handles
@@ -141,11 +123,19 @@ const Typewriter: React.FC<TypewriterProps> = ({
   const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
   const selectionOverlayRef = useRef<HTMLDivElement>(null);
-  const [ghostVisible, setGhostVisible] = useState(true);
+  const ghostVisible = useBlinkCursor();
   const [isTextareaFocused, setIsTextareaFocused] = useState(false);
 
   // Use the external ref if provided, otherwise use internal ref
   const textareaRef = externalTextareaRef || internalTextareaRef;
+
+  const scrollToBottom = useCallback(() => {
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
+      }
+    }, 0);
+  }, [textareaRef]);
 
   // IME composition handling for Chinese, Japanese, Korean, and other languages
   const {
@@ -217,14 +207,6 @@ const Typewriter: React.FC<TypewriterProps> = ({
     return theme.cursor;
   }, [content, syntaxSets, highlightConfig, theme]);
 
-  // Blink effect for the ghost cursor
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setGhostVisible((v) => !v);
-    }, 530);
-    return () => clearInterval(interval);
-  }, []);
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // Skip handling during IME composition (Chinese, Japanese, Korean, etc.)
     if (isComposing) {
@@ -249,13 +231,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
       // Force append to the very end
       const newContent = content + char;
       setContent(newContent);
-
-      // Scroll to bottom to follow the "ghost" cursor
-      setTimeout(() => {
-        if (textareaRef.current) {
-          textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
-        }
-      }, 0);
+      scrollToBottom();
     }
   };
 
@@ -267,13 +243,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
       // Append the composed text to the end of content
       const newContent = content + composedText;
       setContent(newContent);
-
-      // Scroll to bottom to follow the "ghost" cursor
-      setTimeout(() => {
-        if (textareaRef.current) {
-          textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
-        }
-      }, 0);
+      scrollToBottom();
     });
   };
 
@@ -325,13 +295,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
     const pastedText = e.clipboardData.getData("text");
     if (pastedText) {
       setContent(content + pastedText);
-
-      // Scroll to bottom after paste
-      setTimeout(() => {
-        if (textareaRef.current) {
-          textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
-        }
-      }, 0);
+      scrollToBottom();
     }
   };
 
@@ -384,33 +348,6 @@ const Typewriter: React.FC<TypewriterProps> = ({
     }
     selectionOverlayRef.current.scrollTop = textareaRef.current.scrollTop;
   }, [showPersistedSelectionOverlay, textareaRef]);
-
-  // Helper to determine which syntax category a word belongs to (O(1) lookups)
-  const getWordCategory = useCallback(
-    (word: string): keyof HighlightConfig | null => {
-      const lowerWord = normalizeTokenForSyntaxLookup(word);
-      if (!lowerWord) return null;
-
-      if (syntaxSets.urls.has(lowerWord) || isUrlToken(lowerWord))
-        return "urls";
-      if (syntaxSets.hashtags.has(lowerWord) || isHashtagToken(lowerWord))
-        return "hashtags";
-      if (syntaxSets.numbers.has(lowerWord) || isNumberToken(lowerWord))
-        return "numbers";
-      if (syntaxSets.articles.has(lowerWord)) return "articles";
-      if (syntaxSets.interjections.has(lowerWord)) return "interjections";
-      if (syntaxSets.prepositions.has(lowerWord)) return "prepositions";
-      if (syntaxSets.conjunctions.has(lowerWord)) return "conjunctions";
-      if (syntaxSets.pronouns.has(lowerWord)) return "pronouns";
-      if (syntaxSets.adverbs.has(lowerWord)) return "adverbs";
-      if (syntaxSets.verbs.has(lowerWord)) return "verbs";
-      if (syntaxSets.adjectives.has(lowerWord)) return "adjectives";
-      if (syntaxSets.nouns.has(lowerWord)) return "nouns";
-
-      return null;
-    },
-    [syntaxSets],
-  );
 
   const renderHighlights = useCallback(() => {
     if (!content) return null;

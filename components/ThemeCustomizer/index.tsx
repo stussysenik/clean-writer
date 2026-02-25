@@ -711,7 +711,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                           className="w-3 h-3 rounded-full flex-shrink-0"
                           style={{ backgroundColor: theme.highlight[key] }}
                         />
-                        <span className="text-[10px] uppercase tracking-wide opacity-60 whitespace-nowrap flex-shrink-0">
+                        <span className="text-[10px] uppercase tracking-wide opacity-60 flex-shrink-0">
                           {short}
                         </span>
                         <input
@@ -805,7 +805,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                           className="w-3 h-3 rounded-full flex-shrink-0"
                           style={{ backgroundColor: color }}
                         />
-                        <span className="text-[10px] uppercase tracking-wide opacity-60 whitespace-nowrap flex-shrink-0">
+                        <span className="text-[10px] uppercase tracking-wide opacity-60 flex-shrink-0">
                           {RHYME_COLOR_LABELS[index] || `C${index + 1}`}
                         </span>
                         <input

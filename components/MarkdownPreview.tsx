@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { RisoTheme } from "../types";
+import { useBlinkCursor } from "../hooks/useBlinkCursor";
 
 interface MarkdownPreviewProps {
   content: string;
@@ -12,14 +13,7 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
   content,
   theme,
 }) => {
-  const [cursorVisible, setCursorVisible] = useState(true);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCursorVisible((v) => !v);
-    }, 530);
-    return () => clearInterval(interval);
-  }, []);
+  const cursorVisible = useBlinkCursor();
 
   return (
     <div
