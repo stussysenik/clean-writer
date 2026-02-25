@@ -34,8 +34,6 @@ import Toolbar from "./components/Toolbar";
 import ThemeSelector from "./components/Toolbar/ThemeSelector";
 import ThemeCustomizer from "./components/ThemeCustomizer";
 import UnifiedSyntaxPanel from "./components/UnifiedSyntaxPanel";
-import DragGhost from "./components/DragGhost";
-import AnimatedTrashBin, { TrashBinState } from "./components/AnimatedTrashBin";
 import Toast from "./components/Toast";
 import TouchButton from "./components/TouchButton";
 import Tooltip from "./components/Tooltip";
@@ -331,161 +329,22 @@ const App: React.FC = () => {
   const { saveSelection, getSavedSelection, savedSelection, clearSelection } =
     useSelectionPersistence(textareaRef);
 
-  // Ref-based position tracking for drag (avoids 60fps setState calls)
-  const dragPositionRef = useRef({ x: 0, y: 0 });
-  const cachedScreenHeightRef = useRef(0);
-
-  // Enhanced drag state with position tracking
-  const [dragState, setDragState] = useState<{
-    isDragging: boolean;
-    draggedTheme: { id: string; color: string; isPreset: boolean } | null;
-    position: { x: number; y: number };
-    originalPosition: { x: number; y: number };
-    isOverTrash: boolean;
-  }>({
-    isDragging: false,
-    draggedTheme: null,
-    position: { x: 0, y: 0 },
-    originalPosition: { x: 0, y: 0 },
-    isOverTrash: false,
-  });
-
-  // Trash bin animation state
-  const [trashState, setTrashState] = useState<TrashBinState>("hidden");
-
   // Toast state for last-theme warning
   const [showLastThemeToast, setShowLastThemeToast] = useState(false);
   // Toast state for export success
   const [showExportToast, setShowExportToast] = useState(false);
 
-  // Animation states for delete sequence
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isRejected, setIsRejected] = useState(false);
-
-  // Filter visible themes (used for last-theme check)
-  const visibleThemes = useMemo(
-    () => orderedThemes.filter((t) => !hiddenThemeIds.includes(t.id)),
-    [orderedThemes, hiddenThemeIds],
-  );
-
-  // Enhanced drag handlers
-  const handleDragStart = useCallback(
-    (
-      themeInfo: { id: string; color: string; isPreset: boolean },
-      position: { x: number; y: number },
-    ) => {
-      dragPositionRef.current = position;
-      cachedScreenHeightRef.current = window.innerHeight;
-      setDragState({
-        isDragging: true,
-        draggedTheme: themeInfo,
-        position,
-        originalPosition: position,
-        isOverTrash: false,
-      });
-      setTrashState("idle");
-      setIsDeleting(false);
-      setIsRejected(false);
-    },
-    [],
-  );
-
-  const handleDragMove = useCallback(
-    (position: { x: number; y: number }) => {
-      // Update ref (no re-render) — DragGhost reads this via positionRef
-      dragPositionRef.current = position;
-
-      // Only call setState when the trash boundary changes
-      const isOverTrash = position.y > cachedScreenHeightRef.current - 140;
-      setDragState((prev) => {
-        if (prev.isOverTrash === isOverTrash) return prev;
-        return { ...prev, isOverTrash };
-      });
-      setTrashState((prev) => {
-        const next = isOverTrash ? "hover" : "idle";
-        return prev === next ? prev : next;
-      });
-    },
-    [],
-  );
-
-  const handleDragEnd = useCallback(() => {
-    const { isDragging, draggedTheme, isOverTrash } = dragState;
-
-    if (!isDragging || !draggedTheme) {
-      setDragState((prev) => ({
-        ...prev,
-        isDragging: false,
-        draggedTheme: null,
-        isOverTrash: false,
-      }));
-      setTrashState("hidden");
-      return;
-    }
-
-    if (isOverTrash) {
-      // Check if this is the last theme/palette
-      const canDelete = draggedTheme.isPreset ? visibleThemes.length > 1 : true; // Custom palettes can always be deleted
-
-      if (!canDelete) {
-        // Reject: last theme can't be deleted
-        setIsRejected(true);
-        setTrashState("rejecting");
-        setShowLastThemeToast(true);
-
-        // Reset after bounce-back animation
-        setTimeout(() => {
-          setDragState((prev) => ({
-            ...prev,
-            isDragging: false,
-            draggedTheme: null,
-            isOverTrash: false,
-          }));
-          setTrashState("hidden");
-          setIsRejected(false);
-        }, 600);
+  // Simple theme delete handler (X button on each circle)
+  const handleDeleteTheme = useCallback(
+    (id: string, isPreset: boolean) => {
+      if (isPreset) {
+        hideTheme(id);
       } else {
-        // Accept: trigger swallow animation
-        setIsDeleting(true);
-        setTrashState("swallowing");
+        deletePalette(id);
       }
-    } else {
-      // Not over trash, just end drag
-      setDragState((prev) => ({
-        ...prev,
-        isDragging: false,
-        draggedTheme: null,
-        isOverTrash: false,
-      }));
-      setTrashState("hidden");
-    }
-  }, [dragState, visibleThemes.length]);
-
-  // Handle swallow animation completion - actually delete the item
-  const handleSwallowComplete = useCallback(() => {
-    const { draggedTheme } = dragState;
-
-    if (draggedTheme) {
-      if (draggedTheme.isPreset) {
-        hideTheme(draggedTheme.id);
-      } else {
-        deletePalette(draggedTheme.id);
-      }
-    }
-
-    setDragState((prev) => ({
-      ...prev,
-      isDragging: false,
-      draggedTheme: null,
-      isOverTrash: false,
-    }));
-    setTrashState("hidden");
-    setIsDeleting(false);
-  }, [dragState, hideTheme, deletePalette]);
-
-  // Derived values for compatibility with ThemeSelector
-  const isDragging = dragState.isDragging;
-  const isDraggingOverTrash = dragState.isOverTrash;
+    },
+    [hideTheme, deletePalette],
+  );
 
   // Get current theme - either from custom palette or from theme customizer
   const currentTheme = useMemo(() => {
@@ -1085,26 +944,6 @@ const App: React.FC = () => {
         onRhymeBoldEnabledChange={setRhymeBoldEnabled}
       />
 
-      {/* Animated Trash Bin for deleting/hiding themes */}
-      <AnimatedTrashBin
-        isVisible={isDragging}
-        state={trashState}
-        onAnimationComplete={handleSwallowComplete}
-        themeColor={dragState.draggedTheme?.color}
-      />
-
-      {/* Drag Ghost - floating circle that follows cursor */}
-      <DragGhost
-        color={dragState.draggedTheme?.color || "#888"}
-        position={dragState.position}
-        positionRef={dragPositionRef}
-        isVisible={isDragging}
-        isOverTrash={isDraggingOverTrash}
-        isDeleting={isDeleting}
-        isRejected={isRejected}
-        originalPosition={dragState.originalPosition}
-      />
-
       {/* Toast for warnings */}
       <Toast
         message="You need at least one theme"
@@ -1133,11 +972,7 @@ const App: React.FC = () => {
             activePaletteId={activePaletteId}
             onPaletteSelect={handlePaletteSelect}
             orderedThemes={orderedThemes}
-            onReorderThemes={reorderThemes}
-            onDragStart={handleDragStart}
-            onDragMove={handleDragMove}
-            onDragEnd={handleDragEnd}
-            isDraggingOverTrash={isDraggingOverTrash}
+            onDeleteTheme={handleDeleteTheme}
           />
         </div>
         {/* Hidden when customizer open — customizer has its own close (X) button */}
@@ -1233,7 +1068,6 @@ const App: React.FC = () => {
         theme={currentTheme}
         viewMode={viewMode}
         maxWidth={maxWidth}
-        highlightConfig={highlightConfig}
         hasStrikethroughs={hasStrikethroughs}
         onToggleView={toggleViewMode}
         onStrikethrough={handleStrikethrough}
@@ -1242,9 +1076,6 @@ const App: React.FC = () => {
         onExport={handleExport}
         onClear={handleClearRequest}
         onWidthChange={setMaxWidth}
-        onToggleHighlight={toggleHighlight}
-        soloMode={soloMode}
-        onSoloToggle={handleSoloToggle}
         onSampleText={handleSampleTextRequest}
       />
 
