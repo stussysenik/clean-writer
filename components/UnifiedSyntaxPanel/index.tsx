@@ -197,33 +197,6 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
   // Mobile: Harmonica panel with 3-stage drag gesture
   return (
     <>
-    {/* Left-edge word counter (mobile only, visible when harmonica is closed) */}
-    {harmonicaState.stage === "closed" && (
-      <div
-        className="fixed left-4 z-[55] flex flex-col items-center justify-center rounded-xl px-3 py-2"
-        style={{
-          bottom: "max(80px, calc(64px + env(safe-area-inset-bottom)))",
-          backgroundColor: `${theme.background}E6`,
-          backdropFilter: "blur(10px)",
-          WebkitBackdropFilter: "blur(10px)",
-          border: `1px solid ${theme.text}15`,
-          boxShadow: `0 4px 12px rgba(0,0,0,0.08)`,
-        }}
-      >
-        <span
-          className="text-lg font-bold tabular-nums leading-none"
-          style={{ color: theme.text }}
-        >
-          {wordCount}
-        </span>
-        <span
-          className="text-[8px] uppercase tracking-wider opacity-40 mt-0.5"
-          style={{ color: theme.text }}
-        >
-          words
-        </span>
-      </div>
-    )}
     <div
       ref={containerRef}
       className="fixed right-0 z-[55] flex items-end"
