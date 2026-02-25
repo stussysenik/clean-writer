@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { RisoTheme, ViewMode } from "../../types";
 import {
   IconEyeOpen,
@@ -13,6 +13,7 @@ import {
 import TouchButton from "../TouchButton";
 import Tooltip from "../Tooltip";
 import { getIconColor } from "../../utils/contrastAwareColor";
+import { useResponsiveBreakpoint } from "../../hooks/useResponsiveBreakpoint";
 
 interface ActionButtonsProps {
   theme: RisoTheme;
@@ -38,6 +39,7 @@ interface ActionButtonProps {
   icon: React.ReactNode;
   label: string;
   tooltip: string;
+  shortcut?: string;
   className?: string;
   ariaLabel?: string;
   "data-testid"?: string;
@@ -52,11 +54,12 @@ const ActionButton: React.FC<ActionButtonProps> = ({
   icon,
   label,
   tooltip,
+  shortcut,
   className = "",
   ariaLabel,
   "data-testid": dataTestId,
 }) => (
-  <Tooltip content={tooltip} position="top" delay={400}>
+  <Tooltip content={tooltip} shortcut={shortcut} position="top" delay={400}>
     <TouchButton
       onClick={onClick}
       onMouseDown={onMouseDown}
@@ -96,6 +99,12 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
 }) => {
   const [showWidthControl, setShowWidthControl] = useState(false);
   const iconColor = getIconColor(theme);
+  const { isMobile } = useResponsiveBreakpoint();
+  const mod = useMemo(() => {
+    if (isMobile) return null;
+    const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+    return isMac ? "\u2318\u21E7" : "Ctrl+Shift+";
+  }, [isMobile]);
 
   return (
     <div
@@ -107,6 +116,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         icon={viewMode === "write" ? <IconEyeOpen /> : <IconEyeClosed />}
         label={viewMode === "write" ? "Preview" : "Edit"}
         tooltip={viewMode === "write" ? "Preview markdown" : "Back to editing"}
+        shortcut={mod ? `${mod}P` : undefined}
         ariaLabel={
           viewMode === "write" ? "Preview markdown" : "Switch to edit mode"
         }
@@ -121,6 +131,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         icon={<IconStrike />}
         label="Strike"
         tooltip="Apply strikethrough to selected text"
+        shortcut={mod ? `${mod}X` : undefined}
         ariaLabel="Strikethrough selected text"
         data-testid="strikethrough-btn"
       />
@@ -131,6 +142,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         icon={<IconMagicClean />}
         label="Clean"
         tooltip="Remove all ~~...~~ segments"
+        shortcut={mod ? `${mod}K` : undefined}
         ariaLabel="Remove all struck text segments"
         data-testid="clean-strikethroughs-btn"
       />
@@ -140,6 +152,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         icon={<IconDownload />}
         label="Export"
         tooltip="Download as markdown file"
+        shortcut={mod ? `${mod}E` : undefined}
         ariaLabel="Export markdown file"
       />
 

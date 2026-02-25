@@ -383,7 +383,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
                       : "all 200ms cubic-bezier(0.34, 1.56, 0.64, 1)",
                   } as React.CSSProperties
                 }
-                title={t.name}
+                aria-label={t.name}
               ></button>
             </Tooltip>
           </div>
@@ -443,7 +443,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
                     transition: "all 200ms cubic-bezier(0.34, 1.56, 0.64, 1)",
                   } as React.CSSProperties
                 }
-                title={palette.name}
+                aria-label={palette.name}
               ></button>
             </Tooltip>
           </div>

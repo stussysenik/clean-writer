@@ -735,6 +735,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
         onCompositionStart={handleCompositionStart}
         onCompositionUpdate={handleCompositionUpdate}
         onCompositionEnd={handleCompositionEndWithAppend}
+        onContextMenu={(e) => e.preventDefault()}
         onFocus={() => setIsTextareaFocused(true)}
         onBlur={() => setIsTextareaFocused(false)}
         spellCheck={false}
@@ -752,6 +753,9 @@ const Typewriter: React.FC<TypewriterProps> = ({
           color: "transparent",
           caretColor: "transparent",
           opacity: 1,
+          WebkitTouchCallout: "none",
+          WebkitUserSelect: "none",
+          userSelect: "none",
         }}
         placeholder="Type here..."
       />

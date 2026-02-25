@@ -1,5 +1,6 @@
 import path from "path";
 import fs from "node:fs";
+import crypto from "node:crypto";
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
@@ -11,6 +12,7 @@ export default defineConfig(({ mode }) => {
   ) as { version?: string };
   const buildVersion = env.VITE_APP_VERSION || packageJson.version || "0.0.0";
   const buildTrack = env.VITE_BUILD_TRACK || mode;
+  const buildHash = crypto.randomUUID().replace(/-/g, "").slice(0, 7);
   return {
     server: {
       port: 3000,
@@ -92,6 +94,7 @@ export default defineConfig(({ mode }) => {
     define: {
       __APP_VERSION__: JSON.stringify(buildVersion),
       __BUILD_TRACK__: JSON.stringify(buildTrack),
+      __BUILD_HASH__: JSON.stringify(buildHash),
     },
   };
 });

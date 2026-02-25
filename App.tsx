@@ -11,6 +11,7 @@ import {
   FONT_OPTIONS,
   FONT_STORAGE_KEY,
   BUILD_NUMBER,
+  BUILD_HASH,
   RHYME_COLORS,
   FontId,
 } from "./constants";
@@ -646,6 +647,58 @@ const App: React.FC = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [toggleHighlight]);
 
+  // Stable ref for action shortcuts (avoids re-registering listener on content changes)
+  const shortcutActionsRef = useRef({ handleStrikethrough, handleCleanStrikethroughs, handleExport });
+  shortcutActionsRef.current = { handleStrikethrough, handleCleanStrikethroughs, handleExport };
+
+  // Global keyboard shortcuts: Cmd/Ctrl + Shift + letter
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || !e.shiftKey) return;
+      const a = shortcutActionsRef.current;
+      switch (e.key.toLowerCase()) {
+        case "x": e.preventDefault(); a.handleStrikethrough(); break;
+        case "k": e.preventDefault(); a.handleCleanStrikethroughs(); break;
+        case "p": e.preventDefault(); setViewMode(v => v === "write" ? "preview" : "write"); break;
+        case "e": e.preventDefault(); a.handleExport(); break;
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  // Responsive breakpoint for desktop panel padding & shortcut overlay
+  const { isDesktop, isMobile } = useResponsiveBreakpoint();
+
+  // Hold-Tab cheat sheet state
+  const [tabHeld, setTabHeld] = useState(false);
+  useEffect(() => {
+    if (isMobile) { setTabHeld(false); return; }
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "Tab" && !e.repeat) {
+        e.preventDefault();
+        setTabHeld(true);
+      }
+    };
+    const up = (e: KeyboardEvent) => {
+      if (e.key === "Tab") setTabHeld(false);
+    };
+    const blur = () => setTabHeld(false);
+    window.addEventListener("keydown", down);
+    window.addEventListener("keyup", up);
+    window.addEventListener("blur", blur);
+    return () => {
+      window.removeEventListener("keydown", down);
+      window.removeEventListener("keyup", up);
+      window.removeEventListener("blur", blur);
+    };
+  }, [isMobile]);
+
+  const isMac = useMemo(
+    () => /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent),
+    [],
+  );
+
   // Font size now uses CSS clamp() — no JS resize handler needed
 
   // Sync selection color CSS custom property
@@ -783,9 +836,6 @@ const App: React.FC = () => {
       console.warn("Could not save rhyme bold setting");
     }
   }, [rhymeBoldEnabled]);
-
-  // Responsive breakpoint for desktop panel padding
-  const { isDesktop } = useResponsiveBreakpoint();
 
   // Overlap debug utility (zero cost when inactive — just a keydown listener)
   useEffect(() => {
@@ -1090,7 +1140,7 @@ const App: React.FC = () => {
         {/* Hidden when customizer open — customizer has its own close (X) button */}
         {!isCustomizerOpen && (
           <div className="pointer-events-auto flex items-center min-h-[44px]">
-            <Tooltip content={`Build ${BUILD_NUMBER}`} position="bottom">
+            <Tooltip content={`Build ${BUILD_NUMBER} · ${BUILD_HASH}`} position="bottom">
               <TouchButton
                 onClick={() => setIsCustomizerOpen(true)}
                 className="p-2.5 rounded-xl hover:bg-current/5 transition-all duration-200"
@@ -1194,6 +1244,56 @@ const App: React.FC = () => {
         onSoloToggle={handleSoloToggle}
         onSampleText={handleSampleTextRequest}
       />
+
+      {/* Hold-Tab shortcut cheat sheet */}
+      {tabHeld && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center pointer-events-none">
+          <div
+            className="rounded-2xl px-8 py-6 shadow-2xl border backdrop-blur-xl"
+            style={{
+              backgroundColor: `${currentTheme.background}cc`,
+              borderColor: `${currentTheme.text}15`,
+              color: currentTheme.text,
+              maxWidth: 360,
+            }}
+          >
+            <h3
+              className="text-xs font-semibold uppercase tracking-widest mb-4 text-center"
+              style={{ opacity: 0.5 }}
+            >
+              Keyboard Shortcuts
+            </h3>
+            <div
+              className="grid gap-2 text-sm"
+              style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", gridTemplateColumns: "auto 1fr" }}
+            >
+              {[
+                [isMac ? "⌘⇧X" : "Ctrl+Shift+X", "Strikethrough"],
+                [isMac ? "⌘⇧K" : "Ctrl+Shift+K", "Clean struck text"],
+                [isMac ? "⌘⇧P" : "Ctrl+Shift+P", "Toggle preview"],
+                [isMac ? "⌘⇧E" : "Ctrl+Shift+E", "Export markdown"],
+                ["1 – 9", "Toggle word types"],
+              ].map(([key, desc]) => (
+                <React.Fragment key={key}>
+                  <span
+                    className="font-bold text-right pr-3"
+                    style={{ color: currentTheme.accent, opacity: 0.85 }}
+                  >
+                    {key}
+                  </span>
+                  <span style={{ opacity: 0.7 }}>{desc}</span>
+                </React.Fragment>
+              ))}
+            </div>
+            <p
+              className="text-[10px] text-center mt-4 uppercase tracking-widest"
+              style={{ opacity: 0.3 }}
+            >
+              Release Tab to dismiss
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -225,8 +225,8 @@ const SortableThemeItem: React.FC<{
 
   return (
     <div ref={setNodeRef} style={style} className="select-none">
-      <label
-        className="flex items-center gap-2 p-3 rounded-lg hover:bg-current/5 cursor-pointer transition-colors"
+      <div
+        className="flex items-center gap-2 p-3 rounded-lg hover:bg-current/5 transition-colors"
         style={{ minHeight: "44px" }}
       >
         {canDrag && (
@@ -279,7 +279,7 @@ const SortableThemeItem: React.FC<{
             ))}
           </div>
         </div>
-      </label>
+      </div>
     </div>
   );
 };
