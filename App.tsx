@@ -37,6 +37,7 @@ import UnifiedSyntaxPanel from "./components/UnifiedSyntaxPanel";
 import Toast from "./components/Toast";
 import TouchButton from "./components/TouchButton";
 import Tooltip from "./components/Tooltip";
+import HelpModal from "./components/HelpModal";
 import { IconSettings } from "./components/Toolbar/Icons";
 import useCustomTheme from "./hooks/useCustomTheme";
 import useCustomPalettes, { SavedPalette } from "./hooks/useCustomPalettes";
@@ -181,6 +182,7 @@ const App: React.FC = () => {
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
   const [isSampleDialogOpen, setIsSampleDialogOpen] = useState(false);
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [utf8DisplayEnabled, setUtf8DisplayEnabled] = useState<boolean>(() => {
     try {
       return localStorage.getItem(UTF8_DISPLAY_STORAGE_KEY) === "true";
@@ -902,6 +904,13 @@ const App: React.FC = () => {
         confirmLabel="LOAD SAMPLE"
       />
 
+      <HelpModal
+        isOpen={isHelpOpen}
+        onClose={() => setIsHelpOpen(false)}
+        theme={currentTheme}
+        isMac={isMac}
+      />
+
       <ThemeCustomizer
         isOpen={isCustomizerOpen}
         onClose={() => setIsCustomizerOpen(false)}
@@ -969,7 +978,31 @@ const App: React.FC = () => {
         </div>
         {/* Hidden when customizer open — customizer has its own close (X) button */}
         {!isCustomizerOpen && (
-          <div className="pointer-events-auto flex items-center min-h-[44px]">
+          <div className="pointer-events-auto flex items-center gap-2 min-h-[44px]">
+            <Tooltip content="Help & Shortcuts" position="bottom">
+              <TouchButton
+                onClick={() => setIsHelpOpen(true)}
+                className="p-2.5 rounded-xl hover:bg-current/5 transition-all duration-200"
+                style={{
+                  color: getIconColor(currentTheme),
+                }}
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+              </TouchButton>
+            </Tooltip>
             <Tooltip content={`Build ${BUILD_NUMBER} · ${BUILD_HASH}`} position="bottom">
               <TouchButton
                 onClick={() => setIsCustomizerOpen(true)}
