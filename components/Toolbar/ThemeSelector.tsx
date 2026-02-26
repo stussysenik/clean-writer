@@ -5,30 +5,25 @@ import React, {
 import { RisoTheme } from "../../types";
 import { THEMES } from "../../constants";
 import Tooltip from "../Tooltip";
-import { SavedPalette } from "../../hooks/useCustomPalettes";
-import { averageHighlightColor } from "../../utils/colorContrast";
 
 interface ThemeSelectorProps {
   currentTheme: RisoTheme;
   themeId: string;
   onThemeChange: (id: string) => void;
   hiddenThemeIds?: string[];
-  customPalettes?: SavedPalette[];
-  activePaletteId?: string | null;
-  onPaletteSelect?: (palette: SavedPalette) => void;
   orderedThemes?: typeof THEMES;
-  onDeleteTheme?: (id: string, isPreset: boolean) => void;
+  hasOverridesForTheme?: (id: string) => boolean;
 }
 
 // Swipe threshold
 const SWIPE_THRESHOLD_PX = 50;
 
-// Shared swatch circle used for both preset themes and custom palettes
+// Shared swatch circle used for preset themes
 const SwatchCircle = ({
-  id, name, color, isSelected, dashed, currentTheme, onClick,
+  id, name, color, isSelected, hasEdits, currentTheme, onClick,
 }: {
   id: string; name: string; color: string;
-  isSelected: boolean; dashed?: boolean;
+  isSelected: boolean; hasEdits?: boolean;
   currentTheme: RisoTheme;
   onClick: () => void;
 }) => (
@@ -37,11 +32,10 @@ const SwatchCircle = ({
       <button
         onClick={onClick}
         className={`relative w-9 h-9 md:w-8 md:h-8 rounded-full transition-all duration-200 touch-manipulation ${
-          dashed ? "border-2 border-dashed" : ""
-        } ${isSelected ? "" : "hover:scale-110 opacity-80 hover:opacity-100"}`}
+          isSelected ? "" : "hover:scale-110 opacity-80 hover:opacity-100"
+        }`}
         style={{
           backgroundColor: color,
-          ...(dashed && { borderColor: `${currentTheme.text}50` }),
           transform: isSelected ? "scale(1.1)" : undefined,
           boxShadow: isSelected
             ? `0 0 0 2px ${currentTheme.background}, 0 0 0 4px ${currentTheme.text}`
@@ -49,7 +43,17 @@ const SwatchCircle = ({
           transition: "all 200ms cubic-bezier(0.34, 1.56, 0.64, 1)",
         }}
         aria-label={name}
-      />
+      >
+        {hasEdits && (
+          <span
+            className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
+            style={{
+              backgroundColor: currentTheme.text,
+              borderColor: currentTheme.background,
+            }}
+          />
+        )}
+      </button>
     </Tooltip>
   </div>
 );
@@ -59,14 +63,13 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
   themeId,
   onThemeChange,
   hiddenThemeIds = [],
-  customPalettes = [],
-  activePaletteId = null,
-  onPaletteSelect,
   orderedThemes = THEMES,
+  hasOverridesForTheme,
 }) => {
-  const visibleThemes = orderedThemes.filter(
-    (t) => !hiddenThemeIds.includes(t.id),
-  );
+  const MAX_VISIBLE = 10;
+  const visibleThemes = orderedThemes
+    .filter((t) => !hiddenThemeIds.includes(t.id))
+    .slice(0, MAX_VISIBLE);
 
   // Swipe state
   const touchStartXRef = useRef<number>(0);
@@ -82,18 +85,15 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
     const deltaX = touchEndX - touchStartXRef.current;
 
     if (Math.abs(deltaX) > SWIPE_THRESHOLD_PX) {
-      // Find current index
-      const currentIndex = visibleThemes.findIndex((t) => t.id === themeId && !activePaletteId);
+      const currentIndex = visibleThemes.findIndex((t) => t.id === themeId);
 
       if (currentIndex !== -1) {
         if (deltaX > 0) {
-          // Swipe right - previous theme
           const prevIndex = currentIndex - 1;
           if (prevIndex >= 0) {
             onThemeChange(visibleThemes[prevIndex].id);
           }
         } else {
-          // Swipe left - next theme
           const nextIndex = currentIndex + 1;
           if (nextIndex < visibleThemes.length) {
             onThemeChange(visibleThemes[nextIndex].id);
@@ -101,12 +101,12 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
         }
       }
     }
-  }, [visibleThemes, themeId, activePaletteId, onThemeChange]);
+  }, [visibleThemes, themeId, onThemeChange]);
 
   return (
     <div
       ref={containerRef}
-      className="max-w-[256px] md:max-w-[336px] max-h-[122px] overflow-hidden p-[8px]"
+      className="max-w-[256px] md:max-w-[336px] p-[8px]"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
@@ -117,32 +117,12 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
             id={t.id}
             name={t.name}
             color={t.accent}
-            isSelected={themeId === t.id && !activePaletteId}
+            isSelected={themeId === t.id}
+            hasEdits={hasOverridesForTheme?.(t.id)}
             currentTheme={currentTheme}
             onClick={() => onThemeChange(t.id)}
           />
         ))}
-
-        {customPalettes.length > 0 && (
-          <div className="w-px h-7 mx-1 opacity-30" style={{ backgroundColor: currentTheme.text }} />
-        )}
-
-        {customPalettes.map((palette) => {
-          const base = THEMES.find((t) => t.id === palette.baseThemeId) || THEMES[0];
-          const color = averageHighlightColor({ ...base.highlight, ...palette.overrides.highlight });
-          return (
-            <SwatchCircle
-              key={palette.id}
-              id={palette.id}
-              name={palette.name}
-              color={color}
-              isSelected={activePaletteId === palette.id}
-              dashed
-              currentTheme={currentTheme}
-              onClick={() => onPaletteSelect?.(palette)}
-            />
-          );
-        })}
       </div>
     </div>
   );
