@@ -390,14 +390,6 @@ const SortableThemeItem: React.FC<{
               >
                 {name}
               </span>
-              {hasEdits && (
-                <span
-                  className="w-2 h-2 rounded-full flex-shrink-0"
-                  data-testid="edited-badge"
-                  style={{ backgroundColor: theme.accent }}
-                  title="Has custom colors"
-                />
-              )}
             </>
           )}
           <div

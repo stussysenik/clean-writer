@@ -35,22 +35,14 @@ const SwatchCircle = ({
         style={{
           backgroundColor: color,
           transform: isSelected ? "scale(1.15)" : undefined,
-          boxShadow: isSelected
-            ? `0 0 0 2px ${currentTheme.background}, 0 0 0 3.5px ${currentTheme.text}`
-            : undefined,
+          outline: isSelected
+            ? `2px solid ${currentTheme.text}`
+            : "2px solid transparent",
+          outlineOffset: "2px",
           transition: "all 200ms cubic-bezier(0.34, 1.56, 0.64, 1)",
         }}
         aria-label={name}
       >
-        {hasEdits && (
-          <span
-            className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border-[1.5px]"
-            style={{
-              backgroundColor: currentTheme.text,
-              borderColor: currentTheme.background,
-            }}
-          />
-        )}
         {isCustom && (
           <span
             className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center"
@@ -97,11 +89,11 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
   }, [themeId]);
 
   return (
-    <div className="overflow-hidden md:overflow-visible rounded-[20px] md:rounded-none">
-      {/* Mobile: horizontal scroll strip with fade edges / Desktop: wrapped grid */}
+    <div className="overflow-hidden md:overflow-visible">
+      {/* Mobile: horizontal scroll strip / Desktop: wrapped grid */}
       <div
         ref={scrollRef}
-        className="flex gap-2.5 md:gap-3 items-center overflow-x-auto md:flex-wrap md:max-w-[336px] no-scrollbar theme-scroll-fade py-[5px] px-[5px]"
+        className="flex gap-2.5 md:gap-3 items-center overflow-x-auto md:flex-wrap md:max-w-[336px] no-scrollbar py-2 px-1.5 md:py-[5px] md:px-[5px]"
         style={{ WebkitOverflowScrolling: "touch" }}
       >
         {visibleThemes.map((t) => (
