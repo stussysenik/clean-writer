@@ -29,14 +29,14 @@ const SwatchCircle = ({
       <button
         onClick={onClick}
         data-theme-id={id}
-        className={`relative w-9 h-9 md:w-8 md:h-8 rounded-full transition-all duration-200 touch-manipulation ${
+        className={`relative w-8 h-8 md:w-8 md:h-8 rounded-full transition-all duration-200 touch-manipulation ${
           isSelected ? "" : "hover:scale-110 opacity-80 hover:opacity-100"
         }`}
         style={{
           backgroundColor: color,
-          transform: isSelected ? "scale(1.1)" : undefined,
+          transform: isSelected ? "scale(1.15)" : undefined,
           boxShadow: isSelected
-            ? `0 0 0 2px ${currentTheme.background}, 0 0 0 4px ${currentTheme.text}`
+            ? `0 0 0 2px ${currentTheme.background}, 0 0 0 3.5px ${currentTheme.text}`
             : undefined,
           transition: "all 200ms cubic-bezier(0.34, 1.56, 0.64, 1)",
         }}
@@ -44,7 +44,7 @@ const SwatchCircle = ({
       >
         {hasEdits && (
           <span
-            className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
+            className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border-[1.5px]"
             style={{
               backgroundColor: currentTheme.text,
               borderColor: currentTheme.background,
@@ -82,11 +82,11 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
   }, [themeId]);
 
   return (
-    <div className="p-[8px]">
-      {/* Mobile: horizontal scroll strip / Desktop: wrapped grid */}
+    <div className="overflow-hidden">
+      {/* Mobile: horizontal scroll strip with fade edges / Desktop: wrapped grid */}
       <div
         ref={scrollRef}
-        className="flex gap-3 items-center overflow-x-auto md:flex-wrap md:max-w-[336px] no-scrollbar"
+        className="flex gap-2.5 md:gap-3 items-center overflow-x-auto md:flex-wrap md:max-w-[336px] no-scrollbar theme-scroll-fade py-[5px] px-[5px]"
         style={{ WebkitOverflowScrolling: "touch" }}
       >
         {visibleThemes.map((t) => (

@@ -952,7 +952,7 @@ const App: React.FC = () => {
 
       {/* Top Bar with Theme Selector and Settings */}
       <div className="absolute top-0 left-0 right-0 flex justify-between items-center p-[13px] md:p-[21px] z-[60] pointer-events-none">
-        <div className="pointer-events-auto flex items-center min-h-[44px] min-w-0 flex-1 mr-2">
+        <div className="pointer-events-auto flex items-center min-h-[44px] min-w-0 flex-1 mr-2 overflow-hidden">
           <ThemeSelector
             currentTheme={currentTheme}
             themeId={themeId}

@@ -85,6 +85,30 @@
   display: none;
 }
 
+/* Horizontal scroll fade edges for theme dots on mobile */
+.theme-scroll-fade {
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 8px,
+    black calc(100% - 16px),
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 8px,
+    black calc(100% - 16px),
+    transparent
+  );
+}
+@media (min-width: 768px) {
+  .theme-scroll-fade {
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+}
+
 /* Frosted glass pill effect */
 .liquid-glass {
   backdrop-filter: blur(16px) saturate(180%);
