@@ -1,6 +1,6 @@
 import React, {
   useRef,
-  useCallback,
+  useEffect,
 } from "react";
 import { RisoTheme } from "../../types";
 import { THEMES } from "../../constants";
@@ -15,9 +15,6 @@ interface ThemeSelectorProps {
   hasOverridesForTheme?: (id: string) => boolean;
 }
 
-// Swipe threshold
-const SWIPE_THRESHOLD_PX = 50;
-
 // Shared swatch circle used for preset themes
 const SwatchCircle = ({
   id, name, color, isSelected, hasEdits, currentTheme, onClick,
@@ -27,10 +24,11 @@ const SwatchCircle = ({
   currentTheme: RisoTheme;
   onClick: () => void;
 }) => (
-  <div className="relative group">
+  <div className="relative group flex-shrink-0">
     <Tooltip content={name} position="bottom">
       <button
         onClick={onClick}
+        data-theme-id={id}
         className={`relative w-9 h-9 md:w-8 md:h-8 rounded-full transition-all duration-200 touch-manipulation ${
           isSelected ? "" : "hover:scale-110 opacity-80 hover:opacity-100"
         }`}
@@ -71,46 +69,26 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
     .filter((t) => !hiddenThemeIds.includes(t.id))
     .slice(0, MAX_VISIBLE);
 
-  // Swipe state
-  const touchStartXRef = useRef<number>(0);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Swipe navigation
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    touchStartXRef.current = e.touches[0].clientX;
-  }, []);
-
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    const touchEndX = e.changedTouches[0].clientX;
-    const deltaX = touchEndX - touchStartXRef.current;
-
-    if (Math.abs(deltaX) > SWIPE_THRESHOLD_PX) {
-      const currentIndex = visibleThemes.findIndex((t) => t.id === themeId);
-
-      if (currentIndex !== -1) {
-        if (deltaX > 0) {
-          const prevIndex = currentIndex - 1;
-          if (prevIndex >= 0) {
-            onThemeChange(visibleThemes[prevIndex].id);
-          }
-        } else {
-          const nextIndex = currentIndex + 1;
-          if (nextIndex < visibleThemes.length) {
-            onThemeChange(visibleThemes[nextIndex].id);
-          }
-        }
-      }
+  // Scroll active theme into view on mount & when themeId changes
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const active = container.querySelector(`[data-theme-id="${themeId}"]`);
+    if (active) {
+      active.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
     }
-  }, [visibleThemes, themeId, onThemeChange]);
+  }, [themeId]);
 
   return (
-    <div
-      ref={containerRef}
-      className="max-w-[256px] md:max-w-[336px] p-[8px]"
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-    >
-      <div className="flex gap-3 flex-wrap items-center">
+    <div className="p-[8px]">
+      {/* Mobile: horizontal scroll strip / Desktop: wrapped grid */}
+      <div
+        ref={scrollRef}
+        className="flex gap-3 items-center overflow-x-auto md:flex-wrap md:max-w-[336px] no-scrollbar"
+        style={{ WebkitOverflowScrolling: "touch" }}
+      >
         {visibleThemes.map((t) => (
           <SwatchCircle
             key={t.id}

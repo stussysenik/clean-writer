@@ -23,8 +23,6 @@ import {
   HighlightConfig,
   toSyntaxSets,
   SongAnalysis,
-  ColorSystemMode,
-  ColorHarmonyType,
 } from "./types";
 import { useSyntaxWorker } from "./hooks/useSyntaxWorker";
 import Typewriter from "./components/Typewriter";
@@ -42,7 +40,6 @@ import MobileWelcome from "./components/MobileWelcome";
 import Kbd from "./components/Kbd";
 import { IconSettings } from "./components/Toolbar/Icons";
 import useCustomTheme from "./hooks/useCustomTheme";
-import useCustomPalettes, { SavedPalette } from "./hooks/useCustomPalettes";
 import useThemeVisibility from "./hooks/useThemeVisibility";
 import useSelectionPersistence from "./hooks/useSelectionPersistence";
 import { getIconColor } from "./utils/contrastAwareColor";
@@ -217,7 +214,6 @@ const App: React.FC = () => {
 
   const handleSelectThemeForEditing = useCallback((id: string) => {
     setThemeId(id);
-    setActivePaletteId(null);
     setCustomizerInitialTab("colors");
   }, []);
 
@@ -282,13 +278,6 @@ const App: React.FC = () => {
     }
   });
 
-  // Color system state
-  const [colorSystemMode, setColorSystemMode] =
-    useState<ColorSystemMode>("free");
-  const [colorHarmonyType, setColorHarmonyType] =
-    useState<ColorHarmonyType>("analogous");
-  const [colorBaseHue, setColorBaseHue] = useState(220);
-
   // Solo mode state
   const [soloMode, setSoloMode] = useState<keyof HighlightConfig | null>(() => {
     try {
@@ -313,16 +302,6 @@ const App: React.FC = () => {
           : null;
       }
       return null;
-    } catch {
-      return null;
-    }
-  });
-
-  // Active custom palette state
-  const [activePaletteId, setActivePaletteId] = useState<string | null>(() => {
-    try {
-      const saved = localStorage.getItem("clean_writer_active_palette");
-      return saved && saved !== "null" ? saved : null;
     } catch {
       return null;
     }
@@ -354,6 +333,7 @@ const App: React.FC = () => {
     setRhymeColor,
     resetRhymeColor,
     isRhymeColorCustomized,
+    hasOverridesForTheme,
   } = useCustomTheme(themeId);
 
   // Compute effective rhyme colors (defaults overridden by user customizations)
@@ -361,10 +341,6 @@ const App: React.FC = () => {
     () => RHYME_COLORS.map((def, i) => rhymeColorOverrides?.[i] ?? def),
     [rhymeColorOverrides],
   );
-
-  // Use custom palettes hook
-  const { visiblePalettes, savePalette, deletePalette, applyPalette } =
-    useCustomPalettes();
 
   // Use theme visibility hook
   const {
@@ -392,28 +368,7 @@ const App: React.FC = () => {
   // Toast state for export success
   const [showExportToast, setShowExportToast] = useState(false);
 
-  // Simple theme delete handler (X button on each circle)
-  const handleDeleteTheme = useCallback(
-    (id: string, isPreset: boolean) => {
-      if (isPreset) {
-        hideTheme(id);
-      } else {
-        deletePalette(id);
-      }
-    },
-    [hideTheme, deletePalette],
-  );
-
-  // Get current theme - either from custom palette or from theme customizer
-  const currentTheme = useMemo(() => {
-    if (activePaletteId) {
-      const palette = visiblePalettes.find((p) => p.id === activePaletteId);
-      if (palette) {
-        return applyPalette(palette);
-      }
-    }
-    return effectiveTheme;
-  }, [activePaletteId, visiblePalettes, applyPalette, effectiveTheme]);
+  const currentTheme = effectiveTheme;
 
   const currentFont =
     FONT_OPTIONS.find((f) => f.id === fontId) || FONT_OPTIONS[0];
@@ -475,12 +430,6 @@ const App: React.FC = () => {
     setSoloMode(key);
   }, []);
 
-  // Handle palette selection
-  const handlePaletteSelect = useCallback((palette: SavedPalette) => {
-    setActivePaletteId(palette.id);
-    setThemeId(palette.baseThemeId);
-  }, []);
-
   // Handle syntax panel first open (marks as seen)
   const handleSyntaxPanelSeen = useCallback(() => {
     if (!hasSeenSyntaxPanel) {
@@ -493,49 +442,10 @@ const App: React.FC = () => {
     }
   }, [hasSeenSyntaxPanel]);
 
-  // Handle theme change (clears active palette)
+  // Handle theme change
   const handleThemeChange = useCallback((id: string) => {
     setThemeId(id);
-    setActivePaletteId(null);
   }, []);
-
-  // Handle saving a palette
-  const handleSavePalette = useCallback(
-    (name: string) => {
-      // Get the current overrides from useCustomTheme
-      const baseTheme = THEMES.find((t) => t.id === themeId) || THEMES[0];
-      const overrides: SavedPalette["overrides"] = {};
-
-      if (effectiveTheme.background !== baseTheme.background) {
-        overrides.background = effectiveTheme.background;
-      }
-      if (effectiveTheme.text !== baseTheme.text) {
-        overrides.text = effectiveTheme.text;
-      }
-      if (effectiveTheme.cursor !== baseTheme.cursor) {
-        overrides.cursor = effectiveTheme.cursor;
-      }
-      if (effectiveTheme.selection !== baseTheme.selection) {
-        overrides.selection = effectiveTheme.selection;
-      }
-
-      // Check highlight overrides
-      const highlightOverrides: Partial<typeof baseTheme.highlight> = {};
-      (
-        Object.keys(baseTheme.highlight) as (keyof typeof baseTheme.highlight)[]
-      ).forEach((key) => {
-        if (effectiveTheme.highlight[key] !== baseTheme.highlight[key]) {
-          highlightOverrides[key] = effectiveTheme.highlight[key];
-        }
-      });
-      if (Object.keys(highlightOverrides).length > 0) {
-        overrides.highlight = highlightOverrides;
-      }
-
-      savePalette(name, themeId, overrides);
-    },
-    [themeId, effectiveTheme, savePalette],
-  );
 
   // Keyboard shortcuts for word type toggles (1-9)
   useEffect(() => {
@@ -716,18 +626,6 @@ const App: React.FC = () => {
       console.warn("Could not save solo mode");
     }
   }, [soloMode]);
-
-  // Persist activePaletteId
-  useEffect(() => {
-    try {
-      localStorage.setItem(
-        "clean_writer_active_palette",
-        activePaletteId || "null",
-      );
-    } catch (e) {
-      console.warn("Could not save active palette");
-    }
-  }, [activePaletteId]);
 
   // Persist UTF-8 display preference
   useEffect(() => {
@@ -1013,17 +911,10 @@ const App: React.FC = () => {
         isColorCustomized={isColorCustomized}
         currentFontId={fontId}
         onFontChange={setFontId}
-        onSavePalette={handleSavePalette}
         hiddenThemeIds={hiddenThemeIds}
         onToggleThemeVisibility={toggleThemeVisibility}
         utf8DisplayEnabled={utf8DisplayEnabled}
         onToggleUtf8Display={setUtf8DisplayEnabled}
-        colorSystemMode={colorSystemMode}
-        onColorSystemModeChange={setColorSystemMode}
-        colorHarmonyType={colorHarmonyType}
-        onColorHarmonyTypeChange={setColorHarmonyType}
-        colorBaseHue={colorBaseHue}
-        onColorBaseHueChange={setColorBaseHue}
         themeOrder={themeOrder}
         onReorderThemes={reorderThemes}
         rhymeColors={effectiveRhymeColors}
@@ -1037,6 +928,8 @@ const App: React.FC = () => {
         customThemeNames={customThemeNames}
         onThemeRename={handleThemeRename}
         onSelectThemeForEditing={handleSelectThemeForEditing}
+        hasOverridesForTheme={hasOverridesForTheme}
+        songMode={songMode}
         initialTab={customizerInitialTab}
         onInitialTabConsumed={() => setCustomizerInitialTab(null)}
       />
@@ -1059,17 +952,14 @@ const App: React.FC = () => {
 
       {/* Top Bar with Theme Selector and Settings */}
       <div className="absolute top-0 left-0 right-0 flex justify-between items-center p-[13px] md:p-[21px] z-[60] pointer-events-none">
-        <div className="pointer-events-auto flex items-center min-h-[44px]">
+        <div className="pointer-events-auto flex items-center min-h-[44px] min-w-0 flex-1 mr-2">
           <ThemeSelector
             currentTheme={currentTheme}
             themeId={themeId}
             onThemeChange={handleThemeChange}
             hiddenThemeIds={hiddenThemeIds}
-            customPalettes={visiblePalettes}
-            activePaletteId={activePaletteId}
-            onPaletteSelect={handlePaletteSelect}
             orderedThemes={orderedThemes}
-            onDeleteTheme={handleDeleteTheme}
+            hasOverridesForTheme={hasOverridesForTheme}
           />
         </div>
         {/* Hidden when customizer open — customizer has its own close (X) button */}
@@ -1150,6 +1040,7 @@ const App: React.FC = () => {
               <TouchButton
                 onClick={() => setIsCustomizerOpen(true)}
                 className="p-2.5 rounded-xl hover:bg-current/5 transition-all duration-200"
+                title="Customize Theme"
                 style={{
                   color: getIconColor(currentTheme),
                 }}
