@@ -82,7 +82,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
   }, [themeId]);
 
   return (
-    <div className="overflow-hidden">
+    <div className="overflow-hidden md:overflow-visible rounded-[20px] md:rounded-none">
       {/* Mobile: horizontal scroll strip with fade edges / Desktop: wrapped grid */}
       <div
         ref={scrollRef}
