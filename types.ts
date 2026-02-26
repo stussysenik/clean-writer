@@ -104,6 +104,14 @@ export interface CustomTheme extends RisoTheme {
   wordVisibility: HighlightConfig;
 }
 
+export interface SavedCustomTheme {
+  id: string;          // "custom_{timestamp}_{random4}"
+  name: string;
+  theme: RisoTheme;    // full snapshot of all theme colors
+  rhymeColors?: string[];
+  createdAt: number;
+}
+
 export type ViewMode = "write" | "preview";
 
 // Song Mode types

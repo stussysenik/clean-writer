@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { THEMES } from "../constants";
+import { SavedCustomTheme, RisoTheme } from "../types";
 
 const HIDDEN_THEMES_STORAGE_KEY = "clean_writer_hidden_themes";
 const HAS_CUSTOMIZED_VISIBILITY_KEY = "clean_writer_has_customized_visibility";
@@ -9,7 +10,7 @@ const THEME_ORDER_STORAGE_KEY = "clean_writer_theme_order";
 const ALL_THEME_IDS = THEMES.map((t) => t.id);
 const DEFAULT_HIDDEN_THEMES: string[] = [];
 
-export function useThemeVisibility() {
+export function useThemeVisibility(savedCustomThemes?: SavedCustomTheme[]) {
   const [hiddenThemeIds, setHiddenThemeIds] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem(HIDDEN_THEMES_STORAGE_KEY);
@@ -44,14 +45,21 @@ export function useThemeVisibility() {
     }
   });
 
-  // Get ordered themes (sorted by user's custom order)
+  // Convert saved custom themes to RisoTheme-like entries for the selector
+  const customThemeEntries: (typeof THEMES[number])[] = useMemo(() => {
+    if (!savedCustomThemes) return [];
+    return savedCustomThemes.map((ct) => ct.theme);
+  }, [savedCustomThemes]);
+
+  // Get ordered themes (sorted by user's custom order), with custom themes appended
   const orderedThemes = useMemo(() => {
-    return [...THEMES].sort((a, b) => {
+    const presetsSorted = [...THEMES].sort((a, b) => {
       const indexA = themeOrder.indexOf(a.id);
       const indexB = themeOrder.indexOf(b.id);
       return indexA - indexB;
     });
-  }, [themeOrder]);
+    return [...presetsSorted, ...customThemeEntries];
+  }, [themeOrder, customThemeEntries]);
 
   // Persist hidden themes to localStorage
   useEffect(() => {

@@ -40,6 +40,7 @@ import MobileWelcome from "./components/MobileWelcome";
 import Kbd from "./components/Kbd";
 import { IconSettings } from "./components/Toolbar/Icons";
 import useCustomTheme from "./hooks/useCustomTheme";
+import useCustomThemes from "./hooks/useCustomThemes";
 import useThemeVisibility from "./hooks/useThemeVisibility";
 import useSelectionPersistence from "./hooks/useSelectionPersistence";
 import { getIconColor } from "./utils/contrastAwareColor";
@@ -100,7 +101,11 @@ const App: React.FC = () => {
   const [themeId, setThemeId] = useState<string>(() => {
     try {
       const saved = localStorage.getItem(THEME_STORAGE_KEY);
-      return saved && THEMES.some((t) => t.id === saved) ? saved : "classic";
+      // Accept both preset and custom_ theme IDs
+      if (saved && (THEMES.some((t) => t.id === saved) || saved.startsWith("custom_"))) {
+        return saved;
+      }
+      return "classic";
     } catch {
       return "classic";
     }
@@ -321,6 +326,15 @@ const App: React.FC = () => {
     keyof HighlightConfig | null
   >(null);
 
+  // Saved custom themes hook
+  const {
+    savedThemes: savedCustomThemes,
+    addTheme: addCustomTheme,
+    deleteTheme: deleteCustomTheme,
+    renameTheme: renameCustomTheme,
+    getTheme: getCustomTheme,
+  } = useCustomThemes();
+
   // Use custom theme hook
   const {
     effectiveTheme,
@@ -334,12 +348,16 @@ const App: React.FC = () => {
     resetRhymeColor,
     isRhymeColorCustomized,
     hasOverridesForTheme,
-  } = useCustomTheme(themeId);
+  } = useCustomTheme(themeId, savedCustomThemes);
 
-  // Compute effective rhyme colors (defaults overridden by user customizations)
+  // Compute effective rhyme colors: for custom themes, use their saved rhyme colors as defaults
+  const customThemeEntry = savedCustomThemes.find((t) => t.id === themeId);
   const effectiveRhymeColors = useMemo(
-    () => RHYME_COLORS.map((def, i) => rhymeColorOverrides?.[i] ?? def),
-    [rhymeColorOverrides],
+    () => {
+      const defaults = customThemeEntry?.rhymeColors || RHYME_COLORS;
+      return defaults.map((def, i) => rhymeColorOverrides?.[i] ?? def);
+    },
+    [rhymeColorOverrides, customThemeEntry],
   );
 
   // Use theme visibility hook
@@ -350,7 +368,29 @@ const App: React.FC = () => {
     orderedThemes,
     reorderThemes,
     themeOrder,
-  } = useThemeVisibility();
+  } = useThemeVisibility(savedCustomThemes);
+
+  const handleSaveCustomTheme = useCallback(
+    (name: string, theme: import("./types").RisoTheme, rhymeColors?: string[]) => {
+      const saved = addCustomTheme(name, theme, rhymeColors);
+      if (saved) {
+        setThemeId(saved.id);
+      }
+      return saved;
+    },
+    [addCustomTheme],
+  );
+
+  const handleDeleteCustomTheme = useCallback(
+    (id: string) => {
+      deleteCustomTheme(id);
+      // If the deleted theme was active, fall back to first preset
+      if (themeId === id) {
+        setThemeId(THEMES[0].id);
+      }
+    },
+    [deleteCustomTheme, themeId],
+  );
 
   // Textarea ref for selection persistence
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -367,6 +407,12 @@ const App: React.FC = () => {
   const [showLastThemeToast, setShowLastThemeToast] = useState(false);
   // Toast state for export success
   const [showExportToast, setShowExportToast] = useState(false);
+  // Toast state for custom theme operations
+  const [customThemeToast, setCustomThemeToast] = useState<{ message: string; type: "success" | "warning" } | null>(null);
+
+  const handleShowToast = useCallback((message: string, type: "success" | "warning" = "success") => {
+    setCustomThemeToast({ message, type });
+  }, []);
 
   const currentTheme = effectiveTheme;
 
@@ -932,6 +978,12 @@ const App: React.FC = () => {
         songMode={songMode}
         initialTab={customizerInitialTab}
         onInitialTabConsumed={() => setCustomizerInitialTab(null)}
+        savedCustomThemes={savedCustomThemes}
+        onSaveCustomTheme={handleSaveCustomTheme}
+        onDeleteCustomTheme={handleDeleteCustomTheme}
+        onRenameCustomTheme={renameCustomTheme}
+        isCustomTheme={themeId.startsWith("custom_")}
+        onShowToast={handleShowToast}
       />
 
       {/* Toast for warnings */}
@@ -948,6 +1000,14 @@ const App: React.FC = () => {
         isVisible={showExportToast}
         onDismiss={() => setShowExportToast(false)}
         type="success"
+      />
+
+      {/* Toast for custom theme operations */}
+      <Toast
+        message={customThemeToast?.message || ""}
+        isVisible={!!customThemeToast}
+        onDismiss={() => setCustomThemeToast(null)}
+        type={customThemeToast?.type || "success"}
       />
 
       {/* Top Bar with Theme Selector and Settings */}

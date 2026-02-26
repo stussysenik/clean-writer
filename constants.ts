@@ -477,14 +477,14 @@ export const THEMES: RisoTheme[] = [
 
 export const MOCK_ANALYSIS_DELAY = 1500; // ms
 
-// Song Mode: 8 rhyme highlight colors — OKLCH-uniform (L=0.65, C=0.155) keeping Flexoki hues
+// Song Mode: 8 rhyme highlight colors — OKLCH-uniform ocean palette (base hue 210°, L=0.55, C=0.14)
 export const RHYME_COLORS = [
-  "#de6457", // red     (H≈28)
-  "#2895e7", // blue    (H≈247)
-  "#859b00", // green   (H≈119)
-  "#d86d28", // orange  (H≈49)
-  "#917be5", // purple  (H≈291)
-  "#00ac9e", // teal    (H≈187)
-  "#d3629c", // pink    (H≈351)
-  "#b78700", // yellow  (H≈88)
+  "#00859e", // teal      (H≈210)
+  "#3072c1", // blue      (H≈255)
+  "#7f5bb6", // purple    (H≈300)
+  "#a84b84", // magenta   (H≈345)
+  "#b54c3d", // red       (H≈30)
+  "#a06200", // amber     (H≈75)
+  "#687c00", // olive     (H≈120)
+  "#008a5d", // green     (H≈165)
 ] as const;

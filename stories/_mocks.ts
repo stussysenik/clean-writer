@@ -202,6 +202,6 @@ export const SAMPLE_SONG_DATA: SongAnalysis = {
 };
 
 export const RHYME_COLORS = [
-  "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4",
-  "#FFEAA7", "#DDA0DD", "#98D8C8", "#F7DC6F",
+  "#00859e", "#3072c1", "#7f5bb6", "#a84b84",
+  "#b54c3d", "#a06200", "#687c00", "#008a5d",
 ] as const;

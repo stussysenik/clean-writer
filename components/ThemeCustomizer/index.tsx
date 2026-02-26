@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
-import { RisoTheme } from "../../types";
+import { RisoTheme, SavedCustomTheme } from "../../types";
 import {
   BUILD_IDENTITY,
   FONT_OPTIONS,
@@ -7,6 +7,7 @@ import {
   FontId,
   THEMES,
 } from "../../constants";
+import SaveThemeForm from "./SaveThemeForm";
 import {
   getContrastRatio,
   formatContrastRatio,
@@ -45,26 +46,6 @@ const IconReset: React.FC<{ size?: number }> = ({ size = 16 }) => (
   >
     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
     <path d="M3 3v5h5" />
-  </svg>
-);
-
-// Chevron icon for collapsible sections
-const IconChevron: React.FC<{ open: boolean; size?: number }> = ({ open, size = 14 }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    style={{
-      transform: open ? "rotate(90deg)" : "rotate(0deg)",
-      transition: "transform 150ms ease",
-    }}
-  >
-    <path d="M9 18l6-6-6-6" />
   </svg>
 );
 
@@ -120,18 +101,34 @@ interface ThemeCustomizerProps {
   songMode?: boolean;
   initialTab?: string | null;
   onInitialTabConsumed?: () => void;
+  savedCustomThemes?: SavedCustomTheme[];
+  onSaveCustomTheme?: (name: string, theme: RisoTheme, rhymeColors?: string[]) => SavedCustomTheme | null;
+  onDeleteCustomTheme?: (id: string) => void;
+  onRenameCustomTheme?: (id: string, newName: string) => void;
+  isCustomTheme?: boolean;
+  onShowToast?: (message: string, type?: "success" | "warning") => void;
 }
 
 const RHYME_COLOR_LABELS = [
   "Red", "Blue", "Green", "Orange", "Purple", "Teal", "Pink", "Yellow",
 ];
 
+// Pre-computed OKLCH palettes (8 evenly-spaced hues from base hue, L=0.55, C=0.14)
+const OKLCH_SUNSET = generateOklchHarmony(30, 8, "#ffffff");
+const OKLCH_FOREST = generateOklchHarmony(140, 8, "#ffffff");
+const OKLCH_BERRY = generateOklchHarmony(320, 8, "#ffffff");
+const OKLCH_JEWEL = generateOklchHarmony(270, 8, "#ffffff");
+
 const RHYME_PRESETS: { name: string; colors: string[] }[] = [
-  { name: "Default", colors: ["#de6457","#2895e7","#859b00","#d86d28","#917be5","#00ac9e","#d3629c","#b78700"] },
+  { name: "Default", colors: ["#00859e","#3072c1","#7f5bb6","#a84b84","#b54c3d","#a06200","#687c00","#008a5d"] },
   { name: "Billboard", colors: ["#E53935","#1E88E5","#43A047","#FB8C00","#8E24AA","#00ACC1","#D81B60","#FFD600"] },
   { name: "Neon", colors: ["#FF006E","#3A86FF","#8AC926","#FF5400","#9B5DE5","#00F5D4","#F72585","#FFBE0B"] },
   { name: "Earth", colors: ["#A0522D","#4682B4","#6B8E23","#CD853F","#708090","#2E8B57","#BC8F8F","#DAA520"] },
   { name: "Pastel", colors: ["#FF9AA2","#B5EAD7","#C7CEEA","#FFDAC1","#E2B4BD","#9DE0D0","#FFB7B2","#F3E8C0"] },
+  { name: "Sunset", colors: OKLCH_SUNSET },
+  { name: "Forest", colors: OKLCH_FOREST },
+  { name: "Berry", colors: OKLCH_BERRY },
+  { name: "Jewel", colors: OKLCH_JEWEL },
 ];
 
 const WORD_TYPE_LABELS: {
@@ -236,50 +233,22 @@ const CompactColorRow: React.FC<{
   );
 };
 
-/** Collapsible accordion section */
-const CollapsibleSection: React.FC<{
+/** Thin section label (flat, always-visible) */
+const SectionLabel: React.FC<{
   title: string;
-  badge?: string;
-  defaultOpen?: boolean;
-  theme: RisoTheme;
   trailing?: React.ReactNode;
-  children: React.ReactNode;
-}> = ({ title, badge, defaultOpen = false, theme, trailing, children }) => {
-  const [open, setOpen] = useState(defaultOpen);
-
-  return (
-    <section className="border-b border-current/10">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-2 py-4 text-left"
-        style={{ minHeight: "44px" }}
-      >
-        <IconChevron open={open} />
-        <h3 className="text-xs font-medium uppercase tracking-widest opacity-50 flex-1">
-          {title}
-        </h3>
-        {badge && (
-          <span
-            className="text-[9px] px-1.5 py-0.5 rounded-full font-medium"
-            style={{
-              backgroundColor: `${theme.accent}20`,
-              color: theme.accent,
-            }}
-          >
-            {badge}
-          </span>
-        )}
-        {trailing && (
-          <span onClick={(e) => e.stopPropagation()}>
-            {trailing}
-          </span>
-        )}
-      </button>
-      {open && <div className="pb-4">{children}</div>}
-    </section>
-  );
-};
+  theme: RisoTheme;
+}> = ({ title, trailing, theme }) => (
+  <div
+    className="flex items-center gap-2 pt-4 pb-2 border-b"
+    style={{ borderColor: `${theme.text}10` }}
+  >
+    <h3 className="text-[10px] font-semibold uppercase tracking-[0.15em] opacity-40 flex-1">
+      {title}
+    </h3>
+    {trailing}
+  </div>
+);
 
 /** Single sortable theme item */
 const SortableThemeItem: React.FC<{
@@ -292,7 +261,9 @@ const SortableThemeItem: React.FC<{
   displayName?: string;
   onRename?: (themeId: string, newName: string) => void;
   onSelectForEditing?: (themeId: string) => void;
-}> = ({ t, isHidden, hasEdits, onToggleThemeVisibility, theme, canDrag, displayName, onRename, onSelectForEditing }) => {
+  isCustom?: boolean;
+  onDelete?: (id: string) => void;
+}> = ({ t, isHidden, hasEdits, onToggleThemeVisibility, theme, canDrag, displayName, onRename, onSelectForEditing, isCustom, onDelete }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -446,6 +417,21 @@ const SortableThemeItem: React.FC<{
               />
             ))}
           </div>
+          {isCustom && onDelete && (
+            <span onClick={(e) => e.stopPropagation()}>
+              <TouchButton
+                onClick={() => onDelete(t.id)}
+                className="p-1.5 rounded-md opacity-40 hover:opacity-80 transition-opacity flex-shrink-0"
+                title="Delete custom theme"
+                aria-label="Delete custom theme"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                </svg>
+              </TouchButton>
+            </span>
+          )}
         </div>
       </div>
     </div>
@@ -463,7 +449,10 @@ const ThemesTab: React.FC<{
   onThemeRename?: (themeId: string, newName: string) => void;
   onSelectThemeForEditing?: (themeId: string) => void;
   hasOverridesForTheme?: (id: string) => boolean;
-}> = ({ theme, hiddenThemeIds, onToggleThemeVisibility, themeOrder, onReorderThemes, customThemeNames, onThemeRename, onSelectThemeForEditing, hasOverridesForTheme }) => {
+  savedCustomThemes?: SavedCustomTheme[];
+  onDeleteCustomTheme?: (id: string) => void;
+  onRenameCustomTheme?: (id: string, newName: string) => void;
+}> = ({ theme, hiddenThemeIds, onToggleThemeVisibility, themeOrder, onReorderThemes, customThemeNames, onThemeRename, onSelectThemeForEditing, hasOverridesForTheme, savedCustomThemes, onDeleteCustomTheme, onRenameCustomTheme }) => {
   const listRef = useRef<HTMLDivElement>(null);
 
   const orderedThemeList = useMemo(() => {
@@ -560,7 +549,185 @@ const ThemesTab: React.FC<{
           </SortableContext>
         </DndContext>
       </div>
+
+      {/* Custom Themes */}
+      {savedCustomThemes && savedCustomThemes.length > 0 && (
+        <>
+          <h3 className="text-xs font-medium uppercase tracking-widest mt-4 mb-1 opacity-50">
+            Custom Themes
+          </h3>
+          <p className="text-[10px] opacity-30 mb-2">Click to edit. Double-click name to rename.</p>
+          <div className="space-y-1">
+            {savedCustomThemes.map((ct) => (
+              <div
+                key={ct.id}
+                className="flex items-center gap-2 p-3 rounded-lg hover:bg-current/5 transition-colors cursor-pointer"
+                style={{ minHeight: "44px" }}
+                onClick={() => onSelectThemeForEditing?.(ct.id)}
+              >
+                <span
+                  className="w-5 h-5 rounded-full flex-shrink-0 relative"
+                  style={{
+                    backgroundColor: ct.theme.accent,
+                    boxShadow: isDarkBackground(theme.background)
+                      ? "0 0 0 0.5px rgba(255,255,255,0.25)"
+                      : "0 0 0 0.5px rgba(0,0,0,0.15)",
+                  }}
+                >
+                  <span
+                    className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center"
+                    style={{
+                      width: "8px",
+                      height: "8px",
+                      backgroundColor: theme.background,
+                      borderRadius: "50%",
+                    }}
+                  >
+                    <svg width="5" height="5" viewBox="0 0 10 10" fill={theme.text} opacity="0.6">
+                      <path d="M5 0L6.12 3.88L10 5L6.12 6.12L5 10L3.88 6.12L0 5L3.88 3.88Z" />
+                    </svg>
+                  </span>
+                </span>
+                <span className="text-sm font-medium truncate flex-1"
+                  onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    const newName = prompt("Rename theme:", ct.name);
+                    if (newName?.trim() && onRenameCustomTheme) {
+                      onRenameCustomTheme(ct.id, newName.trim());
+                    }
+                  }}
+                  title="Double-click to rename"
+                >
+                  {ct.name}
+                </span>
+                <div
+                  className="flex flex-wrap flex-shrink-0 ml-auto"
+                  style={{ gap: "2px", maxWidth: "52px" }}
+                >
+                  {WORD_TYPE_LABELS.map(({ key }) => (
+                    <span
+                      key={key}
+                      className="rounded-full"
+                      style={{
+                        width: "7px",
+                        height: "7px",
+                        backgroundColor: ct.theme.highlight[key as keyof typeof ct.theme.highlight],
+                        boxShadow: isDarkBackground(theme.background)
+                          ? "0 0 0 0.5px rgba(255,255,255,0.25)"
+                          : "0 0 0 0.5px rgba(0,0,0,0.15)",
+                      }}
+                    />
+                  ))}
+                </div>
+                {onDeleteCustomTheme && (
+                  <span onClick={(e) => e.stopPropagation()}>
+                    <TouchButton
+                      onClick={() => onDeleteCustomTheme(ct.id)}
+                      className="p-1.5 rounded-md opacity-40 hover:opacity-80 transition-opacity flex-shrink-0"
+                      title="Delete custom theme"
+                      aria-label="Delete custom theme"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                      </svg>
+                    </TouchButton>
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </section>
+  );
+};
+
+/** Active theme header with inline rename */
+const ActiveThemeHeader: React.FC<{
+  theme: RisoTheme;
+  isCustomTheme: boolean;
+  customThemeNames?: Record<string, string>;
+  onThemeRename?: (themeId: string, newName: string) => void;
+  onRenameCustomTheme?: (id: string, newName: string) => void;
+}> = ({ theme, isCustomTheme, customThemeNames, onThemeRename, onRenameCustomTheme }) => {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const displayName = customThemeNames?.[theme.id] || theme.name;
+
+  const startEditing = () => {
+    setEditValue(displayName);
+    setIsEditing(true);
+    setTimeout(() => inputRef.current?.select(), 0);
+  };
+
+  const commitEdit = () => {
+    setIsEditing(false);
+    const trimmed = editValue.trim();
+    if (trimmed === displayName) return;
+    if (isCustomTheme && onRenameCustomTheme) {
+      onRenameCustomTheme(theme.id, trimmed || theme.name);
+    } else if (onThemeRename) {
+      onThemeRename(theme.id, trimmed);
+    }
+  };
+
+  return (
+    <div className="px-4 py-3 flex items-center gap-3 border-b border-current/10 flex-shrink-0">
+      <div
+        className="w-10 h-10 rounded-xl flex-shrink-0 border"
+        style={{
+          backgroundColor: theme.background,
+          borderColor: `${theme.text}20`,
+        }}
+      >
+        <div className="w-full h-full rounded-xl flex items-center justify-center">
+          <span className="text-xs font-bold" style={{ color: theme.accent }}>
+            Aa
+          </span>
+        </div>
+      </div>
+      <div className="flex-1 min-w-0">
+        {isEditing ? (
+          <input
+            ref={inputRef}
+            type="text"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onBlur={commitEdit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commitEdit();
+              if (e.key === "Escape") setIsEditing(false);
+            }}
+            maxLength={40}
+            className="text-sm font-semibold bg-transparent border-b border-current/30 outline-none px-0 py-0 w-full"
+            style={{ color: theme.text }}
+          />
+        ) : (
+          <span
+            className="text-sm font-semibold truncate block cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={startEditing}
+            title="Click to rename"
+          >
+            {displayName}
+            {isCustomTheme && (
+              <span className="ml-1.5 text-[9px] font-medium uppercase opacity-40">custom</span>
+            )}
+          </span>
+        )}
+        <div className="flex flex-wrap gap-1 mt-1">
+          {WORD_TYPE_LABELS.map(({ key }) => (
+            <span
+              key={key}
+              className="w-2.5 h-2.5 rounded-full"
+              style={{ backgroundColor: theme.highlight[key] }}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -598,8 +765,15 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
   songMode,
   initialTab,
   onInitialTabConsumed,
+  savedCustomThemes,
+  onSaveCustomTheme,
+  onDeleteCustomTheme,
+  onRenameCustomTheme,
+  isCustomTheme,
+  onShowToast,
 }) => {
   const [activeTab, setActiveTab] = useState<TabId>("colors");
+  const [showSaveForm, setShowSaveForm] = useState(false);
 
   // Handle initialTab from parent (e.g. click theme row -> switch to colors)
   useEffect(() => {
@@ -678,34 +852,14 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
           </TouchButton>
         </div>
 
-        {/* Active Preview Swatch */}
-        <div className="px-4 py-3 flex items-center gap-3 border-b border-current/10 flex-shrink-0">
-          <div
-            className="w-10 h-10 rounded-xl flex-shrink-0 border"
-            style={{
-              backgroundColor: theme.background,
-              borderColor: `${theme.text}20`,
-            }}
-          >
-            <div className="w-full h-full rounded-xl flex items-center justify-center">
-              <span
-                className="text-xs font-bold"
-                style={{ color: theme.accent }}
-              >
-                Aa
-              </span>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-1">
-            {WORD_TYPE_LABELS.map(({ key }) => (
-              <span
-                key={key}
-                className="w-2.5 h-2.5 rounded-full"
-                style={{ backgroundColor: theme.highlight[key] }}
-              />
-            ))}
-          </div>
-        </div>
+        {/* Active Preview Swatch with inline rename */}
+        <ActiveThemeHeader
+          theme={theme}
+          isCustomTheme={!!isCustomTheme}
+          customThemeNames={customThemeNames}
+          onThemeRename={onThemeRename}
+          onRenameCustomTheme={onRenameCustomTheme}
+        />
 
         {/* Tab Bar */}
         <div className="flex border-b border-current/10 flex-shrink-0">
@@ -740,50 +894,42 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
           {/* Colors Tab */}
           {activeTab === "colors" && (
             <>
-              {/* Base Colors — collapsible, auto-expanded if any edited */}
-              <CollapsibleSection
-                title="Base Colors"
-                badge={hasBaseEdits ? "edited" : undefined}
-                defaultOpen={hasBaseEdits}
-                theme={theme}
-              >
-                <div className="space-y-1">
-                  <CompactColorRow
-                    label="Background"
-                    color={theme.background}
-                    path="background"
-                    bgColor={theme.background}
-                    isCustomized={checkCustomized("background")}
-                    onSetColor={onSetColor}
-                    onResetColor={onResetColor}
-                  />
-                  <CompactColorRow
-                    label="Text"
-                    color={theme.text}
-                    path="text"
-                    bgColor={theme.background}
-                    showContrast
-                    isCustomized={checkCustomized("text")}
-                    onSetColor={onSetColor}
-                    onResetColor={onResetColor}
-                  />
-                  <CompactColorRow
-                    label="Cursor"
-                    color={theme.cursor}
-                    path="cursor"
-                    bgColor={theme.background}
-                    isCustomized={checkCustomized("cursor")}
-                    onSetColor={onSetColor}
-                    onResetColor={onResetColor}
-                  />
-                </div>
-              </CollapsibleSection>
+              {/* Editor Colors — flat, always visible */}
+              <SectionLabel title="Editor Colors" theme={theme} />
+              <div className="space-y-1 pb-2">
+                <CompactColorRow
+                  label="Background"
+                  color={theme.background}
+                  path="background"
+                  bgColor={theme.background}
+                  isCustomized={checkCustomized("background")}
+                  onSetColor={onSetColor}
+                  onResetColor={onResetColor}
+                />
+                <CompactColorRow
+                  label="Text"
+                  color={theme.text}
+                  path="text"
+                  bgColor={theme.background}
+                  showContrast
+                  isCustomized={checkCustomized("text")}
+                  onSetColor={onSetColor}
+                  onResetColor={onResetColor}
+                />
+                <CompactColorRow
+                  label="Cursor"
+                  color={theme.cursor}
+                  path="cursor"
+                  bgColor={theme.background}
+                  isCustomized={checkCustomized("cursor")}
+                  onSetColor={onSetColor}
+                  onResetColor={onResetColor}
+                />
+              </div>
 
-              {/* Word Type Colors — collapsible with Shuffle button */}
-              <CollapsibleSection
+              {/* Word Colors — flat, always visible */}
+              <SectionLabel
                 title="Word Colors"
-                badge={editedWordCount > 0 ? `${editedWordCount} edited` : undefined}
-                defaultOpen={false}
                 theme={theme}
                 trailing={
                   <TouchButton
@@ -800,43 +946,39 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                     Shuffle
                   </TouchButton>
                 }
-              >
-                <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-                  {WORD_TYPE_LABELS.map(({ key, short }) => (
-                    <div key={key} className="flex items-center gap-1.5" style={{ minHeight: "44px" }}>
-                      <span
-                        className="w-3 h-3 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: theme.highlight[key], boxShadow: dotShadow }}
-                      />
-                      <span className="text-xs uppercase tracking-wide opacity-60 flex-shrink-0 min-w-[2.5rem]">
-                        {short}
-                      </span>
-                      <input
-                        type="color"
-                        value={theme.highlight[key]}
-                        onChange={(e) => onSetColor(key, e.target.value)}
-                        className="cursor-pointer rounded border-0 p-0 bg-transparent flex-shrink-0"
-                        style={{
-                          minWidth: "44px",
-                          minHeight: "44px",
-                          width: "44px",
-                          height: "44px",
-                        }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </CollapsibleSection>
+              />
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3 pb-2 pt-2">
+                {WORD_TYPE_LABELS.map(({ key, short }) => (
+                  <div key={key} className="flex items-center gap-1.5" style={{ minHeight: "44px" }}>
+                    <span
+                      className="w-3 h-3 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: theme.highlight[key], boxShadow: dotShadow }}
+                    />
+                    <span className="text-xs uppercase tracking-wide opacity-60 flex-shrink-0 min-w-[2.5rem]">
+                      {short}
+                    </span>
+                    <input
+                      type="color"
+                      value={theme.highlight[key]}
+                      onChange={(e) => onSetColor(key, e.target.value)}
+                      className="cursor-pointer rounded border-0 p-0 bg-transparent flex-shrink-0"
+                      style={{
+                        minWidth: "44px",
+                        minHeight: "44px",
+                        width: "44px",
+                        height: "44px",
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
 
-              {/* Song Colors — always available for customization */}
+              {/* Song Colors — flat, always visible */}
               {rhymeColors && onSetRhymeColor && (
-                <CollapsibleSection
-                  title="Song Colors"
-                  defaultOpen={false}
-                  theme={theme}
-                >
+                <>
+                  <SectionLabel title="Song Colors" theme={theme} />
                   {/* Preset palette strip */}
-                  <div className="flex gap-2 overflow-x-auto pb-1 mb-3">
+                  <div className="flex gap-2 overflow-x-auto pb-1 mb-3 pt-2">
                     {RHYME_PRESETS.map((preset) => {
                       const isActive = rhymeColors.every((c, i) => c.toLowerCase() === preset.colors[i]?.toLowerCase());
                       return (
@@ -896,7 +1038,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                       Auto-generate
                     </TouchButton>
                   </div>
-                  <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+                  <div className="grid grid-cols-2 gap-x-2 gap-y-1 pb-2">
                     {rhymeColors.map((color, index) => (
                       <div key={index} className="flex items-center gap-1.5">
                         <span
@@ -939,11 +1081,54 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                       </div>
                     ))}
                   </div>
-                </CollapsibleSection>
+                </>
               )}
 
-              {/* Reset */}
-              <section className="py-4">
+              {/* Actions */}
+              <SectionLabel title="Actions" theme={theme} />
+              <div className="space-y-2 py-3">
+                {/* Save as Custom Theme */}
+                {onSaveCustomTheme && !showSaveForm && (
+                  <TouchButton
+                    onClick={() => setShowSaveForm(true)}
+                    disabled={!hasCustomizations && !isCustomTheme}
+                    className={`w-full py-2.5 px-4 rounded-lg text-center text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+                      hasCustomizations || isCustomTheme
+                        ? "hover:opacity-90"
+                        : "opacity-40 cursor-not-allowed"
+                    }`}
+                    style={{
+                      backgroundColor: hasCustomizations || isCustomTheme ? theme.accent : `${theme.text}10`,
+                      color: hasCustomizations || isCustomTheme ? theme.background : theme.text,
+                      minHeight: "44px",
+                    }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                      <polyline points="17 21 17 13 7 13 7 21" />
+                      <polyline points="7 3 7 8 15 8" />
+                    </svg>
+                    Save as Custom Theme
+                  </TouchButton>
+                )}
+                {showSaveForm && onSaveCustomTheme && (
+                  <SaveThemeForm
+                    theme={theme}
+                    defaultName={`${theme.name} Custom`}
+                    onSave={(name) => {
+                      const saved = onSaveCustomTheme(name, theme, rhymeColors);
+                      setShowSaveForm(false);
+                      if (saved) {
+                        onShowToast?.(`Saved "${name}"`, "success");
+                      } else {
+                        onShowToast?.("Max 20 custom themes reached", "warning");
+                      }
+                    }}
+                    onCancel={() => setShowSaveForm(false)}
+                  />
+                )}
+
+                {/* Reset */}
                 <TouchButton
                   onClick={onResetToPreset}
                   disabled={!hasCustomizations}
@@ -957,7 +1142,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                   <IconReset size={16} />
                   Reset All to Preset
                 </TouchButton>
-              </section>
+              </div>
             </>
           )}
 
@@ -1005,6 +1190,9 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
               onThemeRename={onThemeRename}
               onSelectThemeForEditing={handleSelectForEditing}
               hasOverridesForTheme={hasOverridesForTheme}
+              savedCustomThemes={savedCustomThemes}
+              onDeleteCustomTheme={onDeleteCustomTheme}
+              onRenameCustomTheme={onRenameCustomTheme}
             />
           )}
 

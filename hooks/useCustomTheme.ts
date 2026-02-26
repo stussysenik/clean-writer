@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { RisoTheme, HighlightConfig } from "../types";
+import { RisoTheme, HighlightConfig, SavedCustomTheme } from "../types";
 import { THEMES } from "../constants";
 
 const STORAGE_KEY_V1 = "clean_writer_custom_theme";
@@ -95,10 +95,15 @@ const highlightKeys: (keyof RisoTheme["highlight"])[] = [
   "url", "number", "hashtag",
 ];
 
-export function useCustomTheme(baseThemeId: string) {
+export function useCustomTheme(baseThemeId: string, savedCustomThemes?: SavedCustomTheme[]) {
   const [state, setState] = useState<PersistedState>(loadPersistedState);
 
-  const baseTheme = THEMES.find((t) => t.id === baseThemeId) || THEMES[0];
+  // Resolve base theme: check presets first, then saved custom themes
+  const presetTheme = THEMES.find((t) => t.id === baseThemeId);
+  const customThemeEntry = !presetTheme
+    ? savedCustomThemes?.find((t) => t.id === baseThemeId)
+    : undefined;
+  const baseTheme = presetTheme || customThemeEntry?.theme || THEMES[0];
 
   // Get overrides for the current theme
   const currentOverrides = state.overrideMap[baseThemeId];

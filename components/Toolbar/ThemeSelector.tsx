@@ -17,10 +17,10 @@ interface ThemeSelectorProps {
 
 // Shared swatch circle used for preset themes
 const SwatchCircle = ({
-  id, name, color, isSelected, hasEdits, currentTheme, onClick,
+  id, name, color, isSelected, hasEdits, isCustom, currentTheme, onClick,
 }: {
   id: string; name: string; color: string;
-  isSelected: boolean; hasEdits?: boolean;
+  isSelected: boolean; hasEdits?: boolean; isCustom?: boolean;
   currentTheme: RisoTheme;
   onClick: () => void;
 }) => (
@@ -50,6 +50,21 @@ const SwatchCircle = ({
               borderColor: currentTheme.background,
             }}
           />
+        )}
+        {isCustom && (
+          <span
+            className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center"
+            style={{
+              width: "10px",
+              height: "10px",
+              backgroundColor: currentTheme.background,
+              borderRadius: "50%",
+            }}
+          >
+            <svg width="6" height="6" viewBox="0 0 10 10" fill={currentTheme.text}>
+              <path d="M5 0L6.12 3.88L10 5L6.12 6.12L5 10L3.88 6.12L0 5L3.88 3.88Z" />
+            </svg>
+          </span>
         )}
       </button>
     </Tooltip>
@@ -97,6 +112,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
             color={t.accent}
             isSelected={themeId === t.id}
             hasEdits={hasOverridesForTheme?.(t.id)}
+            isCustom={t.id.startsWith("custom_")}
             currentTheme={currentTheme}
             onClick={() => onThemeChange(t.id)}
           />
