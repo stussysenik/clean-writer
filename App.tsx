@@ -1075,6 +1075,52 @@ const App: React.FC = () => {
         {/* Hidden when customizer open — customizer has its own close (X) button */}
         {!isCustomizerOpen && (
           <div className="pointer-events-auto flex items-center gap-2 min-h-[44px]">
+            {/* Font Size A-/A+ Controls */}
+            <div
+              className="flex items-center gap-0.5 px-1.5 py-1 rounded-xl"
+              style={{
+                backgroundColor: `${currentTheme.background}80`,
+                backdropFilter: "blur(8px)",
+                WebkitBackdropFilter: "blur(8px)",
+              }}
+            >
+              <TouchButton
+                onClick={() => handleFontSizeChange(fontSizeOffset - 2)}
+                disabled={fontSizeOffset <= -6}
+                className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${
+                  fontSizeOffset <= -6 ? "opacity-25 cursor-not-allowed" : "opacity-60 hover:opacity-100 hover:bg-current/5"
+                }`}
+                style={{ color: currentTheme.text }}
+                aria-label="Decrease font size"
+                title="Decrease font size"
+              >
+                A−
+              </TouchButton>
+              <TouchButton
+                onClick={() => handleFontSizeChange(0)}
+                disabled={fontSizeOffset === 0}
+                className={`px-2 py-1 rounded-lg text-[10px] font-medium tabular-nums transition-all ${
+                  fontSizeOffset === 0 ? "opacity-25 cursor-not-allowed" : "opacity-60 hover:opacity-100 hover:bg-current/5"
+                }`}
+                style={{ color: currentTheme.text, minWidth: "28px", textAlign: "center" }}
+                aria-label="Reset font size"
+                title="Reset font size"
+              >
+                {fontSizeOffset === 0 ? "0" : fontSizeOffset > 0 ? `+${fontSizeOffset}` : `${fontSizeOffset}`}
+              </TouchButton>
+              <TouchButton
+                onClick={() => handleFontSizeChange(fontSizeOffset + 2)}
+                disabled={fontSizeOffset >= 12}
+                className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${
+                  fontSizeOffset >= 12 ? "opacity-25 cursor-not-allowed" : "opacity-60 hover:opacity-100 hover:bg-current/5"
+                }`}
+                style={{ color: currentTheme.text }}
+                aria-label="Increase font size"
+                title="Increase font size"
+              >
+                A+
+              </TouchButton>
+            </div>
             <Tooltip content="Help & Shortcuts" position="bottom">
               <TouchButton
                 onClick={() => setIsHelpOpen(true)}

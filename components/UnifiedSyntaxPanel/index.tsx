@@ -201,7 +201,7 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
       ref={containerRef}
       className="fixed right-0 z-[55] flex items-end"
       style={{
-        bottom: "max(100px, calc(92px + env(safe-area-inset-bottom)))",
+        bottom: "max(140px, calc(132px + env(safe-area-inset-bottom)))",
         paddingRight: "env(safe-area-inset-right)",
         maxHeight: "calc(100dvh - 100px)",
       }}

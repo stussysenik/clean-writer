@@ -5,14 +5,9 @@ const HIDDEN_THEMES_STORAGE_KEY = "clean_writer_hidden_themes";
 const HAS_CUSTOMIZED_VISIBILITY_KEY = "clean_writer_has_customized_visibility";
 const THEME_ORDER_STORAGE_KEY = "clean_writer_theme_order";
 
-// Default visible themes: Classic (light), Midnight (dark), Paper (pure white)
-const DEFAULT_VISIBLE_THEMES = ["classic", "midnight", "paper"];
+// All themes visible by default for easy browsing, toggling, and reordering
 const ALL_THEME_IDS = THEMES.map((t) => t.id);
-
-// Calculate which themes should be hidden by default (all except the 3 defaults)
-const DEFAULT_HIDDEN_THEMES = ALL_THEME_IDS.filter(
-  (id) => !DEFAULT_VISIBLE_THEMES.includes(id),
-);
+const DEFAULT_HIDDEN_THEMES: string[] = [];
 
 export function useThemeVisibility() {
   const [hiddenThemeIds, setHiddenThemeIds] = useState<string[]>(() => {
