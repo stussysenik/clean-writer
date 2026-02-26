@@ -31,3 +31,7 @@ CLAUDE.md
 AGENTS.md
 .vercel
 .env*.local
+.mcp.json
+
+# Screenshots (dev artifacts)
+screenshots/

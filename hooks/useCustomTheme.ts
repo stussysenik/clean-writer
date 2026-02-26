@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
-import { RisoTheme, HighlightConfig, CustomTheme } from "../types";
+import { RisoTheme, HighlightConfig } from "../types";
 import { THEMES } from "../constants";
 
-const CUSTOM_THEME_STORAGE_KEY = "clean_writer_custom_theme";
+const STORAGE_KEY_V1 = "clean_writer_custom_theme";
+const STORAGE_KEY_V2 = "clean_writer_theme_overrides_v2";
 
-interface CustomThemeState {
-  baseThemeId: string;
+interface ThemeOverrides {
   overrides: Partial<{
     background: string;
     text: string;
@@ -13,8 +13,15 @@ interface CustomThemeState {
     selection: string;
     highlight: Partial<RisoTheme["highlight"]>;
   }>;
-  wordVisibility: HighlightConfig;
   rhymeColorOverrides?: Record<number, string>;
+}
+
+/** Per-theme override map: { "classic": { overrides: {...} }, "midnight": { overrides: {...} } } */
+type OverrideMap = Record<string, ThemeOverrides>;
+
+interface PersistedState {
+  overrideMap: OverrideMap;
+  wordVisibility: HighlightConfig;
 }
 
 const defaultVisibility: HighlightConfig = {
@@ -32,54 +39,95 @@ const defaultVisibility: HighlightConfig = {
   hashtags: true,
 };
 
-export function useCustomTheme(baseThemeId: string) {
-  const [customState, setCustomState] = useState<CustomThemeState | null>(
-    () => {
-      try {
-        const saved = localStorage.getItem(CUSTOM_THEME_STORAGE_KEY);
-        return saved ? JSON.parse(saved) : null;
-      } catch {
-        return null;
-      }
-    },
-  );
+/** Migrate from v1 single-theme format to v2 per-theme map */
+function migrateV1(): PersistedState | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_V1);
+    if (!raw) return null;
+    const v1 = JSON.parse(raw);
+    if (!v1 || !v1.baseThemeId) return null;
 
-  // Get base theme
+    const overrideMap: OverrideMap = {};
+    if (v1.overrides && Object.keys(v1.overrides).length > 0) {
+      overrideMap[v1.baseThemeId] = {
+        overrides: v1.overrides,
+        rhymeColorOverrides: v1.rhymeColorOverrides,
+      };
+    }
+
+    const state: PersistedState = {
+      overrideMap,
+      wordVisibility: v1.wordVisibility || defaultVisibility,
+    };
+
+    // Write v2 and remove v1
+    localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(state));
+    localStorage.removeItem(STORAGE_KEY_V1);
+
+    return state;
+  } catch {
+    return null;
+  }
+}
+
+function loadPersistedState(): PersistedState {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_V2);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return {
+        overrideMap: parsed.overrideMap || {},
+        wordVisibility: parsed.wordVisibility || defaultVisibility,
+      };
+    }
+  } catch {}
+
+  // Try migrate from v1
+  const migrated = migrateV1();
+  if (migrated) return migrated;
+
+  return { overrideMap: {}, wordVisibility: defaultVisibility };
+}
+
+const highlightKeys: (keyof RisoTheme["highlight"])[] = [
+  "noun", "pronoun", "verb", "adjective", "adverb",
+  "preposition", "conjunction", "article", "interjection",
+  "url", "number", "hashtag",
+];
+
+export function useCustomTheme(baseThemeId: string) {
+  const [state, setState] = useState<PersistedState>(loadPersistedState);
+
   const baseTheme = THEMES.find((t) => t.id === baseThemeId) || THEMES[0];
 
+  // Get overrides for the current theme
+  const currentOverrides = state.overrideMap[baseThemeId];
+
   // Apply overrides to create effective theme
-  const effectiveTheme: RisoTheme =
-    customState?.baseThemeId === baseThemeId && customState?.overrides
-      ? {
-          ...baseTheme,
-          background: customState.overrides.background || baseTheme.background,
-          text: customState.overrides.text || baseTheme.text,
-          cursor: customState.overrides.cursor || baseTheme.cursor,
-          selection: customState.overrides.selection || baseTheme.selection,
-          highlight: {
-            ...baseTheme.highlight,
-            ...customState.overrides.highlight,
-          },
-        }
-      : baseTheme;
+  const effectiveTheme: RisoTheme = currentOverrides?.overrides
+    ? {
+        ...baseTheme,
+        background: currentOverrides.overrides.background || baseTheme.background,
+        text: currentOverrides.overrides.text || baseTheme.text,
+        cursor: currentOverrides.overrides.cursor || baseTheme.cursor,
+        selection: currentOverrides.overrides.selection || baseTheme.selection,
+        highlight: {
+          ...baseTheme.highlight,
+          ...currentOverrides.overrides.highlight,
+        },
+      }
+    : baseTheme;
 
-  const wordVisibility = customState?.wordVisibility || defaultVisibility;
+  const wordVisibility = state.wordVisibility;
 
-  // Persist custom theme state
+  // Persist state
   useEffect(() => {
     try {
-      if (customState) {
-        localStorage.setItem(
-          CUSTOM_THEME_STORAGE_KEY,
-          JSON.stringify(customState),
-        );
-      } else {
-        localStorage.removeItem(CUSTOM_THEME_STORAGE_KEY);
-      }
-    } catch (e) {
+      localStorage.setItem(STORAGE_KEY_V2, JSON.stringify(state));
+    } catch {
       console.warn("Could not save custom theme");
     }
-  }, [customState]);
+  }, [state]);
 
   // Set a specific color
   const setColor = useCallback(
@@ -92,47 +140,39 @@ export function useCustomTheme(baseThemeId: string) {
         | keyof RisoTheme["highlight"],
       color: string,
     ) => {
-      setCustomState((prev) => {
-        const base = prev || {
-          baseThemeId,
-          overrides: {},
-          wordVisibility: defaultVisibility,
-        };
-        const highlightKeys: (keyof RisoTheme["highlight"])[] = [
-          "noun",
-          "pronoun",
-          "verb",
-          "adjective",
-          "adverb",
-          "preposition",
-          "conjunction",
-          "article",
-          "interjection",
-          "url",
-          "number",
-          "hashtag",
-        ];
+      setState((prev) => {
+        const existing = prev.overrideMap[baseThemeId] || { overrides: {} };
 
         if (highlightKeys.includes(path as keyof RisoTheme["highlight"])) {
           return {
-            ...base,
-            baseThemeId,
-            overrides: {
-              ...base.overrides,
-              highlight: {
-                ...base.overrides?.highlight,
-                [path]: color,
+            ...prev,
+            overrideMap: {
+              ...prev.overrideMap,
+              [baseThemeId]: {
+                ...existing,
+                overrides: {
+                  ...existing.overrides,
+                  highlight: {
+                    ...existing.overrides?.highlight,
+                    [path]: color,
+                  },
+                },
               },
             },
           };
         }
 
         return {
-          ...base,
-          baseThemeId,
-          overrides: {
-            ...base.overrides,
-            [path]: color,
+          ...prev,
+          overrideMap: {
+            ...prev.overrideMap,
+            [baseThemeId]: {
+              ...existing,
+              overrides: {
+                ...existing.overrides,
+                [path]: color,
+              },
+            },
           },
         };
       });
@@ -143,28 +183,25 @@ export function useCustomTheme(baseThemeId: string) {
   // Toggle word type visibility
   const toggleVisibility = useCallback(
     (key: keyof HighlightConfig) => {
-      setCustomState((prev) => {
-        const base = prev || {
-          baseThemeId,
-          overrides: {},
-          wordVisibility: defaultVisibility,
-        };
-        return {
-          ...base,
-          wordVisibility: {
-            ...base.wordVisibility,
-            [key]: !base.wordVisibility[key],
-          },
-        };
-      });
+      setState((prev) => ({
+        ...prev,
+        wordVisibility: {
+          ...prev.wordVisibility,
+          [key]: !prev.wordVisibility[key],
+        },
+      }));
     },
-    [baseThemeId],
+    [],
   );
 
-  // Reset to preset theme
+  // Reset current theme to preset
   const resetToPreset = useCallback(() => {
-    setCustomState(null);
-  }, []);
+    setState((prev) => {
+      const newMap = { ...prev.overrideMap };
+      delete newMap[baseThemeId];
+      return { ...prev, overrideMap: newMap };
+    });
+  }, [baseThemeId]);
 
   // Reset a single color to its base theme value
   const resetColor = useCallback(
@@ -176,81 +213,68 @@ export function useCustomTheme(baseThemeId: string) {
         | "selection"
         | keyof RisoTheme["highlight"],
     ) => {
-      setCustomState((prev) => {
-        if (!prev) return null;
-
-        const highlightKeys: (keyof RisoTheme["highlight"])[] = [
-          "noun",
-          "pronoun",
-          "verb",
-          "adjective",
-          "adverb",
-          "preposition",
-          "conjunction",
-          "article",
-          "interjection",
-          "url",
-          "number",
-          "hashtag",
-        ];
+      setState((prev) => {
+        const existing = prev.overrideMap[baseThemeId];
+        if (!existing) return prev;
 
         if (highlightKeys.includes(path as keyof RisoTheme["highlight"])) {
-          // Remove the highlight override
-          const newHighlight = { ...prev.overrides?.highlight };
+          const newHighlight = { ...existing.overrides?.highlight };
           delete newHighlight[path as keyof RisoTheme["highlight"]];
 
-          const newOverrides = { ...prev.overrides, highlight: newHighlight };
+          const newOverrides = {
+            ...existing.overrides,
+            highlight: Object.keys(newHighlight).length > 0 ? newHighlight : undefined,
+          };
 
-          // If highlight object is empty, remove it
-          if (Object.keys(newHighlight).length === 0) {
-            delete newOverrides.highlight;
+          // Clean up undefined highlight
+          if (!newOverrides.highlight) delete newOverrides.highlight;
+
+          // If no overrides remain, remove the theme entry entirely
+          const remainingKeys = Object.keys(newOverrides).filter(
+            (k) => newOverrides[k as keyof typeof newOverrides] !== undefined,
+          );
+          if (remainingKeys.length === 0 && !existing.rhymeColorOverrides) {
+            const newMap = { ...prev.overrideMap };
+            delete newMap[baseThemeId];
+            return { ...prev, overrideMap: newMap };
           }
 
-          // If no overrides remain, clear the state
-          if (
-            Object.keys(newOverrides).length === 0 ||
-            (Object.keys(newOverrides).length === 1 && !newOverrides.highlight)
-          ) {
-            const remainingOverrides = { ...newOverrides };
-            delete remainingOverrides.highlight;
-            if (Object.keys(remainingOverrides).length === 0) {
-              return prev.wordVisibility === defaultVisibility
-                ? null
-                : {
-                    ...prev,
-                    overrides: {},
-                  };
-            }
-          }
-
-          return { ...prev, overrides: newOverrides };
+          return {
+            ...prev,
+            overrideMap: {
+              ...prev.overrideMap,
+              [baseThemeId]: { ...existing, overrides: newOverrides },
+            },
+          };
         }
 
-        // Remove the base color override
-        const newOverrides = { ...prev.overrides };
-        delete newOverrides[
-          path as "background" | "text" | "cursor" | "selection"
-        ];
+        // Remove base color override
+        const newOverrides = { ...existing.overrides };
+        delete newOverrides[path as "background" | "text" | "cursor" | "selection"];
 
-        // If no overrides remain, check if we should clear state
-        if (
-          Object.keys(newOverrides).length === 0 ||
-          (Object.keys(newOverrides).length === 1 &&
-            newOverrides.highlight &&
-            Object.keys(newOverrides.highlight).length === 0)
-        ) {
-          return prev.wordVisibility === defaultVisibility
-            ? null
-            : {
-                ...prev,
-                overrides: {},
-              };
+        // If no overrides remain, remove theme entry
+        const hasHighlightOverrides =
+          newOverrides.highlight && Object.keys(newOverrides.highlight).length > 0;
+        const hasBaseOverrides = Object.keys(newOverrides).filter(
+          (k) => k !== "highlight" && newOverrides[k as keyof typeof newOverrides] !== undefined,
+        ).length > 0;
+
+        if (!hasHighlightOverrides && !hasBaseOverrides && !existing.rhymeColorOverrides) {
+          const newMap = { ...prev.overrideMap };
+          delete newMap[baseThemeId];
+          return { ...prev, overrideMap: newMap };
         }
 
-        return { ...prev, overrides: newOverrides };
+        return {
+          ...prev,
+          overrideMap: {
+            ...prev.overrideMap,
+            [baseThemeId]: { ...existing, overrides: newOverrides },
+          },
+        };
       });
     },
-    [],
+    [baseThemeId],
   );
 
   // Check if a specific color has been customized
@@ -263,59 +287,40 @@ export function useCustomTheme(baseThemeId: string) {
         | "selection"
         | keyof RisoTheme["highlight"],
     ): boolean => {
-      if (!customState || customState.baseThemeId !== baseThemeId) return false;
-
-      const highlightKeys: (keyof RisoTheme["highlight"])[] = [
-        "noun",
-        "pronoun",
-        "verb",
-        "adjective",
-        "adverb",
-        "preposition",
-        "conjunction",
-        "article",
-        "interjection",
-        "url",
-        "number",
-        "hashtag",
-      ];
+      const entry = state.overrideMap[baseThemeId];
+      if (!entry) return false;
 
       if (highlightKeys.includes(path as keyof RisoTheme["highlight"])) {
         return (
-          customState.overrides?.highlight?.[
-            path as keyof RisoTheme["highlight"]
-          ] !== undefined
+          entry.overrides?.highlight?.[path as keyof RisoTheme["highlight"]] !== undefined
         );
       }
 
       return (
-        customState.overrides?.[
-          path as "background" | "text" | "cursor" | "selection"
-        ] !== undefined
+        entry.overrides?.[path as "background" | "text" | "cursor" | "selection"] !== undefined
       );
     },
-    [customState, baseThemeId],
+    [state, baseThemeId],
   );
 
   // Rhyme color overrides
-  const rhymeColorOverrides = customState?.baseThemeId === baseThemeId
-    ? customState?.rhymeColorOverrides
-    : undefined;
+  const rhymeColorOverrides = currentOverrides?.rhymeColorOverrides;
 
   const setRhymeColor = useCallback(
     (index: number, color: string) => {
-      setCustomState((prev) => {
-        const base = prev || {
-          baseThemeId,
-          overrides: {},
-          wordVisibility: defaultVisibility,
-        };
+      setState((prev) => {
+        const existing = prev.overrideMap[baseThemeId] || { overrides: {} };
         return {
-          ...base,
-          baseThemeId,
-          rhymeColorOverrides: {
-            ...base.rhymeColorOverrides,
-            [index]: color,
+          ...prev,
+          overrideMap: {
+            ...prev.overrideMap,
+            [baseThemeId]: {
+              ...existing,
+              rhymeColorOverrides: {
+                ...existing.rhymeColorOverrides,
+                [index]: color,
+              },
+            },
           },
         };
       });
@@ -325,30 +330,52 @@ export function useCustomTheme(baseThemeId: string) {
 
   const resetRhymeColor = useCallback(
     (index: number) => {
-      setCustomState((prev) => {
-        if (!prev) return null;
-        const newOverrides = { ...prev.rhymeColorOverrides };
+      setState((prev) => {
+        const existing = prev.overrideMap[baseThemeId];
+        if (!existing) return prev;
+        const newOverrides = { ...existing.rhymeColorOverrides };
         delete newOverrides[index];
+        const hasRhymeOverrides = Object.keys(newOverrides).length > 0;
         return {
           ...prev,
-          rhymeColorOverrides: Object.keys(newOverrides).length > 0 ? newOverrides : undefined,
+          overrideMap: {
+            ...prev.overrideMap,
+            [baseThemeId]: {
+              ...existing,
+              rhymeColorOverrides: hasRhymeOverrides ? newOverrides : undefined,
+            },
+          },
         };
       });
     },
-    [],
+    [baseThemeId],
   );
 
   const isRhymeColorCustomized = useCallback(
     (index: number): boolean => {
-      if (!customState || customState.baseThemeId !== baseThemeId) return false;
-      return customState.rhymeColorOverrides?.[index] !== undefined;
+      return state.overrideMap[baseThemeId]?.rhymeColorOverrides?.[index] !== undefined;
     },
-    [customState, baseThemeId],
+    [state, baseThemeId],
   );
 
-  // Check if theme has customizations
-  const hasCustomizations =
-    customState !== null && customState.baseThemeId === baseThemeId;
+  // Check if current theme has customizations
+  const hasCustomizations = !!state.overrideMap[baseThemeId];
+
+  // Check if ANY theme has overrides (for badge display)
+  const hasOverridesForTheme = useCallback(
+    (id: string): boolean => {
+      const entry = state.overrideMap[id];
+      if (!entry) return false;
+      const hasColorOverrides =
+        entry.overrides && Object.keys(entry.overrides).length > 0;
+      const hasHighlight =
+        entry.overrides?.highlight && Object.keys(entry.overrides.highlight).length > 0;
+      const hasRhyme =
+        entry.rhymeColorOverrides && Object.keys(entry.rhymeColorOverrides).length > 0;
+      return !!(hasColorOverrides || hasHighlight || hasRhyme);
+    },
+    [state],
+  );
 
   return {
     effectiveTheme,
@@ -363,6 +390,7 @@ export function useCustomTheme(baseThemeId: string) {
     setRhymeColor,
     resetRhymeColor,
     isRhymeColorCustomized,
+    hasOverridesForTheme,
   };
 }
 
