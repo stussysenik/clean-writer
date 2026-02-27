@@ -137,7 +137,7 @@ const HarmonicaContainer: React.FC<HarmonicaContainerProps> = ({
         borderRight: stage === "closed" ? "none" : "none",
         boxShadow:
           stage !== "closed"
-            ? `-8px 0 32px rgba(0,0,0,0.15), -2px 0 8px rgba(0,0,0,0.08), inset 0 0 0 1px ${theme.text}08`
+            ? `-8px 0 32px rgba(0,0,0,0.15), -2px 0 8px rgba(0,0,0,0.08)`
             : "none",
         // Resistance visual feedback during drag
         transform:
@@ -148,27 +148,13 @@ const HarmonicaContainer: React.FC<HarmonicaContainerProps> = ({
       }}
     >
       {stage !== "closed" && (
-        <>
-          {/* Paper grain texture */}
-          <div
-            className="absolute inset-0 pointer-events-none opacity-15 mix-blend-multiply"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='paperNoise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23paperNoise)' opacity='0.08'/%3E%3C/svg%3E")`,
-            }}
-          />
-
-          {/* Glass highlight at top edge */}
-          <div
-            className="absolute left-0 right-0 top-0 h-px pointer-events-none"
-            style={{
-              background: `linear-gradient(to right,
-                transparent 0%,
-                ${theme.text}20 20%,
-                ${theme.text}20 80%,
-                transparent 100%)`,
-            }}
-          />
-        </>
+        /* Paper grain texture */
+        <div
+          className="absolute inset-0 pointer-events-none opacity-15 mix-blend-multiply"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='paperNoise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23paperNoise)' opacity='0.08'/%3E%3C/svg%3E")`,
+          }}
+        />
       )}
 
       {/* Content container */}
