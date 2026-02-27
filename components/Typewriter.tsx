@@ -39,6 +39,8 @@ interface TypewriterProps {
   focusedRhymeKey?: string | null;
   hoveredRhymeKey?: string | null;
   disabledRhymeKeys?: Set<string>;
+  lineHeight?: number;
+  paragraphSpacing?: number;
 }
 
 // Known non-text keys to reject (control, navigation, function keys).
@@ -119,7 +121,11 @@ const Typewriter: React.FC<TypewriterProps> = ({
   focusedRhymeKey = null,
   hoveredRhymeKey = null,
   disabledRhymeKeys,
+  lineHeight: lineHeightProp = 1.6,
+  paragraphSpacing: paragraphSpacingProp = 0.5,
 }) => {
+  const effectiveLineHeight = songMode && showSyllableAnnotations ? "2.4" : String(lineHeightProp);
+
   const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
   const selectionOverlayRef = useRef<HTMLDivElement>(null);
@@ -411,6 +417,15 @@ const Typewriter: React.FC<TypewriterProps> = ({
             let matchCategory: keyof HighlightConfig | null = null;
 
             if (!normalizedPart) {
+              // Add extra paragraph spacing after double-newlines
+              if (paragraphSpacingProp > 0 && part.includes("\n\n")) {
+                return (
+                  <React.Fragment key={index}>
+                    <span>{part}</span>
+                    <span style={{ display: "block", height: `${paragraphSpacingProp}em` }} />
+                  </React.Fragment>
+                );
+              }
               return (
                 <span key={index} style={{ transition: "color 0.3s ease" }}>
                   {part}
@@ -542,6 +557,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
     highlightConfig,
     hoveredCategory,
     showUtfEmojiCodes,
+    paragraphSpacingProp,
   ]);
 
   // Build a map of rhymeKey -> color for song mode
@@ -561,9 +577,12 @@ const Typewriter: React.FC<TypewriterProps> = ({
     return lines.map((lineText, lineIdx) => {
       const songLine = songData.lines[lineIdx];
       if (!songLine || songLine.words.length === 0) {
+        // Paragraph spacing: empty line = paragraph break
+        const isParagraphBreak = paragraphSpacingProp > 0 && lineText === "" && lineIdx > 0;
         return (
           <React.Fragment key={`sl-${lineIdx}`}>
             {lineText}
+            {isParagraphBreak && <span style={{ display: "block", height: `${paragraphSpacingProp}em` }} />}
             {lineIdx < lines.length - 1 ? "\n" : ""}
           </React.Fragment>
         );
@@ -659,7 +678,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
         </React.Fragment>
       );
     });
-  }, [content, songData, rhymeColorMap, theme.text, theme.background, showSyllableAnnotations, focusedRhymeKey, hoveredRhymeKey, disabledRhymeKeys]);
+  }, [content, songData, rhymeColorMap, theme.text, theme.background, showSyllableAnnotations, focusedRhymeKey, hoveredRhymeKey, disabledRhymeKeys, paragraphSpacingProp]);
 
   return (
     <div
@@ -673,7 +692,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
         style={{
           fontFamily,
           fontSize,
-          lineHeight: songMode && showSyllableAnnotations ? "2.4" : "1.6",
+          lineHeight: effectiveLineHeight,
           color: theme.text,
         }}
       >
@@ -703,7 +722,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
           style={{
             fontFamily,
             fontSize,
-            lineHeight: songMode && showSyllableAnnotations ? "2.4" : "1.6",
+            lineHeight: effectiveLineHeight,
             color: "transparent",
           }}
         >
@@ -749,7 +768,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
         style={{
           fontFamily,
           fontSize,
-          lineHeight: songMode && showSyllableAnnotations ? "2.4" : "1.6",
+          lineHeight: effectiveLineHeight,
           color: "transparent",
           caretColor: "transparent",
           opacity: 1,

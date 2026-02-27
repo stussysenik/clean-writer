@@ -37,6 +37,7 @@ import TouchButton from "./components/TouchButton";
 import Tooltip from "./components/Tooltip";
 import HelpModal from "./components/HelpModal";
 import MobileWelcome from "./components/MobileWelcome";
+import SpacingSliders from "./components/SpacingSliders";
 import Kbd from "./components/Kbd";
 import { IconSettings } from "./components/Toolbar/Icons";
 import useCustomTheme from "./hooks/useCustomTheme";
@@ -192,6 +193,24 @@ const App: React.FC = () => {
       return 0;
     } catch {
       return 0;
+    }
+  });
+
+  const [lineHeightValue, setLineHeightValue] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem("clean_writer_line_height");
+      return saved ? Number(saved) : 1.6;
+    } catch {
+      return 1.6;
+    }
+  });
+
+  const [paragraphSpacing, setParagraphSpacing] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem("clean_writer_paragraph_spacing");
+      return saved ? Number(saved) : 0.5;
+    } catch {
+      return 0.5;
     }
   });
 
@@ -724,6 +743,24 @@ const App: React.FC = () => {
     }
   }, [fontSizeOffset]);
 
+  // Persist lineHeight
+  useEffect(() => {
+    try {
+      localStorage.setItem("clean_writer_line_height", String(lineHeightValue));
+    } catch (e) {
+      console.warn("Could not save line height");
+    }
+  }, [lineHeightValue]);
+
+  // Persist paragraphSpacing
+  useEffect(() => {
+    try {
+      localStorage.setItem("clean_writer_paragraph_spacing", String(paragraphSpacing));
+    } catch (e) {
+      console.warn("Could not save paragraph spacing");
+    }
+  }, [paragraphSpacing]);
+
   // Persist customThemeNames
   useEffect(() => {
     try {
@@ -1025,9 +1062,9 @@ const App: React.FC = () => {
         {/* Hidden when customizer open — customizer has its own close (X) button */}
         {!isCustomizerOpen && (
           <div className="pointer-events-auto flex items-center gap-2 min-h-[44px]">
-            {/* Font Size A-/A+ Controls */}
+            {/* Font Size A-/A+ Controls — segmented pill */}
             <div
-              className="flex items-center gap-0.5 px-1.5 py-1 rounded-xl"
+              className="flex items-center gap-0 rounded-lg overflow-hidden"
               style={{
                 backgroundColor: `${currentTheme.background}80`,
                 backdropFilter: "blur(8px)",
@@ -1037,7 +1074,7 @@ const App: React.FC = () => {
               <TouchButton
                 onClick={() => handleFontSizeChange(fontSizeOffset - 2)}
                 disabled={fontSizeOffset <= -6}
-                className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${
+                className={`px-1.5 py-0.5 text-xs font-bold transition-all ${
                   fontSizeOffset <= -6 ? "opacity-25 cursor-not-allowed" : "opacity-60 hover:opacity-100 hover:bg-current/5"
                 }`}
                 style={{ color: currentTheme.text }}
@@ -1049,10 +1086,10 @@ const App: React.FC = () => {
               <TouchButton
                 onClick={() => handleFontSizeChange(0)}
                 disabled={fontSizeOffset === 0}
-                className={`px-2 py-1 rounded-lg text-[10px] font-medium tabular-nums transition-all ${
+                className={`px-1.5 py-0.5 text-[10px] font-medium tabular-nums transition-all ${
                   fontSizeOffset === 0 ? "opacity-25 cursor-not-allowed" : "opacity-60 hover:opacity-100 hover:bg-current/5"
                 }`}
-                style={{ color: currentTheme.text, minWidth: "28px", textAlign: "center" }}
+                style={{ color: currentTheme.text, minWidth: "24px", textAlign: "center" }}
                 aria-label="Reset font size"
                 title="Reset font size"
               >
@@ -1061,7 +1098,7 @@ const App: React.FC = () => {
               <TouchButton
                 onClick={() => handleFontSizeChange(fontSizeOffset + 2)}
                 disabled={fontSizeOffset >= 12}
-                className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${
+                className={`px-1.5 py-0.5 text-xs font-bold transition-all ${
                   fontSizeOffset >= 12 ? "opacity-25 cursor-not-allowed" : "opacity-60 hover:opacity-100 hover:bg-current/5"
                 }`}
                 style={{ color: currentTheme.text }}
@@ -1106,9 +1143,7 @@ const App: React.FC = () => {
                     color: getIconColor(currentTheme),
                   }}
                 >
-                  <span className="block scale-[1.125]">
-                    <IconSettings />
-                  </span>
+                  <IconSettings />
                 </TouchButton>
               </Tooltip>
             </div>
@@ -1146,6 +1181,8 @@ const App: React.FC = () => {
             focusedRhymeKey={focusedRhymeKey}
             hoveredRhymeKey={hoveredRhymeKey}
             disabledRhymeKeys={disabledRhymeKeys}
+            lineHeight={lineHeightValue}
+            paragraphSpacing={paragraphSpacing}
           />
         ) : (
           <div
@@ -1182,6 +1219,15 @@ const App: React.FC = () => {
         onHoverRhymeKey={setHoveredRhymeKey}
         disabledRhymeKeys={disabledRhymeKeys}
         onToggleRhymeKey={handleToggleRhymeKey}
+      />
+
+      {/* Left-edge Spacing Sliders */}
+      <SpacingSliders
+        theme={currentTheme}
+        lineHeight={lineHeightValue}
+        paragraphSpacing={paragraphSpacing}
+        onLineHeightChange={setLineHeightValue}
+        onParagraphSpacingChange={setParagraphSpacing}
       />
 
       {/* Bottom Toolbar */}
