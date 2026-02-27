@@ -1041,6 +1041,8 @@ const App: React.FC = () => {
         onShowToast={handleShowToast}
         letterSpacing={letterSpacing}
         onLetterSpacingChange={setLetterSpacing}
+        lineHeight={lineHeightValue}
+        onLineHeightChange={setLineHeightValue}
       />
 
       {/* Toast for warnings */}
@@ -1202,6 +1204,7 @@ const App: React.FC = () => {
             hoveredRhymeKey={hoveredRhymeKey}
             disabledRhymeKeys={disabledRhymeKeys}
             letterSpacing={letterSpacing}
+            lineHeight={lineHeightValue}
           />
         ) : (
           <div

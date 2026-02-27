@@ -109,6 +109,8 @@ interface ThemeCustomizerProps {
   onShowToast?: (message: string, type?: "success" | "warning") => void;
   letterSpacing?: number;
   onLetterSpacingChange?: (v: number) => void;
+  lineHeight?: number;
+  onLineHeightChange?: (v: number) => void;
 }
 
 const RHYME_COLOR_LABELS = [
@@ -767,6 +769,8 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
   onShowToast,
   letterSpacing = 0,
   onLetterSpacingChange,
+  lineHeight = 1.6,
+  onLineHeightChange,
 }) => {
   const [activeTab, setActiveTab] = useState<TabId>("colors");
   const [showSaveForm, setShowSaveForm] = useState(false);
@@ -1145,6 +1149,42 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
           {/* Typography Tab */}
           {activeTab === "typography" && (
             <section className="py-4">
+              {/* Line Height control */}
+              {onLineHeightChange && (
+                <div className="mb-5">
+                  <h3 className="text-[10px] font-semibold uppercase tracking-[0.15em] mb-2 opacity-40">
+                    Line Height
+                  </h3>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="range"
+                      min={1.2}
+                      max={2.4}
+                      step={0.1}
+                      value={lineHeight}
+                      onChange={(e) => onLineHeightChange(Math.round(Number(e.target.value) * 10) / 10)}
+                      className="spacing-slider flex-1"
+                      style={{ accentColor: theme.accent, height: 20 }}
+                    />
+                    <span
+                      className="text-[11px] font-medium tabular-nums w-[3ch] text-right"
+                      style={{ opacity: 0.6 }}
+                    >
+                      {lineHeight.toFixed(1)}
+                    </span>
+                    {lineHeight !== 1.6 && (
+                      <button
+                        onClick={() => onLineHeightChange(1.6)}
+                        className="opacity-40 hover:opacity-80 transition-opacity"
+                        title="Reset to default"
+                      >
+                        <IconReset size={14} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {/* Letter Spacing control */}
               {onLetterSpacingChange && (
                 <div className="mb-5">
