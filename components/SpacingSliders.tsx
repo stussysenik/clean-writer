@@ -4,21 +4,13 @@ import { RisoTheme } from "../types";
 interface SpacingSlidersProps {
   theme: RisoTheme;
   lineHeight: number;
-  paragraphSpacing: number;
   onLineHeightChange: (v: number) => void;
-  onParagraphSpacingChange: (v: number) => void;
 }
 
 const LH_PRESETS = [
   { value: 1.3, label: "Tight" },
   { value: 1.6, label: "Normal" },
   { value: 2.0, label: "Relaxed" },
-];
-
-const PS_PRESETS = [
-  { value: 0, label: "Tight" },
-  { value: 0.5, label: "Normal" },
-  { value: 1.2, label: "Relaxed" },
 ];
 
 function closestPreset(value: number, presets: typeof LH_PRESETS) {
@@ -37,9 +29,7 @@ function closestPreset(value: number, presets: typeof LH_PRESETS) {
 const SpacingSliders: React.FC<SpacingSlidersProps> = ({
   theme,
   lineHeight,
-  paragraphSpacing,
   onLineHeightChange,
-  onParagraphSpacingChange,
 }) => {
   const [expanded, setExpanded] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -63,7 +53,6 @@ const SpacingSliders: React.FC<SpacingSlidersProps> = ({
   }, [expanded]);
 
   const lhPreset = closestPreset(lineHeight, LH_PRESETS);
-  const psPreset = closestPreset(paragraphSpacing, PS_PRESETS);
 
   const roundStep = useCallback((v: number) => Math.round(v * 10) / 10, []);
 
@@ -124,44 +113,6 @@ const SpacingSliders: React.FC<SpacingSlidersProps> = ({
             style={{ color: theme.text, opacity: 0.35 }}
           >
             {lhPreset.label}
-          </span>
-        </div>
-
-        {/* Paragraph Spacing slider */}
-        <div className="flex flex-col items-center gap-1">
-          <span
-            className="text-[9px] font-semibold uppercase tracking-wider"
-            style={{ color: theme.text, opacity: 0.5 }}
-          >
-            PS
-          </span>
-          <input
-            type="range"
-            min={0}
-            max={1.5}
-            step={0.1}
-            value={paragraphSpacing}
-            onChange={(e) => onParagraphSpacingChange(roundStep(Number(e.target.value)))}
-            className="spacing-slider"
-            style={{
-              writingMode: "vertical-lr",
-              direction: "rtl",
-              height: 80,
-              width: 20,
-              accentColor: theme.accent,
-            }}
-          />
-          <span
-            className="text-[10px] font-medium tabular-nums"
-            style={{ color: theme.text, opacity: 0.7 }}
-          >
-            {paragraphSpacing.toFixed(1)}
-          </span>
-          <span
-            className="text-[8px] uppercase tracking-wider"
-            style={{ color: theme.text, opacity: 0.35 }}
-          >
-            {psPreset.label}
           </span>
         </div>
       </div>

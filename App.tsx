@@ -1182,7 +1182,6 @@ const App: React.FC = () => {
             hoveredRhymeKey={hoveredRhymeKey}
             disabledRhymeKeys={disabledRhymeKeys}
             lineHeight={lineHeightValue}
-            paragraphSpacing={paragraphSpacing}
           />
         ) : (
           <div
@@ -1225,9 +1224,7 @@ const App: React.FC = () => {
       <SpacingSliders
         theme={currentTheme}
         lineHeight={lineHeightValue}
-        paragraphSpacing={paragraphSpacing}
         onLineHeightChange={setLineHeightValue}
-        onParagraphSpacingChange={setParagraphSpacing}
       />
 
       {/* Bottom Toolbar */}
