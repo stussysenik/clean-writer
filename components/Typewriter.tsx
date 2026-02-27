@@ -39,6 +39,7 @@ interface TypewriterProps {
   focusedRhymeKey?: string | null;
   hoveredRhymeKey?: string | null;
   disabledRhymeKeys?: Set<string>;
+  letterSpacing?: number;
 }
 
 // Known non-text keys to reject (control, navigation, function keys).
@@ -119,8 +120,10 @@ const Typewriter: React.FC<TypewriterProps> = ({
   focusedRhymeKey = null,
   hoveredRhymeKey = null,
   disabledRhymeKeys,
+  letterSpacing: letterSpacingProp = 0,
 }) => {
   const effectiveLineHeight = songMode && showSyllableAnnotations ? "2.4" : "1.6";
+  const effectiveLetterSpacing = letterSpacingProp ? `${letterSpacingProp}em` : undefined;
 
   const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
@@ -676,6 +679,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
           fontFamily,
           fontSize,
           lineHeight: effectiveLineHeight,
+          letterSpacing: effectiveLetterSpacing,
           color: theme.text,
         }}
       >
@@ -706,6 +710,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
             fontFamily,
             fontSize,
             lineHeight: effectiveLineHeight,
+            letterSpacing: effectiveLetterSpacing,
             color: "transparent",
           }}
         >
@@ -752,6 +757,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
           fontFamily,
           fontSize,
           lineHeight: effectiveLineHeight,
+          letterSpacing: effectiveLetterSpacing,
           color: "transparent",
           caretColor: "transparent",
           opacity: 1,

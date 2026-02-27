@@ -107,6 +107,8 @@ interface ThemeCustomizerProps {
   onRenameCustomTheme?: (id: string, newName: string) => void;
   isCustomTheme?: boolean;
   onShowToast?: (message: string, type?: "success" | "warning") => void;
+  letterSpacing?: number;
+  onLetterSpacingChange?: (v: number) => void;
 }
 
 const RHYME_COLOR_LABELS = [
@@ -763,6 +765,8 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
   onRenameCustomTheme,
   isCustomTheme,
   onShowToast,
+  letterSpacing = 0,
+  onLetterSpacingChange,
 }) => {
   const [activeTab, setActiveTab] = useState<TabId>("colors");
   const [showSaveForm, setShowSaveForm] = useState(false);
@@ -1141,6 +1145,42 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
           {/* Typography Tab */}
           {activeTab === "typography" && (
             <section className="py-4">
+              {/* Letter Spacing control */}
+              {onLetterSpacingChange && (
+                <div className="mb-5">
+                  <h3 className="text-[10px] font-semibold uppercase tracking-[0.15em] mb-2 opacity-40">
+                    Letter Spacing
+                  </h3>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="range"
+                      min={-0.05}
+                      max={0.15}
+                      step={0.01}
+                      value={letterSpacing}
+                      onChange={(e) => onLetterSpacingChange(Math.round(Number(e.target.value) * 100) / 100)}
+                      className="spacing-slider flex-1"
+                      style={{ accentColor: theme.accent, height: 20 }}
+                    />
+                    <span
+                      className="text-[11px] font-medium tabular-nums w-[4ch] text-right"
+                      style={{ opacity: 0.6 }}
+                    >
+                      {letterSpacing.toFixed(2)}
+                    </span>
+                    {letterSpacing !== 0 && (
+                      <button
+                        onClick={() => onLetterSpacingChange(0)}
+                        className="opacity-40 hover:opacity-80 transition-opacity"
+                        title="Reset to default"
+                      >
+                        <IconReset size={14} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {groupedFonts.map(({ category, fonts }) => (
                 <div key={category} className="mb-4">
                   <h3 className="text-[10px] font-semibold uppercase tracking-[0.15em] mb-1.5 opacity-40">
@@ -1151,16 +1191,16 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                       <button
                         key={font.id}
                         onClick={() => onFontChange(font.id)}
-                        className={`w-full text-left px-3 py-2.5 rounded-lg transition-all ${
+                        className={`w-full text-left px-3 py-3 rounded-lg transition-all ${
                           currentFontId === font.id
                             ? "ring-1 ring-current bg-current/5"
                             : "hover:bg-current/5"
                         }`}
                         style={{ fontFamily: font.family, minHeight: "44px" }}
                       >
-                        <span className="font-bold text-base">{font.name}</span>
-                        <span className="block text-xs opacity-40">
-                          The quick brown fox jumps over the lazy dog
+                        <span className="text-lg leading-tight">{font.name}</span>
+                        <span className="block text-sm opacity-40 mt-0.5">
+                          abcdefghij 0123456789
                         </span>
                       </button>
                     ))}

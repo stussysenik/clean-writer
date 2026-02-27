@@ -205,6 +205,15 @@ const App: React.FC = () => {
     }
   });
 
+  const [letterSpacing, setLetterSpacing] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem("clean_writer_letter_spacing");
+      return saved ? Number(saved) : 0;
+    } catch {
+      return 0;
+    }
+  });
+
   const [paragraphSpacing, setParagraphSpacing] = useState<number>(() => {
     try {
       const saved = localStorage.getItem("clean_writer_paragraph_spacing");
@@ -752,6 +761,15 @@ const App: React.FC = () => {
     }
   }, [lineHeightValue]);
 
+  // Persist letterSpacing
+  useEffect(() => {
+    try {
+      localStorage.setItem("clean_writer_letter_spacing", String(letterSpacing));
+    } catch (e) {
+      console.warn("Could not save letter spacing");
+    }
+  }, [letterSpacing]);
+
   // Persist paragraphSpacing
   useEffect(() => {
     try {
@@ -1021,6 +1039,8 @@ const App: React.FC = () => {
         onRenameCustomTheme={renameCustomTheme}
         isCustomTheme={themeId.startsWith("custom_")}
         onShowToast={handleShowToast}
+        letterSpacing={letterSpacing}
+        onLetterSpacingChange={setLetterSpacing}
       />
 
       {/* Toast for warnings */}
@@ -1181,7 +1201,7 @@ const App: React.FC = () => {
             focusedRhymeKey={focusedRhymeKey}
             hoveredRhymeKey={hoveredRhymeKey}
             disabledRhymeKeys={disabledRhymeKeys}
-
+            letterSpacing={letterSpacing}
           />
         ) : (
           <div
