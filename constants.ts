@@ -68,6 +68,12 @@ export const FONT_OPTIONS = [
     category: "Sans-serif" as FontCategory,
   },
   {
+    id: "rubik",
+    name: "Rubik",
+    family: '"Rubik", sans-serif',
+    category: "Sans-serif" as FontCategory,
+  },
+  {
     id: "system",
     name: "System",
     family: "system-ui, -apple-system, sans-serif",

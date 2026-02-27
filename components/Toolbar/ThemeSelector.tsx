@@ -29,7 +29,7 @@ const SwatchCircle = ({
       <button
         onClick={onClick}
         data-theme-id={id}
-        className={`relative w-8 h-8 md:w-8 md:h-8 rounded-full transition-all duration-200 touch-manipulation ${
+        className={`relative w-9 h-9 rounded-full transition-all duration-200 touch-manipulation ${
           isSelected ? "" : "hover:scale-110 opacity-80 hover:opacity-100"
         }`}
         style={{
@@ -93,7 +93,7 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
       {/* Mobile: horizontal scroll strip / Desktop: wrapped grid */}
       <div
         ref={scrollRef}
-        className="flex gap-2.5 md:gap-3 items-center overflow-x-auto md:flex-wrap md:max-w-[336px] no-scrollbar py-2 px-1.5 md:py-[5px] md:px-[5px]"
+        className="flex gap-2.5 md:gap-3 items-center overflow-x-auto md:overflow-visible md:flex-wrap md:max-w-[336px] no-scrollbar py-2 px-1.5 md:py-[7px] md:px-[7px]"
         style={{ WebkitOverflowScrolling: "touch" }}
       >
         {visibleThemes.map((t) => (

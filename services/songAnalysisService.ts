@@ -10,10 +10,16 @@ export type CmuDict = Record<string, string>;
 // Vowel phonemes in CMU (with stress markers 0/1/2)
 const CMU_VOWELS = /^(AA|AE|AH|AO|AW|AY|EH|ER|EY|IH|IY|OW|OY|UH|UW)[012]$/;
 
+/** Consonant family map for near-rhyme detection: voiced/unvoiced pairs & similar articulations → same canonical form */
+const CONSONANT_FAMILY: Record<string, string> = Object.fromEntries(
+  [["SH","ZH","CH","JH"],["S","Z"],["T","D"],["P","B"],["K","G"],["F","V"],["TH","DH"]]
+    .flatMap(g => g.map(p => [p, g[0]]))
+);
+
 /**
  * Extract phoneme-based rhyme key from CMU pronunciation.
- * Takes phonemes from last stressed vowel onward.
- * e.g. "N AY1 T" → "AY1 T", "L AY1 T" → "AY1 T" → same = true rhyme
+ * Takes phonemes from last stressed vowel onward, then normalizes
+ * consonants by phonetic family so near-rhymes (fish/stitch) match.
  */
 function getPhonemeRhymeKey(phonemes: string): string {
   const parts = phonemes.split(" ");
@@ -36,7 +42,12 @@ function getPhonemeRhymeKey(phonemes: string): string {
   const idx = lastStressedIdx !== -1 ? lastStressedIdx : lastVowelIdx;
   if (idx === -1) return phonemes; // no vowels found
 
-  return parts.slice(idx).join(" ");
+  // Normalize consonants after the vowel by phonetic family
+  const tail = parts.slice(idx);
+  for (let i = 1; i < tail.length; i++) {
+    tail[i] = CONSONANT_FAMILY[tail[i]] ?? tail[i];
+  }
+  return tail.join(" ");
 }
 
 /**

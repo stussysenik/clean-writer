@@ -1100,7 +1100,6 @@ const PanelBody: React.FC<PanelBodyProps> = ({
                     >
                       {songData.lines.map((line, i) => {
                         if (line.totalSyllables === 0) return null;
-                        const preview = line.text.trim().slice(0, 16);
                         const density = maxSyl > minSyl
                           ? (line.totalSyllables - minSyl) / (maxSyl - minSyl)
                           : 0.5;
@@ -1111,9 +1110,8 @@ const PanelBody: React.FC<PanelBodyProps> = ({
                             className="flex items-center justify-between text-xs min-h-[20px]"
                             style={{ color: theme.text }}
                           >
-                            <span className="truncate flex-1 mr-2" style={{ opacity: 0.45 }}>
-                              {preview}
-                              {line.text.trim().length > 16 ? "..." : ""}
+                            <span className="truncate flex-1 mr-3" style={{ opacity: 0.45 }}>
+                              {line.text.trim()}
                             </span>
                             <span
                               className="tabular-nums font-medium text-right min-w-[24px]"

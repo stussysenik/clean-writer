@@ -1071,45 +1071,47 @@ const App: React.FC = () => {
                 A+
               </TouchButton>
             </div>
-            <Tooltip content="Help & Shortcuts" position="bottom">
-              <TouchButton
-                onClick={() => setIsHelpOpen(true)}
-                className="p-2.5 rounded-xl hover:bg-current/5 transition-all duration-200"
-                aria-label="Help and shortcuts"
-                style={{
-                  color: getIconColor(currentTheme),
-                }}
-              >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+            <div className="flex items-center gap-0.5">
+              <Tooltip content="Help & Shortcuts" position="bottom">
+                <TouchButton
+                  onClick={() => setIsHelpOpen(true)}
+                  className="p-2 rounded-xl hover:bg-current/5 transition-all duration-200"
+                  aria-label="Help and shortcuts"
+                  style={{
+                    color: getIconColor(currentTheme),
+                  }}
                 >
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-                  <line x1="12" y1="17" x2="12.01" y2="17" />
-                </svg>
-              </TouchButton>
-            </Tooltip>
-            <Tooltip content={`Build ${BUILD_NUMBER} · ${BUILD_HASH}`} position="bottom">
-              <TouchButton
-                onClick={() => setIsCustomizerOpen(true)}
-                className="p-2.5 rounded-xl hover:bg-current/5 transition-all duration-200"
-                title="Customize Theme"
-                style={{
-                  color: getIconColor(currentTheme),
-                }}
-              >
-                <span className="block lg:scale-[1.17] lg:origin-center">
-                  <IconSettings />
-                </span>
-              </TouchButton>
-            </Tooltip>
+                  <svg
+                    width="23"
+                    height="23"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                </TouchButton>
+              </Tooltip>
+              <Tooltip content={`Build ${BUILD_NUMBER} · ${BUILD_HASH}`} position="bottom">
+                <TouchButton
+                  onClick={() => setIsCustomizerOpen(true)}
+                  className="p-2 rounded-xl hover:bg-current/5 transition-all duration-200"
+                  title="Customize Theme"
+                  style={{
+                    color: getIconColor(currentTheme),
+                  }}
+                >
+                  <span className="block scale-[1.125]">
+                    <IconSettings />
+                  </span>
+                </TouchButton>
+              </Tooltip>
+            </div>
           </div>
         )}
       </div>
