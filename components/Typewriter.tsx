@@ -39,7 +39,6 @@ interface TypewriterProps {
   focusedRhymeKey?: string | null;
   hoveredRhymeKey?: string | null;
   disabledRhymeKeys?: Set<string>;
-  lineHeight?: number;
 }
 
 // Known non-text keys to reject (control, navigation, function keys).
@@ -120,9 +119,8 @@ const Typewriter: React.FC<TypewriterProps> = ({
   focusedRhymeKey = null,
   hoveredRhymeKey = null,
   disabledRhymeKeys,
-  lineHeight: lineHeightProp = 1.6,
 }) => {
-  const effectiveLineHeight = songMode && showSyllableAnnotations ? "2.4" : String(lineHeightProp);
+  const effectiveLineHeight = songMode && showSyllableAnnotations ? "2.4" : "1.6";
 
   const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);

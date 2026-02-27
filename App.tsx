@@ -37,7 +37,7 @@ import TouchButton from "./components/TouchButton";
 import Tooltip from "./components/Tooltip";
 import HelpModal from "./components/HelpModal";
 import MobileWelcome from "./components/MobileWelcome";
-import SpacingSliders from "./components/SpacingSliders";
+
 import Kbd from "./components/Kbd";
 import { IconSettings } from "./components/Toolbar/Icons";
 import useCustomTheme from "./hooks/useCustomTheme";
@@ -1181,7 +1181,7 @@ const App: React.FC = () => {
             focusedRhymeKey={focusedRhymeKey}
             hoveredRhymeKey={hoveredRhymeKey}
             disabledRhymeKeys={disabledRhymeKeys}
-            lineHeight={lineHeightValue}
+
           />
         ) : (
           <div
@@ -1218,13 +1218,6 @@ const App: React.FC = () => {
         onHoverRhymeKey={setHoveredRhymeKey}
         disabledRhymeKeys={disabledRhymeKeys}
         onToggleRhymeKey={handleToggleRhymeKey}
-      />
-
-      {/* Left-edge Spacing Sliders */}
-      <SpacingSliders
-        theme={currentTheme}
-        lineHeight={lineHeightValue}
-        onLineHeightChange={setLineHeightValue}
       />
 
       {/* Bottom Toolbar */}
