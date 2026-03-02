@@ -1,4 +1,19 @@
+<div align="center">
+
 # Clean Writer
+
+### Distraction-free writing with real-time syntax highlighting
+
+![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=flat-square&logo=typescript)
+![Vite](https://img.shields.io/badge/Vite-6-646CFF?style=flat-square&logo=vite&logoColor=white)
+![PWA](https://img.shields.io/badge/PWA-Installable-5A0FC8?style=flat-square)
+
+[Live App](https://clean-writer.vercel.app)
+
+</div>
+
+---
 
 A distraction-free writing app with real-time syntax highlighting and PWA support.
 
