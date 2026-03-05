@@ -116,6 +116,18 @@ export type ViewMode = "write" | "preview";
 
 export type FocusMode = "none" | "sentence" | "word" | "paragraph";
 
+export interface TextRange {
+  start: number;
+  end: number;
+}
+
+export interface FocusNavState {
+  mode: FocusMode;
+  focusedRange: TextRange | null;
+  lastFocusedWordRange: TextRange | null;
+  isNavigating: boolean;
+}
+
 // Song Mode types
 export interface SongWord {
   text: string;

@@ -72,9 +72,21 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose, theme, isMac }) 
               <span className="opacity-70">Preview</span>
               <Kbd theme={theme}>{cmdKey}+Shift+P</Kbd>
             </div>
-            <div className="flex justify-between items-center py-1.5">
+            <div className="flex justify-between items-center py-1.5 border-b border-current/10">
               <span className="opacity-70">Toggle word types</span>
               <Kbd theme={theme}>1-9</Kbd>
+            </div>
+            <div className="flex justify-between items-center py-1.5 border-b border-current/10">
+              <span className="opacity-70">Navigate in focus mode</span>
+              <Kbd theme={theme}>←/→</Kbd>
+            </div>
+            <div className="flex justify-between items-center py-1.5 border-b border-current/10">
+              <span className="opacity-70">Change focus level</span>
+              <Kbd theme={theme}>↑/↓</Kbd>
+            </div>
+            <div className="flex justify-between items-center py-1.5">
+              <span className="opacity-70">Exit focus mode</span>
+              <Kbd theme={theme}>Esc</Kbd>
             </div>
           </div>
         </section>

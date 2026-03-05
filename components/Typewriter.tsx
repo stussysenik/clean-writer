@@ -5,7 +5,7 @@ import React, {
   useState,
   useMemo,
 } from "react";
-import { RisoTheme, SyntaxSets, HighlightConfig, SongAnalysis, FocusMode } from "../types";
+import { RisoTheme, SyntaxSets, HighlightConfig, SongAnalysis, FocusMode, FocusNavState } from "../types";
 import { useIMEComposition } from "../hooks/useIMEComposition";
 import { useBlinkCursor } from "../hooks/useBlinkCursor";
 import {
@@ -42,6 +42,7 @@ interface TypewriterProps {
   letterSpacing?: number;
   lineHeight?: number;
   focusMode?: FocusMode;
+  focusNavState?: FocusNavState | null;
 }
 
 // Known non-text keys to reject (control, navigation, function keys).
@@ -125,53 +126,15 @@ const Typewriter: React.FC<TypewriterProps> = ({
   letterSpacing: letterSpacingProp = 0,
   lineHeight: lineHeightProp = 1.6,
   focusMode = "none" as FocusMode,
+  focusNavState = null,
 }) => {
   const effectiveLineHeight = songMode && showSyllableAnnotations ? "2.4" : String(lineHeightProp);
   const effectiveLetterSpacing = letterSpacingProp ? `${letterSpacingProp}em` : undefined;
 
-  // Focus mode: compute the character index where dimming ends (focused content starts)
-  const dimBeforeIndex = useMemo(() => {
-    if (focusMode === "none" || !content) return -1;
-
-    switch (focusMode) {
-      case "sentence": {
-        // Find start of the current (last) sentence
-        const pattern = /[.!?]["'\)]*\s+/g;
-        let lastBound = 0;
-        let m;
-        while ((m = pattern.exec(content)) !== null) {
-          const nextStart = m.index + m[0].length;
-          if (nextStart < content.length) {
-            lastBound = nextStart;
-          }
-        }
-        return lastBound;
-      }
-      case "paragraph": {
-        // Find start of the current (last) paragraph (after blank line)
-        const lastDoubleNl = content.lastIndexOf("\n\n");
-        if (lastDoubleNl >= 0) {
-          let start = lastDoubleNl + 2;
-          while (start < content.length && content[start] === "\n") start++;
-          if (start < content.length) return start;
-        }
-        return 0;
-      }
-      case "word": {
-        // Find start of the last word
-        const trimmed = content.trimEnd();
-        if (!trimmed) return 0;
-        const lastWs = Math.max(
-          trimmed.lastIndexOf(" "),
-          trimmed.lastIndexOf("\n"),
-          trimmed.lastIndexOf("\t"),
-        );
-        return lastWs >= 0 ? lastWs + 1 : 0;
-      }
-      default:
-        return -1;
-    }
-  }, [content, focusMode]);
+  // Focus mode: use the focusNavState from the hook if available,
+  // otherwise fall back to a simple "last unit" dimBeforeIndex for backwards compat
+  const focusRange = focusNavState?.focusedRange ?? null;
+  const hasFocusNav = focusNavState !== null && focusNavState.mode !== "none" && focusRange !== null;
 
   const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
@@ -597,38 +560,59 @@ const Typewriter: React.FC<TypewriterProps> = ({
     showUtfEmojiCodes,
   ]);
 
-  // Wrapper that applies focus mode dimming by splitting content
+  // Wrapper that applies focus mode dimming by splitting content into 3 parts
   const renderHighlights = useCallback(() => {
     if (!content) return null;
 
     // No focus mode — render normally
-    if (dimBeforeIndex <= 0 || dimBeforeIndex >= content.length) {
+    if (!hasFocusNav || !focusRange) {
       return renderHighlightsForText(content);
     }
 
-    // Adjust split point to avoid breaking inside ~~...~~ blocks
-    let safeDim = dimBeforeIndex;
+    // Adjust split points to avoid breaking inside ~~...~~ blocks
     const strikePattern = /~~(?:[^~]|~(?!~))+~~/g;
+    let safeStart = focusRange.start;
+    let safeEnd = focusRange.end;
     let m;
     while ((m = strikePattern.exec(content)) !== null) {
-      if (safeDim > m.index && safeDim < m.index + m[0].length) {
-        safeDim = m.index;
-        break;
+      const blockEnd = m.index + m[0].length;
+      if (safeStart > m.index && safeStart < blockEnd) {
+        safeStart = m.index;
+      }
+      if (safeEnd > m.index && safeEnd < blockEnd) {
+        safeEnd = blockEnd;
       }
     }
 
-    const dimText = content.slice(0, safeDim);
-    const focusText = content.slice(safeDim);
+    const dimBeforeText = content.slice(0, safeStart);
+    const focusText = content.slice(safeStart, safeEnd);
+    const dimAfterText = content.slice(safeEnd);
 
     return (
       <>
-        <span style={{ opacity: 0.15, transition: "opacity 0.4s ease" }}>
-          {renderHighlightsForText(dimText)}
+        {dimBeforeText && (
+          <span style={{ opacity: 0.10, transition: "opacity 0.4s ease" }}>
+            {renderHighlightsForText(dimBeforeText)}
+          </span>
+        )}
+        <span
+          style={{
+            opacity: 1,
+            borderBottom: `2px solid ${theme.accent}`,
+            paddingBottom: "1px",
+            transition: "opacity 0.4s ease",
+          }}
+        >
+          {renderHighlightsForText(focusText)}
         </span>
-        {renderHighlightsForText(focusText)}
+        {dimAfterText && (
+          <span style={{ opacity: 0.10, transition: "opacity 0.4s ease" }}>
+            {renderHighlightsForText(dimAfterText)}
+          </span>
+        )}
       </>
     );
-  }, [content, dimBeforeIndex, renderHighlightsForText]);
+  }, [content, hasFocusNav, focusRange, renderHighlightsForText, theme.accent]);
 
   // Build a map of rhymeKey -> color for song mode
   const rhymeColorMap = useMemo(() => {
@@ -781,6 +765,35 @@ const Typewriter: React.FC<TypewriterProps> = ({
           }}
         />
       </div>
+
+      {/* Last-focused-word overlay — visible when in sentence/paragraph mode */}
+      {focusNavState && focusNavState.mode !== "word" && focusNavState.mode !== "none" && focusNavState.lastFocusedWordRange && (
+        <div
+          className="absolute inset-0 px-[13px] pt-[55px] pb-[50vh] md:px-[21px] md:pt-[55px] lg:px-[34px] lg:pt-[55px] whitespace-pre-wrap break-words pointer-events-none z-[3] overflow-hidden"
+          style={{
+            fontFamily,
+            fontSize,
+            lineHeight: effectiveLineHeight,
+            letterSpacing: effectiveLetterSpacing,
+            color: "transparent",
+          }}
+        >
+          <span>{content.slice(0, focusNavState.lastFocusedWordRange.start)}</span>
+          <span
+            style={{
+              backgroundColor: `${theme.accent}15`,
+              borderBottom: `1px dashed ${theme.accent}66`,
+              borderRadius: "2px",
+            }}
+          >
+            {content.slice(
+              focusNavState.lastFocusedWordRange.start,
+              focusNavState.lastFocusedWordRange.end,
+            )}
+          </span>
+          <span>{content.slice(focusNavState.lastFocusedWordRange.end)}</span>
+        </div>
+      )}
 
       {showPersistedSelectionOverlay && normalizedPersistedSelection && (
         <div

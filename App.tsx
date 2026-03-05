@@ -51,6 +51,7 @@ import {
   hasStrikethroughBlocks,
   removeStrikethroughBlocks,
 } from "./utils/strikethroughUtils";
+import { useFocusNavigation } from "./hooks/useFocusNavigation";
 import { initOverlapDebug } from "./utils/overlapDebug";
 import useResponsiveBreakpoint from "./hooks/useResponsiveBreakpoint";
 
@@ -275,7 +276,7 @@ const App: React.FC = () => {
 
   const cycleFocusMode = useCallback(() => {
     setFocusMode((prev) => {
-      const order: FocusMode[] = ["none", "sentence", "paragraph"];
+      const order: FocusMode[] = ["none", "word", "sentence", "paragraph"];
       const idx = order.indexOf(prev);
       return order[(idx + 1) % order.length];
     });
@@ -968,8 +969,38 @@ const App: React.FC = () => {
     }
   }, [content]);
 
+  // Focus navigation hook
+  const { focusNavState, handleFocusKeyDown, applyStrikethroughAtFocus } = useFocusNavigation({
+    content,
+    focusMode,
+    setFocusMode,
+    setContent,
+  });
+
+  // Wrap handleStrikethrough to use focus-at-cursor when navigating
+  const handleStrikethroughWithFocus = useCallback(() => {
+    if (focusNavState.isNavigating && focusNavState.focusedRange) {
+      applyStrikethroughAtFocus();
+    } else {
+      handleStrikethrough();
+    }
+  }, [focusNavState, applyStrikethroughAtFocus, handleStrikethrough]);
+
   // Assign action refs now that all callbacks are declared (see useRef above)
-  shortcutActionsRef.current = { handleStrikethrough, handleCleanStrikethroughs, handleExport };
+  shortcutActionsRef.current = { handleStrikethrough: handleStrikethroughWithFocus, handleCleanStrikethroughs, handleExport };
+
+  // Capture-phase listener for arrow keys in focus mode (must fire before textarea)
+  useEffect(() => {
+    if (focusMode === "none") return;
+    const handler = (e: KeyboardEvent) => {
+      // Only intercept arrow keys and Escape in focus mode
+      if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Escape"].includes(e.key)) {
+        handleFocusKeyDown(e);
+      }
+    };
+    window.addEventListener("keydown", handler, true); // capture phase
+    return () => window.removeEventListener("keydown", handler, true);
+  }, [focusMode, handleFocusKeyDown]);
 
   return (
     <div
@@ -1235,6 +1266,7 @@ const App: React.FC = () => {
             letterSpacing={letterSpacing}
             lineHeight={lineHeightValue}
             focusMode={focusMode}
+            focusNavState={focusNavState}
           />
         ) : (
           <div
@@ -1318,7 +1350,7 @@ const App: React.FC = () => {
         hasStrikethroughs={hasStrikethroughs}
         focusMode={focusMode}
         onToggleView={toggleViewMode}
-        onStrikethrough={handleStrikethrough}
+        onStrikethrough={handleStrikethroughWithFocus}
         onStrikethroughPointerDown={handleStrikethroughPointerDown}
         onCleanStrikethroughs={handleCleanStrikethroughs}
         onExport={handleExport}

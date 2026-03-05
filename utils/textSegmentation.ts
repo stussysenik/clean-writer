@@ -1,0 +1,144 @@
+import { TextRange, FocusMode } from "../types";
+
+/**
+ * Get word boundaries — non-whitespace runs.
+ * Strikethrough `~~...~~` blocks are treated as atomic (single word).
+ */
+export function getWordBoundaries(content: string): TextRange[] {
+  if (!content) return [];
+  const ranges: TextRange[] = [];
+
+  // First, find all strikethrough blocks to treat as atomic
+  const strikeRanges: TextRange[] = [];
+  const strikePattern = /~~(?:[^~]|~(?!~))+~~/g;
+  let m: RegExpExecArray | null;
+  while ((m = strikePattern.exec(content)) !== null) {
+    strikeRanges.push({ start: m.index, end: m.index + m[0].length });
+  }
+
+  let i = 0;
+  while (i < content.length) {
+    // Skip whitespace
+    if (/\s/.test(content[i])) {
+      i++;
+      continue;
+    }
+
+    // Check if we're at the start of a strikethrough block
+    const strikeBlock = strikeRanges.find((r) => r.start === i);
+    if (strikeBlock) {
+      ranges.push({ start: strikeBlock.start, end: strikeBlock.end });
+      i = strikeBlock.end;
+      continue;
+    }
+
+    // Check if we're inside a strikethrough block (shouldn't happen, but guard)
+    const insideStrike = strikeRanges.find((r) => i > r.start && i < r.end);
+    if (insideStrike) {
+      i = insideStrike.end;
+      continue;
+    }
+
+    // Regular word: consume non-whitespace characters until whitespace or a strikethrough block
+    const start = i;
+    while (i < content.length && !/\s/.test(content[i])) {
+      const nextStrike = strikeRanges.find((r) => r.start === i);
+      if (nextStrike) break;
+      i++;
+    }
+    if (i > start) {
+      ranges.push({ start, end: i });
+    }
+  }
+
+  return ranges;
+}
+
+/**
+ * Get sentence boundaries — split on sentence-ending punctuation followed by whitespace.
+ * Uses the same pattern as the original focus mode.
+ */
+export function getSentenceBoundaries(content: string): TextRange[] {
+  if (!content) return [];
+  const ranges: TextRange[] = [];
+  const pattern = /[.!?]["'\)]*\s+/g;
+
+  let lastStart = 0;
+  let m: RegExpExecArray | null;
+  while ((m = pattern.exec(content)) !== null) {
+    const sentenceEnd = m.index + m[0].length;
+    if (sentenceEnd <= content.length) {
+      ranges.push({ start: lastStart, end: sentenceEnd });
+      lastStart = sentenceEnd;
+    }
+  }
+
+  // Remaining text is the last sentence
+  if (lastStart < content.length) {
+    ranges.push({ start: lastStart, end: content.length });
+  }
+
+  return ranges;
+}
+
+/**
+ * Get paragraph boundaries — split on double newlines.
+ */
+export function getParagraphBoundaries(content: string): TextRange[] {
+  if (!content) return [];
+  const ranges: TextRange[] = [];
+  const pattern = /\n\n+/g;
+
+  let lastStart = 0;
+  let m: RegExpExecArray | null;
+  while ((m = pattern.exec(content)) !== null) {
+    // Include up to the start of the double newline as the paragraph
+    ranges.push({ start: lastStart, end: m.index + m[0].length });
+    lastStart = m.index + m[0].length;
+  }
+
+  // Remaining text is the last paragraph
+  if (lastStart < content.length) {
+    ranges.push({ start: lastStart, end: content.length });
+  }
+
+  return ranges;
+}
+
+/**
+ * Dispatch boundary extraction by focus mode.
+ */
+export function getBoundaries(
+  content: string,
+  mode: FocusMode,
+): TextRange[] {
+  switch (mode) {
+    case "word":
+      return getWordBoundaries(content);
+    case "sentence":
+      return getSentenceBoundaries(content);
+    case "paragraph":
+      return getParagraphBoundaries(content);
+    default:
+      return [];
+  }
+}
+
+/**
+ * Given a character index, find a safe split point that doesn't break
+ * inside a `~~...~~` strikethrough block. If the index is inside a
+ * strikethrough block, returns the start of that block instead.
+ */
+export function safeStrikethroughSplit(
+  content: string,
+  index: number,
+): number {
+  const strikePattern = /~~(?:[^~]|~(?!~))+~~/g;
+  let m: RegExpExecArray | null;
+  while ((m = strikePattern.exec(content)) !== null) {
+    if (index > m.index && index < m.index + m[0].length) {
+      return m.index;
+    }
+  }
+  return index;
+}

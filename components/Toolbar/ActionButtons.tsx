@@ -185,7 +185,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         disabled={viewMode === "preview"}
         icon={<IconFocus />}
         label={FOCUS_MODE_LABELS[focusMode]}
-        tooltip={`Focus mode: ${focusMode === "none" ? "Off" : focusMode} (click to cycle)`}
+        tooltip={focusMode === "none" ? "Focus mode (click to cycle)" : `Focus: ${focusMode} — ←/→ navigate, ↑/↓ change level`}
         shortcut={mod ? `${mod}F` : undefined}
         ariaLabel="Cycle focus mode"
         className={focusMode !== "none" ? "!opacity-100" : ""}
