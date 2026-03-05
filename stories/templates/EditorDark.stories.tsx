@@ -55,7 +55,7 @@ const EditorDarkTemplate = () => {
           theme={theme}
           syntaxSets={SAMPLE_SYNTAX_SETS}
           highlightConfig={ALL_HIGHLIGHTS_ON}
-          fontSize={18}
+          fontSize="18px"
           maxWidth={800}
           fontFamily='"Space Mono", monospace'
         />
@@ -65,17 +65,15 @@ const EditorDarkTemplate = () => {
       <Toolbar
         theme={theme}
         viewMode="write"
-        maxWidth={800}
         hasStrikethroughs={false}
-        fontSizeOffset={0}
-        onFontSizeChange={noop}
+        focusMode="none"
         onToggleView={noop}
         onStrikethrough={noop}
         onCleanStrikethroughs={noop}
         onExport={noop}
         onClear={noop}
-        onWidthChange={noop}
         onSampleText={noop}
+        onCycleFocusMode={noop}
       />
     </div>
   );

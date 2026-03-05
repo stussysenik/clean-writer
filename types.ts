@@ -114,6 +114,8 @@ export interface SavedCustomTheme {
 
 export type ViewMode = "write" | "preview";
 
+export type FocusMode = "none" | "sentence" | "word" | "paragraph";
+
 // Song Mode types
 export interface SongWord {
   text: string;

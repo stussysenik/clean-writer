@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { RisoTheme, ViewMode } from "../../types";
+import { RisoTheme, ViewMode, FocusMode } from "../../types";
 import {
   IconEyeOpen,
   IconEyeClosed,
@@ -8,6 +8,7 @@ import {
   IconTrash,
   IconMagicClean,
   IconSample,
+  IconFocus,
 } from "./Icons";
 import TouchButton from "../TouchButton";
 import Tooltip from "../Tooltip";
@@ -18,6 +19,7 @@ interface ActionButtonsProps {
   theme: RisoTheme;
   viewMode: ViewMode;
   hasStrikethroughs: boolean;
+  focusMode: FocusMode;
   onToggleView: () => void;
   onStrikethrough: () => void;
   onStrikethroughPointerDown?: () => void;
@@ -25,6 +27,7 @@ interface ActionButtonsProps {
   onExport: () => void;
   onClear: () => void;
   onSampleText?: () => void;
+  onCycleFocusMode: () => void;
 }
 
 interface ActionButtonProps {
@@ -33,11 +36,13 @@ interface ActionButtonProps {
   onPointerDown?: (e: React.PointerEvent) => void;
   onTouchStart?: (e: React.TouchEvent) => void;
   disabled?: boolean;
+  active?: boolean;
   icon: React.ReactNode;
   label: string;
   tooltip: string;
   shortcut?: string;
   className?: string;
+  style?: React.CSSProperties;
   ariaLabel?: string;
   "data-testid"?: string;
 }
@@ -48,11 +53,13 @@ const ActionButton: React.FC<ActionButtonProps> = ({
   onPointerDown,
   onTouchStart,
   disabled = false,
+  active = false,
   icon,
   label,
   tooltip,
   shortcut,
   className = "",
+  style,
   ariaLabel,
   "data-testid": dataTestId,
 }) => (
@@ -66,8 +73,11 @@ const ActionButton: React.FC<ActionButtonProps> = ({
       className={`flex flex-col items-center justify-center gap-0.5 p-2 rounded-xl transition-all duration-150 hover:bg-current/5 ${
         disabled
           ? "opacity-30 cursor-not-allowed"
-          : "opacity-60 hover:opacity-100"
+          : active
+            ? "opacity-100"
+            : "opacity-60 hover:opacity-100"
       } ${className}`}
+      style={style}
       title={tooltip}
       aria-label={ariaLabel || tooltip}
       data-testid={dataTestId}
@@ -80,17 +90,26 @@ const ActionButton: React.FC<ActionButtonProps> = ({
   </Tooltip>
 );
 
+const FOCUS_MODE_LABELS: Record<FocusMode, string> = {
+  none: "Focus",
+  sentence: "Sentence",
+  word: "Word",
+  paragraph: "Para",
+};
+
 const ActionButtons: React.FC<ActionButtonsProps> = ({
   theme,
   viewMode,
   onToggleView,
   hasStrikethroughs,
+  focusMode,
   onStrikethrough,
   onStrikethroughPointerDown,
   onCleanStrikethroughs,
   onExport,
   onClear,
   onSampleText,
+  onCycleFocusMode,
 }) => {
   const iconColor = getIconColor(theme);
   const { isMobile } = useResponsiveBreakpoint();
@@ -159,6 +178,19 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
           ariaLabel="Load sample text"
         />
       )}
+
+      <ActionButton
+        onClick={onCycleFocusMode}
+        active={focusMode !== "none"}
+        disabled={viewMode === "preview"}
+        icon={<IconFocus />}
+        label={FOCUS_MODE_LABELS[focusMode]}
+        tooltip={`Focus mode: ${focusMode === "none" ? "Off" : focusMode} (click to cycle)`}
+        shortcut={mod ? `${mod}F` : undefined}
+        ariaLabel="Cycle focus mode"
+        className={focusMode !== "none" ? "!opacity-100" : ""}
+        style={focusMode !== "none" ? { color: theme.accent } : undefined}
+      />
 
       <ActionButton
         onClick={onClear}

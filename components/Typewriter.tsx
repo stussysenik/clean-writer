@@ -5,7 +5,7 @@ import React, {
   useState,
   useMemo,
 } from "react";
-import { RisoTheme, SyntaxSets, HighlightConfig, SongAnalysis } from "../types";
+import { RisoTheme, SyntaxSets, HighlightConfig, SongAnalysis, FocusMode } from "../types";
 import { useIMEComposition } from "../hooks/useIMEComposition";
 import { useBlinkCursor } from "../hooks/useBlinkCursor";
 import {
@@ -41,6 +41,7 @@ interface TypewriterProps {
   disabledRhymeKeys?: Set<string>;
   letterSpacing?: number;
   lineHeight?: number;
+  focusMode?: FocusMode;
 }
 
 // Known non-text keys to reject (control, navigation, function keys).
@@ -123,9 +124,54 @@ const Typewriter: React.FC<TypewriterProps> = ({
   disabledRhymeKeys,
   letterSpacing: letterSpacingProp = 0,
   lineHeight: lineHeightProp = 1.6,
+  focusMode = "none" as FocusMode,
 }) => {
   const effectiveLineHeight = songMode && showSyllableAnnotations ? "2.4" : String(lineHeightProp);
   const effectiveLetterSpacing = letterSpacingProp ? `${letterSpacingProp}em` : undefined;
+
+  // Focus mode: compute the character index where dimming ends (focused content starts)
+  const dimBeforeIndex = useMemo(() => {
+    if (focusMode === "none" || !content) return -1;
+
+    switch (focusMode) {
+      case "sentence": {
+        // Find start of the current (last) sentence
+        const pattern = /[.!?]["'\)]*\s+/g;
+        let lastBound = 0;
+        let m;
+        while ((m = pattern.exec(content)) !== null) {
+          const nextStart = m.index + m[0].length;
+          if (nextStart < content.length) {
+            lastBound = nextStart;
+          }
+        }
+        return lastBound;
+      }
+      case "paragraph": {
+        // Find start of the current (last) paragraph (after blank line)
+        const lastDoubleNl = content.lastIndexOf("\n\n");
+        if (lastDoubleNl >= 0) {
+          let start = lastDoubleNl + 2;
+          while (start < content.length && content[start] === "\n") start++;
+          if (start < content.length) return start;
+        }
+        return 0;
+      }
+      case "word": {
+        // Find start of the last word
+        const trimmed = content.trimEnd();
+        if (!trimmed) return 0;
+        const lastWs = Math.max(
+          trimmed.lastIndexOf(" "),
+          trimmed.lastIndexOf("\n"),
+          trimmed.lastIndexOf("\t"),
+        );
+        return lastWs >= 0 ? lastWs + 1 : 0;
+      }
+      default:
+        return -1;
+    }
+  }, [content, focusMode]);
 
   const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
@@ -356,12 +402,13 @@ const Typewriter: React.FC<TypewriterProps> = ({
     selectionOverlayRef.current.scrollTop = textareaRef.current.scrollTop;
   }, [showPersistedSelectionOverlay, textareaRef]);
 
-  const renderHighlights = useCallback(() => {
-    if (!content) return null;
+  // Core syntax highlighting renderer — accepts arbitrary text string
+  const renderHighlightsForText = useCallback((text: string) => {
+    if (!text) return null;
 
     // First, split content by strikethrough syntax "~~...~~"
     // The regex captures the delimiter and content together.
-    const chunks = content.split(/(~~(?:[^~]|~(?!~))+~~)/g);
+    const chunks = text.split(/(~~(?:[^~]|~(?!~))+~~)/g);
 
     return chunks.map((chunk, chunkIndex) => {
       // If it is a strikethrough block
@@ -543,13 +590,45 @@ const Typewriter: React.FC<TypewriterProps> = ({
       );
     });
   }, [
-    content,
     syntaxSets,
     theme,
     highlightConfig,
     hoveredCategory,
     showUtfEmojiCodes,
   ]);
+
+  // Wrapper that applies focus mode dimming by splitting content
+  const renderHighlights = useCallback(() => {
+    if (!content) return null;
+
+    // No focus mode — render normally
+    if (dimBeforeIndex <= 0 || dimBeforeIndex >= content.length) {
+      return renderHighlightsForText(content);
+    }
+
+    // Adjust split point to avoid breaking inside ~~...~~ blocks
+    let safeDim = dimBeforeIndex;
+    const strikePattern = /~~(?:[^~]|~(?!~))+~~/g;
+    let m;
+    while ((m = strikePattern.exec(content)) !== null) {
+      if (safeDim > m.index && safeDim < m.index + m[0].length) {
+        safeDim = m.index;
+        break;
+      }
+    }
+
+    const dimText = content.slice(0, safeDim);
+    const focusText = content.slice(safeDim);
+
+    return (
+      <>
+        <span style={{ opacity: 0.15, transition: "opacity 0.4s ease" }}>
+          {renderHighlightsForText(dimText)}
+        </span>
+        {renderHighlightsForText(focusText)}
+      </>
+    );
+  }, [content, dimBeforeIndex, renderHighlightsForText]);
 
   // Build a map of rhymeKey -> color for song mode
   const rhymeColorMap = useMemo(() => {
@@ -676,7 +755,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
       {/* Backdrop (Visual Layer) */}
       <div
         ref={backdropRef}
-        className="absolute inset-0 px-[13px] pt-[55px] pb-[89px] md:px-[21px] md:pt-[55px] lg:px-[34px] lg:pt-[55px] whitespace-pre-wrap break-words pointer-events-none z-0 overflow-hidden"
+        className="absolute inset-0 px-[13px] pt-[55px] pb-[50vh] md:px-[21px] md:pt-[55px] lg:px-[34px] lg:pt-[55px] whitespace-pre-wrap break-words pointer-events-none z-0 overflow-hidden"
         style={{
           fontFamily,
           fontSize,
@@ -707,7 +786,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
         <div
           ref={selectionOverlayRef}
           data-testid="persisted-selection-overlay"
-          className="absolute inset-0 px-[13px] pt-[55px] pb-[89px] md:px-[21px] md:pt-[55px] lg:px-[34px] lg:pt-[55px] whitespace-pre-wrap break-words pointer-events-none z-[5] overflow-hidden"
+          className="absolute inset-0 px-[13px] pt-[55px] pb-[50vh] md:px-[21px] md:pt-[55px] lg:px-[34px] lg:pt-[55px] whitespace-pre-wrap break-words pointer-events-none z-[5] overflow-hidden"
           style={{
             fontFamily,
             fontSize,
@@ -754,7 +833,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
         inputMode="text"
         enterKeyHint="enter"
         autoFocus
-        className="absolute inset-0 w-full h-full px-[13px] pt-[55px] pb-[89px] md:px-[21px] md:pt-[55px] lg:px-[34px] lg:pt-[55px] bg-transparent resize-none border-none outline-none z-10 whitespace-pre-wrap break-words overflow-y-auto"
+        className="absolute inset-0 w-full h-full px-[13px] pt-[55px] pb-[50vh] md:px-[21px] md:pt-[55px] lg:px-[34px] lg:pt-[55px] bg-transparent resize-none border-none outline-none z-10 whitespace-pre-wrap break-words overflow-y-auto"
         style={{
           fontFamily,
           fontSize,

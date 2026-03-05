@@ -9,17 +9,15 @@ const meta: Meta<typeof Toolbar> = {
   args: {
     theme: CLASSIC_THEME,
     viewMode: "write",
-    maxWidth: 800,
     hasStrikethroughs: false,
-    fontSizeOffset: 0,
-    onFontSizeChange: () => {},
+    focusMode: "none",
     onToggleView: () => {},
     onStrikethrough: () => {},
     onCleanStrikethroughs: () => {},
     onExport: () => {},
     onClear: () => {},
-    onWidthChange: () => {},
     onSampleText: () => {},
+    onCycleFocusMode: () => {},
   },
   decorators: [
     (Story) => (
@@ -42,16 +40,12 @@ export const WithStrikethroughs: Story = {
   args: { hasStrikethroughs: true },
 };
 
-export const NarrowWidth: Story = {
-  args: { maxWidth: 400 },
+export const SentenceFocus: Story = {
+  args: { focusMode: "sentence" },
 };
 
-export const WideWidth: Story = {
-  args: { maxWidth: 1200 },
-};
-
-export const FontSizeIncreased: Story = {
-  args: { fontSizeOffset: 3 },
+export const ParagraphFocus: Story = {
+  args: { focusMode: "paragraph" },
 };
 
 export const DarkTheme: Story = {

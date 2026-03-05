@@ -23,6 +23,7 @@ import {
   HighlightConfig,
   toSyntaxSets,
   SongAnalysis,
+  FocusMode,
 } from "./types";
 import { useSyntaxWorker } from "./hooks/useSyntaxWorker";
 import Typewriter from "./components/Typewriter";
@@ -223,6 +224,16 @@ const App: React.FC = () => {
     }
   });
 
+  const [focusMode, setFocusMode] = useState<FocusMode>(() => {
+    try {
+      const saved = localStorage.getItem("clean_writer_focus_mode") as FocusMode | null;
+      if (saved === "sentence" || saved === "word" || saved === "paragraph") return saved;
+      return "none";
+    } catch {
+      return "none";
+    }
+  });
+
   const [customThemeNames, setCustomThemeNames] = useState<Record<string, string>>(() => {
     try {
       const saved = localStorage.getItem("clean_writer_theme_names");
@@ -259,6 +270,14 @@ const App: React.FC = () => {
         delete next[themeId];
       }
       return next;
+    });
+  }, []);
+
+  const cycleFocusMode = useCallback(() => {
+    setFocusMode((prev) => {
+      const order: FocusMode[] = ["none", "sentence", "paragraph"];
+      const idx = order.indexOf(prev);
+      return order[(idx + 1) % order.length];
     });
   }, []);
 
@@ -562,6 +581,7 @@ const App: React.FC = () => {
         case "k": e.preventDefault(); a.handleCleanStrikethroughs(); break;
         case "p": e.preventDefault(); setViewMode(v => v === "write" ? "preview" : "write"); break;
         case "e": e.preventDefault(); a.handleExport(); break;
+        case "f": e.preventDefault(); cycleFocusMode(); break;
       }
     };
     window.addEventListener("keydown", handler);
@@ -778,6 +798,15 @@ const App: React.FC = () => {
       console.warn("Could not save paragraph spacing");
     }
   }, [paragraphSpacing]);
+
+  // Persist focusMode
+  useEffect(() => {
+    try {
+      localStorage.setItem("clean_writer_focus_mode", focusMode);
+    } catch (e) {
+      console.warn("Could not save focus mode");
+    }
+  }, [focusMode]);
 
   // Persist customThemeNames
   useEffect(() => {
@@ -1205,6 +1234,7 @@ const App: React.FC = () => {
             disabledRhymeKeys={disabledRhymeKeys}
             letterSpacing={letterSpacing}
             lineHeight={lineHeightValue}
+            focusMode={focusMode}
           />
         ) : (
           <div
@@ -1243,22 +1273,58 @@ const App: React.FC = () => {
         onToggleRhymeKey={handleToggleRhymeKey}
       />
 
+      {/* Floating Line Width Slider — centered in viewport */}
+      {viewMode === "write" && (
+        <div
+          className="absolute left-1/2 bottom-[18%] -translate-x-1/2 z-40 pointer-events-auto"
+        >
+          <div
+            className="flex items-center gap-3 px-3 py-2 rounded-xl"
+            style={{
+              backgroundColor: `${currentTheme.background}80`,
+              backdropFilter: "blur(8px)",
+              WebkitBackdropFilter: "blur(8px)",
+            }}
+          >
+            <input
+              type="range"
+              min="300"
+              max="1400"
+              step="50"
+              value={maxWidth}
+              onChange={(e) => setMaxWidth(Number(e.target.value))}
+              className="w-28 md:w-36 h-1 rounded-lg appearance-none cursor-pointer touch-manipulation"
+              style={{
+                accentColor: currentTheme.accent,
+                background: `linear-gradient(to right, ${currentTheme.accent} 0%, ${currentTheme.accent} ${((maxWidth - 300) / 1100) * 100}%, ${currentTheme.text}20 ${((maxWidth - 300) / 1100) * 100}%, ${currentTheme.text}20 100%)`,
+              }}
+              aria-label="Line width"
+              title="Line width"
+            />
+            <span
+              className="text-[9px] opacity-50 tabular-nums font-mono pointer-events-none"
+              style={{ color: currentTheme.text }}
+            >
+              {maxWidth}px
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Bottom Toolbar */}
       <Toolbar
         theme={currentTheme}
         viewMode={viewMode}
-        maxWidth={maxWidth}
         hasStrikethroughs={hasStrikethroughs}
-        fontSizeOffset={fontSizeOffset}
-        onFontSizeChange={handleFontSizeChange}
+        focusMode={focusMode}
         onToggleView={toggleViewMode}
         onStrikethrough={handleStrikethrough}
         onStrikethroughPointerDown={handleStrikethroughPointerDown}
         onCleanStrikethroughs={handleCleanStrikethroughs}
         onExport={handleExport}
         onClear={handleClearRequest}
-        onWidthChange={setMaxWidth}
         onSampleText={handleSampleTextRequest}
+        onCycleFocusMode={cycleFocusMode}
       />
 
       {/* Mobile Welcome Popup */}
@@ -1293,6 +1359,7 @@ const App: React.FC = () => {
                 [isMac ? "⌘⇧K" : "Ctrl+Shift+K", "Clean struck text"],
                 [isMac ? "⌘⇧P" : "Ctrl+Shift+P", "Toggle preview"],
                 [isMac ? "⌘⇧E" : "Ctrl+Shift+E", "Export markdown"],
+                [isMac ? "⌘⇧F" : "Ctrl+Shift+F", "Cycle focus mode"],
                 ["1 – 9", "Toggle word types"],
               ].map(([key, desc]) => (
                 <React.Fragment key={key}>
