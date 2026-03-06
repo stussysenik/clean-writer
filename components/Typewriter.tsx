@@ -7,7 +7,6 @@ import React, {
 } from "react";
 import { RisoTheme, SyntaxSets, HighlightConfig, SongAnalysis, FocusMode, FocusNavState } from "../types";
 import { useIMEComposition } from "../hooks/useIMEComposition";
-import { useBlinkCursor } from "../hooks/useBlinkCursor";
 import {
   isHashtagToken,
   isNumberToken,
@@ -139,7 +138,6 @@ const Typewriter: React.FC<TypewriterProps> = ({
   const internalTextareaRef = useRef<HTMLTextAreaElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
   const selectionOverlayRef = useRef<HTMLDivElement>(null);
-  const ghostVisible = useBlinkCursor();
   const [isTextareaFocused, setIsTextareaFocused] = useState(false);
 
   // Use the external ref if provided, otherwise use internal ref
@@ -229,89 +227,101 @@ const Typewriter: React.FC<TypewriterProps> = ({
       return;
     }
 
+    const textarea = e.currentTarget;
+
     // 1. Strictly Disable Deletion
     if (e.key === "Backspace" || e.key === "Delete") {
       e.preventDefault();
       return;
     }
 
-    // 2. Allow modifiers (for paste, copy, etc.)
+    // 2. Jump to end: Cmd+↓ (Mac) or Ctrl+End (Windows)
+    if (
+      (e.key === "ArrowDown" && e.metaKey) ||
+      (e.key === "End" && e.ctrlKey)
+    ) {
+      e.preventDefault();
+      textarea.selectionStart = textarea.selectionEnd = content.length;
+      scrollToBottom();
+      return;
+    }
+
+    // 3. Allow modifiers (for paste, copy, select-all, etc.)
     if (e.ctrlKey || e.metaKey || e.altKey) return;
 
-    // 3. Handle character input (strictly append to end)
+    // 4. Handle character input — insert at cursor position
     if (isTextInputKey(e.key) || e.key === "Enter") {
-      e.preventDefault(); // Stop default insertion at cursor position
+      e.preventDefault();
 
       const char = e.key === "Enter" ? "\n" : e.key;
 
-      // Force append to the very end
-      const newContent = content + char;
+      // Collapse any selection to start (no replacing = no deletion)
+      const pos = textarea.selectionStart ?? content.length;
+      const newContent = content.slice(0, pos) + char + content.slice(pos);
       setContent(newContent);
-      scrollToBottom();
+
+      // Restore cursor after React re-render
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = pos + char.length;
+      }, 0);
     }
   };
 
-  // Handle IME composition end - append the composed text
+  // Handle IME composition end - insert composed text at cursor position
   const handleCompositionEndWithAppend = (
     e: React.CompositionEvent<HTMLTextAreaElement>,
   ) => {
+    const textarea = e.currentTarget;
     handleCompositionEnd(e, (composedText: string) => {
-      // Append the composed text to the end of content
-      const newContent = content + composedText;
+      const pos = textarea.selectionStart ?? content.length;
+      // The IME may have already modified textarea.value, so use our content state
+      const newContent = content.slice(0, pos) + composedText + content.slice(pos);
       setContent(newContent);
-      scrollToBottom();
+
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = pos + composedText.length;
+      }, 0);
     });
   };
 
   // Fallback for OS emoji pickers (macOS Ctrl+Cmd+Space, Windows Win+.) that
   // insert text via InputEvent without triggering keyDown. We compare the
-  // textarea value against `content` to detect OS-injected text and append it.
+  // textarea value against `content` to detect OS-injected text and insert it
+  // at the correct cursor position.
   const handleInput = useCallback(
     (e: React.FormEvent<HTMLTextAreaElement>) => {
       const textarea = e.currentTarget;
       const newValue = textarea.value;
 
-      // No change or shorter (shouldn't happen with delete blocked) — ignore
-      if (newValue.length <= content.length) return;
-
-      let inserted: string;
-
-      if (newValue.startsWith(content)) {
-        // Simple append at the end — most common emoji picker case
-        inserted = newValue.slice(content.length);
-      } else {
-        // Inserted mid-text (e.g. OS placed cursor somewhere): use selectionStart
-        const cursor = textarea.selectionStart ?? newValue.length;
-        const insertLen = newValue.length - content.length;
-        inserted = newValue.slice(
-          Math.max(0, cursor - insertLen),
-          cursor,
-        );
+      // Reject deletions — only accept if text grew or stayed same
+      if (newValue.length < content.length) {
+        // Restore content and cursor position
+        textarea.value = content;
+        return;
       }
 
-      if (inserted) {
-        setContent(content + inserted);
-        // Force cursor to end after OS-injected input (forward-only guarantee)
-        setTimeout(() => {
-          if (textareaRef.current) {
-            const len = (content + inserted).length;
-            textareaRef.current.selectionStart = len;
-            textareaRef.current.selectionEnd = len;
-            textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
-          }
-        }, 0);
-      }
+      // No change — ignore
+      if (newValue === content) return;
+
+      // Accept the new value directly (it has the insertion at the right position)
+      setContent(newValue);
     },
-    [content, setContent, textareaRef],
+    [content, setContent],
   );
 
-  // Handle paste - append pasted text to end
-  const handlePaste = (e: React.ClipboardEvent) => {
+  // Handle paste - insert pasted text at cursor position
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
     e.preventDefault();
+    const textarea = e.currentTarget;
     const pastedText = e.clipboardData.getData("text");
     if (pastedText) {
-      setContent(content + pastedText);
-      scrollToBottom();
+      const pos = textarea.selectionStart ?? content.length;
+      const newContent = content.slice(0, pos) + pastedText + content.slice(pos);
+      setContent(newContent);
+
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = pos + pastedText.length;
+      }, 0);
     }
   };
 
@@ -749,19 +759,20 @@ const Typewriter: React.FC<TypewriterProps> = ({
         }}
       >
         {songMode && songData ? renderSongHighlights() : renderHighlights()}
-        {/* The Ghost Cursor - Always at the end, color matches last typed word (Garfield cursor) */}
+        {/* End-of-text beacon — static accent marker showing where text ends */}
         <span
           data-testid="ghost-cursor"
           style={{
-            color: lastWordColor,
-            opacity: ghostVisible ? 1 : 0,
-            transition: "opacity 0.1s, background-color 0.3s ease",
-            marginLeft: "1px",
-            backgroundColor: lastWordColor,
+            opacity: 1,
+            transition: "background-color 0.3s ease, box-shadow 0.3s ease",
+            marginLeft: "2px",
+            backgroundColor: theme.accent,
+            boxShadow: `0 0 6px ${theme.accent}`,
             display: "inline-block",
-            width: "10px",
+            width: "3px",
             height: "1em",
             verticalAlign: "text-bottom",
+            borderRadius: "1px",
           }}
         />
       </div>
@@ -846,18 +857,16 @@ const Typewriter: React.FC<TypewriterProps> = ({
         inputMode="text"
         enterKeyHint="enter"
         autoFocus
-        className="absolute inset-0 w-full h-full px-[13px] pt-[55px] pb-[50vh] md:px-[21px] md:pt-[55px] lg:px-[34px] lg:pt-[55px] bg-transparent resize-none border-none outline-none z-10 whitespace-pre-wrap break-words overflow-y-auto"
+        className="absolute inset-0 w-full h-full px-[13px] pt-[55px] pb-[50vh] md:px-[21px] md:pt-[55px] lg:px-[34px] lg:pt-[55px] bg-transparent resize-none border-none outline-none z-10 whitespace-pre-wrap break-words overflow-y-auto selection:bg-transparent selection:text-transparent"
         style={{
           fontFamily,
           fontSize,
           lineHeight: effectiveLineHeight,
           letterSpacing: effectiveLetterSpacing,
           color: "transparent",
-          caretColor: "transparent",
+          caretColor: lastWordColor,
           opacity: 1,
           WebkitTouchCallout: "none",
-          WebkitUserSelect: "none",
-          userSelect: "none",
         }}
         placeholder="Type here..."
       />
