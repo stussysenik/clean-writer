@@ -299,6 +299,11 @@ test.describe("Mobile Paradigm", () => {
       expect(initialFocusBg).not.toBe("rgba(0, 0, 0, 0)");
       expect(initialFocusBg).not.toBe("transparent");
 
+      const initialCaretColor = await textarea.evaluate(
+        (el) => getComputedStyle(el).caretColor,
+      );
+      expect(initialCaretColor).toBe("rgba(0, 0, 0, 0)");
+
       await textarea.evaluate((el) => {
         const ta = el as HTMLTextAreaElement;
         ta.focus();
@@ -308,6 +313,12 @@ test.describe("Mobile Paradigm", () => {
 
       await expect(focusRange).toContainText("alpha beta gamma.");
       await expect(focusAnchor).toHaveCount(0);
+      await expect(page.locator('[data-testid="ghost-cursor"]')).toHaveCount(0);
+
+      const caretColorAfterTap = await textarea.evaluate(
+        (el) => getComputedStyle(el).caretColor,
+      );
+      expect(caretColorAfterTap).toBe("rgba(0, 0, 0, 0)");
     });
   });
 
