@@ -1,6 +1,10 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { FocusMode, FocusNavState, TextRange } from "../types";
-import { getBoundaries, safeStrikethroughSplit } from "../utils/textSegmentation";
+import {
+  findBoundaryIndexAtPosition,
+  getBoundaries,
+  safeStrikethroughSplit,
+} from "../utils/textSegmentation";
 import { applyStrikethrough } from "../utils/strikethroughUtils";
 
 interface UseFocusNavigationProps {
@@ -14,6 +18,7 @@ interface UseFocusNavigationReturn {
   focusNavState: FocusNavState;
   handleFocusKeyDown: (e: KeyboardEvent) => boolean;
   applyStrikethroughAtFocus: () => void;
+  focusAtTextIndex: (index: number) => void;
 }
 
 export function useFocusNavigation({
@@ -61,6 +66,12 @@ export function useFocusNavigation({
     setIsNavigating(true);
     setCurrentIndex((prev) => Math.max(0, prev - 1));
   }, [boundaries.length]);
+
+  const setLastWordRangeFromPosition = useCallback((position: number) => {
+    const wordBoundaries = getBoundaries(content, "word");
+    const wordIndex = findBoundaryIndexAtPosition(wordBoundaries, position);
+    setLastWordRange(wordIndex >= 0 ? wordBoundaries[wordIndex] : null);
+  }, [content]);
 
   // Navigate right (next unit)
   const navigateRight = useCallback(() => {
@@ -196,6 +207,24 @@ export function useFocusNavigation({
     setContent(newContent);
   }, [focusMode, currentIndex, boundaries, content, setContent]);
 
+  const focusAtTextIndex = useCallback((index: number) => {
+    if (focusMode === "none" || boundaries.length === 0) return;
+
+    const clampedIndex = Math.max(0, Math.min(content.length, index));
+    const boundaryIndex = findBoundaryIndexAtPosition(boundaries, clampedIndex);
+
+    if (boundaryIndex < 0) return;
+
+    setCurrentIndex(boundaryIndex);
+    setIsNavigating(true);
+    setLastWordRangeFromPosition(clampedIndex);
+  }, [
+    focusMode,
+    boundaries,
+    content.length,
+    setLastWordRangeFromPosition,
+  ]);
+
   // Build the focused range
   const focusedRange = useMemo((): TextRange | null => {
     if (focusMode === "none" || currentIndex < 0 || !boundaries[currentIndex])
@@ -218,5 +247,6 @@ export function useFocusNavigation({
     focusNavState,
     handleFocusKeyDown,
     applyStrikethroughAtFocus,
+    focusAtTextIndex,
   };
 }

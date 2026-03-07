@@ -98,6 +98,7 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose, theme, isMac }) 
           </h3>
           <ul className="space-y-1.5 text-sm opacity-70">
             <li>Select text + tap strikethrough to mark, then "Clean" to remove</li>
+            <li>In Focus mode, tap the text to target a word, sentence, or paragraph</li>
             <li>Tap a color dot to switch themes, swipe to cycle</li>
             <li>Open Settings to reorder, hide, or customize themes</li>
           </ul>

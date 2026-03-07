@@ -970,7 +970,12 @@ const App: React.FC = () => {
   }, [content]);
 
   // Focus navigation hook
-  const { focusNavState, handleFocusKeyDown, applyStrikethroughAtFocus } = useFocusNavigation({
+  const {
+    focusNavState,
+    handleFocusKeyDown,
+    applyStrikethroughAtFocus,
+    focusAtTextIndex,
+  } = useFocusNavigation({
     content,
     focusMode,
     setFocusMode,
@@ -1267,6 +1272,8 @@ const App: React.FC = () => {
             lineHeight={lineHeightValue}
             focusMode={focusMode}
             focusNavState={focusNavState}
+            isMobile={isMobile}
+            onFocusTap={focusAtTextIndex}
           />
         ) : (
           <div

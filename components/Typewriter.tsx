@@ -42,6 +42,8 @@ interface TypewriterProps {
   lineHeight?: number;
   focusMode?: FocusMode;
   focusNavState?: FocusNavState | null;
+  isMobile?: boolean;
+  onFocusTap?: (index: number) => void;
 }
 
 // Known non-text keys to reject (control, navigation, function keys).
@@ -126,6 +128,8 @@ const Typewriter: React.FC<TypewriterProps> = ({
   lineHeight: lineHeightProp = 1.6,
   focusMode = "none" as FocusMode,
   focusNavState = null,
+  isMobile = false,
+  onFocusTap,
 }) => {
   const effectiveLineHeight = songMode && showSyllableAnnotations ? "2.4" : String(lineHeightProp);
   const effectiveLetterSpacing = letterSpacingProp ? `${letterSpacingProp}em` : undefined;
@@ -353,6 +357,19 @@ const Typewriter: React.FC<TypewriterProps> = ({
 
   const showPersistedSelectionOverlay =
     !!normalizedPersistedSelection && !isTextareaFocused;
+
+  const handleMobileFocusClick = useCallback(
+    (e: React.MouseEvent<HTMLTextAreaElement>) => {
+      if (!isMobile || focusMode === "none" || !onFocusTap) return;
+
+      const textarea = e.currentTarget;
+      window.requestAnimationFrame(() => {
+        const textIndex = textarea.selectionStart ?? content.length;
+        onFocusTap(textIndex);
+      });
+    },
+    [content.length, focusMode, isMobile, onFocusTap],
+  );
 
   // Use passive event listener for scroll performance
   useEffect(() => {
@@ -601,28 +618,55 @@ const Typewriter: React.FC<TypewriterProps> = ({
     return (
       <>
         {dimBeforeText && (
-          <span style={{ opacity: 0.10, transition: "opacity 0.4s ease" }}>
+          <span
+            style={{
+              opacity: isMobile ? 0.12 : 0.10,
+              transition: "opacity 0.4s ease",
+            }}
+          >
             {renderHighlightsForText(dimBeforeText)}
           </span>
         )}
         <span
+          data-testid="focus-range"
           style={{
             opacity: 1,
-            borderBottom: `2px solid ${theme.accent}`,
-            paddingBottom: "1px",
-            transition: "opacity 0.4s ease",
+            backgroundColor: isMobile ? `${theme.accent}20` : "transparent",
+            borderBottom: isMobile ? "none" : `2px solid ${theme.accent}`,
+            boxShadow: isMobile
+              ? `0 0 0 1px ${theme.accent}35, 0 0 0 4px ${theme.accent}12`
+              : "none",
+            borderRadius: isMobile ? "6px" : undefined,
+            padding: isMobile ? "1px 2px" : undefined,
+            paddingBottom: isMobile ? undefined : "1px",
+            boxDecorationBreak: isMobile ? "clone" : undefined,
+            WebkitBoxDecorationBreak: isMobile ? "clone" : undefined,
+            transition:
+              "opacity 0.4s ease, background-color 0.2s ease, box-shadow 0.2s ease",
           }}
         >
           {renderHighlightsForText(focusText)}
         </span>
         {dimAfterText && (
-          <span style={{ opacity: 0.10, transition: "opacity 0.4s ease" }}>
+          <span
+            style={{
+              opacity: isMobile ? 0.12 : 0.10,
+              transition: "opacity 0.4s ease",
+            }}
+          >
             {renderHighlightsForText(dimAfterText)}
           </span>
         )}
       </>
     );
-  }, [content, hasFocusNav, focusRange, renderHighlightsForText, theme.accent]);
+  }, [
+    content,
+    hasFocusNav,
+    focusRange,
+    isMobile,
+    renderHighlightsForText,
+    theme.accent,
+  ]);
 
   // Build a map of rhymeKey -> color for song mode
   const rhymeColorMap = useMemo(() => {
@@ -778,7 +822,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
       </div>
 
       {/* Last-focused-word overlay — visible when in sentence/paragraph mode */}
-      {focusNavState && focusNavState.mode !== "word" && focusNavState.mode !== "none" && focusNavState.lastFocusedWordRange && (
+      {!isMobile && focusNavState && focusNavState.mode !== "word" && focusNavState.mode !== "none" && focusNavState.lastFocusedWordRange && (
         <div
           className="absolute inset-0 px-[13px] pt-[55px] pb-[50vh] md:px-[21px] md:pt-[55px] lg:px-[34px] lg:pt-[55px] whitespace-pre-wrap break-words pointer-events-none z-[3] overflow-hidden"
           style={{
@@ -791,6 +835,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
         >
           <span>{content.slice(0, focusNavState.lastFocusedWordRange.start)}</span>
           <span
+            data-testid="focus-anchor"
             style={{
               backgroundColor: `${theme.accent}15`,
               borderBottom: `1px dashed ${theme.accent}66`,
@@ -848,6 +893,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
         onCompositionUpdate={handleCompositionUpdate}
         onCompositionEnd={handleCompositionEndWithAppend}
         onContextMenu={(e) => e.preventDefault()}
+        onClick={handleMobileFocusClick}
         onFocus={() => setIsTextareaFocused(true)}
         onBlur={() => setIsTextareaFocused(false)}
         spellCheck={false}

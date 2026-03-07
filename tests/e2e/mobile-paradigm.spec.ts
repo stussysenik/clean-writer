@@ -270,6 +270,47 @@ test.describe("Mobile Paradigm", () => {
     });
   });
 
+  test.describe("Focus Mode", () => {
+    test("mobile taps retarget the highlighted sentence without showing the desktop anchor", async ({
+      page,
+    }) => {
+      await page.evaluate(() => {
+        localStorage.clear();
+        localStorage.setItem(
+          "riso_flow_content",
+          "alpha beta gamma. delta epsilon zeta.",
+        );
+        localStorage.setItem("clean_writer_focus_mode", "sentence");
+        localStorage.setItem("clean_writer_mobile_welcome_seen", "true");
+      });
+
+      await page.reload();
+      await page.waitForSelector("textarea");
+
+      const textarea = page.locator("textarea");
+      const focusRange = page.locator('[data-testid="focus-range"]');
+      const focusAnchor = page.locator('[data-testid="focus-anchor"]');
+
+      await expect(focusRange).toContainText("delta epsilon zeta.");
+
+      const initialFocusBg = await focusRange.evaluate(
+        (el) => getComputedStyle(el).backgroundColor,
+      );
+      expect(initialFocusBg).not.toBe("rgba(0, 0, 0, 0)");
+      expect(initialFocusBg).not.toBe("transparent");
+
+      await textarea.evaluate((el) => {
+        const ta = el as HTMLTextAreaElement;
+        ta.focus();
+        ta.setSelectionRange(8, 8);
+        ta.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      });
+
+      await expect(focusRange).toContainText("alpha beta gamma.");
+      await expect(focusAnchor).toHaveCount(0);
+    });
+  });
+
   test.describe("Panel Content on Mobile", () => {
     test("panel shows syntax breakdown", async ({ page }) => {
       await page.locator("textarea").click();

@@ -125,6 +125,46 @@ export function getBoundaries(
 }
 
 /**
+ * Find the boundary index that best matches a character position.
+ * If the position lands in whitespace between word ranges, pick the nearest range.
+ */
+export function findBoundaryIndexAtPosition(
+  boundaries: TextRange[],
+  position: number,
+): number {
+  if (boundaries.length === 0) return -1;
+
+  const containingIndex = boundaries.findIndex((range, index) => {
+    const isLast = index === boundaries.length - 1;
+    return (
+      position >= range.start &&
+      (position < range.end || (isLast && position <= range.end))
+    );
+  });
+
+  if (containingIndex >= 0) return containingIndex;
+
+  let nearestIndex = 0;
+  let nearestDistance = Infinity;
+
+  boundaries.forEach((range, index) => {
+    const distance =
+      position < range.start
+        ? range.start - position
+        : position > range.end
+          ? position - range.end
+          : 0;
+
+    if (distance < nearestDistance) {
+      nearestDistance = distance;
+      nearestIndex = index;
+    }
+  });
+
+  return nearestIndex;
+}
+
+/**
  * Given a character index, find a safe split point that doesn't break
  * inside a `~~...~~` strikethrough block. If the index is inside a
  * strikethrough block, returns the start of that block instead.
