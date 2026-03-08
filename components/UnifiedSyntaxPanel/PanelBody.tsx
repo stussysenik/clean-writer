@@ -477,6 +477,7 @@ const PanelBody: React.FC<PanelBodyProps> = ({
   }, []);
 
   const showSongModeToggle = Boolean(onToggleSongMode);
+  const useInlineHeader = !onClose;
 
   return (
     <div
@@ -490,65 +491,77 @@ const PanelBody: React.FC<PanelBodyProps> = ({
     >
       {/* Word Count Header */}
       <div className="w-full px-[21px] pt-[21px] pb-[18px]">
-        <div className="flex items-start justify-between gap-3">
-          <WordCount count={wordCount} theme={theme} />
-          {onClose && (
-            <TouchButton
-              onClick={onClose}
-              style={{ minWidth: 44, minHeight: 44 }}
-              className="flex items-center justify-center -mt-1 -mr-1"
-            >
-              <span style={{ color: theme.text, opacity: 0.4, fontSize: 20, fontWeight: 300 }}>×</span>
-            </TouchButton>
-          )}
-        </div>
-
-        {showSongModeToggle && (
-          <div className="mt-4 flex justify-end">
-            <div
-              className="grid w-full max-w-[196px] grid-cols-2 items-center gap-1 rounded-full border p-1"
-              data-testid="panel-mode-switch"
-              style={{
-                backgroundColor: `${theme.text}08`,
-                borderColor: `${theme.text}12`,
-                boxShadow: `inset 0 0 0 1px ${theme.background}55`,
-              }}
-            >
-              <TouchButton
-                onClick={() => {
-                  if (songMode) onToggleSongMode?.();
-                }}
-                data-testid="panel-mode-syntax"
-                className="px-3 py-1.5 rounded-full text-[10px] font-semibold uppercase tracking-[0.18em] transition-all"
-                style={{
-                  minHeight: "34px",
-                  backgroundColor: songMode ? "transparent" : `${theme.background}F2`,
-                  color: songMode ? theme.text : theme.accent,
-                  boxShadow: songMode ? "none" : `0 8px 20px ${theme.text}14`,
-                  opacity: songMode ? 0.55 : 1,
-                }}
-              >
-                Syntax
-              </TouchButton>
-              <TouchButton
-                onClick={() => {
-                  if (!songMode) onToggleSongMode?.();
-                }}
-                data-testid="panel-mode-song"
-                className="px-3 py-1.5 rounded-full text-[10px] font-semibold uppercase tracking-[0.18em] transition-all"
-                style={{
-                  minHeight: "34px",
-                  backgroundColor: songMode ? `${theme.accent}18` : "transparent",
-                  color: songMode ? theme.accent : theme.text,
-                  boxShadow: songMode ? `0 10px 24px ${theme.accent}18` : "none",
-                  opacity: songMode ? 1 : 0.55,
-                }}
-              >
-                Song
-              </TouchButton>
-            </div>
+        <div
+          data-testid="panel-header"
+          className={`flex justify-between gap-3 ${
+            useInlineHeader ? "items-center" : "items-start"
+          }`}
+        >
+          <div data-testid="panel-word-count">
+            <WordCount count={wordCount} theme={theme} />
           </div>
-        )}
+          <div
+            className={`flex flex-shrink-0 ${
+              useInlineHeader ? "items-center gap-3" : "flex-col items-end gap-4"
+            }`}
+          >
+            {showSongModeToggle && (
+              <div
+                className={`grid grid-cols-2 items-center gap-1 rounded-full border p-1 ${
+                  useInlineHeader ? "w-[236px]" : "w-full max-w-[196px]"
+                }`}
+                data-testid="panel-mode-switch"
+                style={{
+                  backgroundColor: `${theme.text}08`,
+                  borderColor: `${theme.text}12`,
+                  boxShadow: `inset 0 0 0 1px ${theme.background}55`,
+                }}
+              >
+                <TouchButton
+                  onClick={() => {
+                    if (songMode) onToggleSongMode?.();
+                  }}
+                  data-testid="panel-mode-syntax"
+                  className="px-3 py-1.5 rounded-full text-[10px] font-semibold uppercase tracking-[0.18em] transition-all"
+                  style={{
+                    minHeight: "34px",
+                    backgroundColor: songMode ? "transparent" : `${theme.background}F2`,
+                    color: songMode ? theme.text : theme.accent,
+                    boxShadow: songMode ? "none" : `0 8px 20px ${theme.text}14`,
+                    opacity: songMode ? 0.55 : 1,
+                  }}
+                >
+                  Syntax
+                </TouchButton>
+                <TouchButton
+                  onClick={() => {
+                    if (!songMode) onToggleSongMode?.();
+                  }}
+                  data-testid="panel-mode-song"
+                  className="px-3 py-1.5 rounded-full text-[10px] font-semibold uppercase tracking-[0.18em] transition-all"
+                  style={{
+                    minHeight: "34px",
+                    backgroundColor: songMode ? `${theme.accent}18` : "transparent",
+                    color: songMode ? theme.accent : theme.text,
+                    boxShadow: songMode ? `0 10px 24px ${theme.accent}18` : "none",
+                    opacity: songMode ? 1 : 0.55,
+                  }}
+                >
+                  Song
+                </TouchButton>
+              </div>
+            )}
+            {onClose && (
+              <TouchButton
+                onClick={onClose}
+                style={{ minWidth: 44, minHeight: 44 }}
+                className="flex items-center justify-center -mt-1 -mr-1"
+              >
+                <span style={{ color: theme.text, opacity: 0.4, fontSize: 20, fontWeight: 300 }}>×</span>
+              </TouchButton>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Song View */}
@@ -760,14 +773,6 @@ const PanelBody: React.FC<PanelBodyProps> = ({
                       onMouseEnter={() => onHoverRhymeKey?.(group.key)}
                       onMouseLeave={() => onHoverRhymeKey?.(null)}
                     >
-                      <div
-                        className="absolute left-3 bottom-0 h-[2px] rounded-full pointer-events-none"
-                        style={{
-                          width: `${Math.max(16, Math.min(84, group.words.length * 12))}%`,
-                          backgroundColor: color,
-                          opacity: 0.28,
-                        }}
-                      />
                       <div className="flex items-center gap-2 min-w-0">
                         <span
                           className="w-2.5 h-2.5 rounded-full flex-shrink-0"

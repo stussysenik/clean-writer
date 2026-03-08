@@ -68,10 +68,19 @@ describe("Dedicated Panel Modes", () => {
     cy.getByTestId("desktop-syntax-panel").then(($panel) => {
       const panel = $panel[0];
       const panelRect = panel.getBoundingClientRect();
+      const headerRect = panel
+        .querySelector('[data-testid="panel-header"]')!
+        .getBoundingClientRect();
+      const wordCountRect = panel
+        .querySelector('[data-testid="panel-word-count"]')!
+        .getBoundingClientRect();
       const switchRect = panel
         .querySelector('[data-testid="panel-mode-switch"]')!
         .getBoundingClientRect();
 
+      expect(wordCountRect.top).to.be.greaterThan(headerRect.top - 1);
+      expect(switchRect.top).to.be.greaterThan(headerRect.top - 1);
+      expect(Math.abs(wordCountRect.top - switchRect.top)).to.be.lessThan(20);
       expect(switchRect.left).to.be.greaterThan(panelRect.left + 16);
       expect(switchRect.right).to.be.lessThan(panelRect.right - 8);
 
