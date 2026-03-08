@@ -7,6 +7,7 @@ interface ToolbarProps {
   viewMode: ViewMode;
   hasStrikethroughs: boolean;
   focusMode: FocusMode;
+  dimmed?: boolean;
   onToggleView: () => void;
   onStrikethrough: () => void;
   onStrikethroughPointerDown?: () => void;
@@ -22,6 +23,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
   viewMode,
   hasStrikethroughs,
   focusMode,
+  dimmed = false,
   onToggleView,
   onStrikethrough,
   onStrikethroughPointerDown,
@@ -33,10 +35,11 @@ const Toolbar: React.FC<ToolbarProps> = ({
 }) => {
   return (
     <footer
-      className="absolute bottom-0 left-0 right-0 flex flex-col items-stretch z-50 pointer-events-none"
+      className="absolute bottom-0 left-0 right-0 flex flex-col items-stretch z-50 pointer-events-none transition-opacity duration-300"
       style={{
         padding: "8px 13px",
         paddingBottom: "max(8px, env(safe-area-inset-bottom))",
+        opacity: dimmed ? 0.5 : 1,
       }}
     >
       {/* Action Buttons */}

@@ -29,6 +29,7 @@ interface TypewriterProps {
   textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
   hoveredCategory?: keyof HighlightConfig | null;
   persistedSelection?: { start: number; end: number } | null;
+  onRestoreSelection?: () => void;
   songMode?: boolean;
   songData?: SongAnalysis | null;
   rhymeColors?: readonly string[];
@@ -115,6 +116,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
   textareaRef: externalTextareaRef,
   hoveredCategory = null,
   persistedSelection = null,
+  onRestoreSelection,
   songMode = false,
   songData = null,
   rhymeColors = [],
@@ -878,7 +880,12 @@ const Typewriter: React.FC<TypewriterProps> = ({
         onCompositionEnd={handleCompositionEndWithAppend}
         onContextMenu={(e) => e.preventDefault()}
         onClick={handleMobileFocusClick}
-        onFocus={() => setIsTextareaFocused(true)}
+        onFocus={() => {
+          setIsTextareaFocused(true);
+          if (persistedSelection && onRestoreSelection) {
+            onRestoreSelection();
+          }
+        }}
         onBlur={() => setIsTextareaFocused(false)}
         spellCheck={false}
         autoCorrect="off"
@@ -887,7 +894,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
         inputMode="text"
         enterKeyHint="enter"
         autoFocus
-        className="absolute inset-0 w-full h-full px-[13px] pt-[55px] pb-[50vh] md:px-[21px] md:pt-[55px] lg:px-[34px] lg:pt-[55px] bg-transparent resize-none border-none outline-none z-10 whitespace-pre-wrap break-words overflow-y-auto selection:bg-transparent selection:text-transparent"
+        className="absolute inset-0 w-full h-full px-[13px] pt-[55px] pb-[50vh] md:px-[21px] md:pt-[55px] lg:px-[34px] lg:pt-[55px] bg-transparent resize-none border-none outline-none z-10 whitespace-pre-wrap break-words overflow-y-auto no-scrollbar selection:text-transparent"
         style={{
           fontFamily,
           fontSize,
@@ -896,6 +903,8 @@ const Typewriter: React.FC<TypewriterProps> = ({
           color: "transparent",
           caretColor: lastWordColor,
           opacity: 1,
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
           WebkitTouchCallout: "none",
         }}
         placeholder="Type here..."

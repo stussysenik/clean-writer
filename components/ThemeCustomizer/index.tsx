@@ -98,7 +98,6 @@ interface ThemeCustomizerProps {
   onThemeRename?: (themeId: string, newName: string) => void;
   onSelectThemeForEditing?: (themeId: string) => void;
   hasOverridesForTheme?: (id: string) => boolean;
-  songMode?: boolean;
   initialTab?: string | null;
   onInitialTabConsumed?: () => void;
   savedCustomThemes?: SavedCustomTheme[];
@@ -124,7 +123,7 @@ const OKLCH_BERRY = generateOklchHarmony(320, 8, "#ffffff");
 const OKLCH_JEWEL = generateOklchHarmony(270, 8, "#ffffff");
 
 const RHYME_PRESETS: { name: string; colors: string[] }[] = [
-  { name: "Default", colors: ["#00859e","#3072c1","#7f5bb6","#a84b84","#b54c3d","#a06200","#687c00","#008a5d"] },
+  { name: "Pantone", colors: ["#D85B73","#F3DD3E","#34C6E3","#B08D3B","#4C7BE8","#2EEA2B","#E3952E","#64BCEC"] },
   { name: "Billboard", colors: ["#E53935","#1E88E5","#43A047","#FB8C00","#8E24AA","#00ACC1","#D81B60","#FFD600"] },
   { name: "Neon", colors: ["#FF006E","#3A86FF","#8AC926","#FF5400","#9B5DE5","#00F5D4","#F72585","#FFBE0B"] },
   { name: "Earth", colors: ["#A0522D","#4682B4","#6B8E23","#CD853F","#708090","#2E8B57","#BC8F8F","#DAA520"] },
@@ -156,14 +155,15 @@ const WORD_TYPE_LABELS: {
 
 const MIN_CONTRAST_RATIO = 3;
 
-type TabId = "colors" | "typography" | "themes" | "display";
+type TabId = "themes" | "typography" | "display";
 
 const TABS: { id: TabId; label: string }[] = [
-  { id: "colors", label: "Colors" },
-  { id: "typography", label: "Type" },
   { id: "themes", label: "Themes" },
+  { id: "typography", label: "Type" },
   { id: "display", label: "Display" },
 ];
+
+const SHOW_TYPOGRAPHY_SLIDERS = false;
 
 /** Compact single-row color editor with 44px touch target */
 const CompactColorRow: React.FC<{
@@ -254,6 +254,109 @@ const SectionLabel: React.FC<{
   </div>
 );
 
+const ThemeActionLegend: React.FC<{ theme: RisoTheme }> = ({ theme }) => (
+  <div
+    className="flex flex-wrap gap-2 pt-2 pb-1"
+    data-testid="theme-actions-legend"
+  >
+    <div
+      className="inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em]"
+      style={{
+        borderColor: `${theme.text}14`,
+        backgroundColor: `${theme.text}04`,
+        color: theme.text,
+      }}
+    >
+      <span
+        className="flex items-center justify-center rounded-full"
+        style={{
+          width: "20px",
+          height: "20px",
+          backgroundColor: `${theme.accent}16`,
+          color: theme.accent,
+        }}
+      >
+        <svg
+          width="11"
+          height="11"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      </span>
+      <span>Show</span>
+    </div>
+
+    <div
+      className="inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em]"
+      style={{
+        borderColor: `${theme.text}14`,
+        backgroundColor: `${theme.text}04`,
+        color: theme.text,
+      }}
+    >
+      <span
+        className="grid grid-cols-2 gap-[2px] place-items-center rounded-full"
+        style={{
+          width: "20px",
+          height: "20px",
+          backgroundColor: `${theme.text}08`,
+        }}
+      >
+        {[0, 1, 2, 3].map((dot) => (
+          <span
+            key={dot}
+            className="rounded-full"
+            style={{
+              width: "3px",
+              height: "3px",
+              backgroundColor: `${theme.text}70`,
+            }}
+          />
+        ))}
+      </span>
+      <span>Order</span>
+    </div>
+
+    <div
+      className="inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em]"
+      style={{
+        borderColor: `${theme.text}14`,
+        backgroundColor: `${theme.text}04`,
+        color: theme.text,
+      }}
+    >
+      <span
+        className="flex items-center justify-center gap-1 rounded-full"
+        style={{
+          width: "28px",
+          height: "20px",
+          backgroundColor: `${theme.text}08`,
+        }}
+      >
+        {[theme.highlight.noun, theme.highlight.verb, theme.highlight.pronoun].map((color, index) => (
+          <span
+            key={`${color}-${index}`}
+            className="rounded-full"
+            style={{
+              width: "5px",
+              height: "5px",
+              backgroundColor: color,
+            }}
+          />
+        ))}
+      </span>
+      <span>Edit</span>
+    </div>
+  </div>
+);
+
 /** Single sortable theme item */
 const SortableThemeItem: React.FC<{
   t: typeof THEMES[number];
@@ -282,8 +385,6 @@ const SortableThemeItem: React.FC<{
   } = useSortable({ id: t.id });
 
   const dark = isDarkBackground(theme.background);
-  const accentOk = getContrastRatio(theme.accent, theme.background) >= 3;
-  const checkboxAccent = accentOk ? theme.accent : dark ? "#ffffff" : "#1a1a1a";
 
   const dotShadow = dark
     ? "0 0 0 0.5px rgba(255,255,255,0.25)"
@@ -349,18 +450,34 @@ const SortableThemeItem: React.FC<{
             </svg>
           </div>
         )}
-        <label className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-          <input
-            type="checkbox"
-            checked={!isHidden}
-            onChange={() => onToggleThemeVisibility(t.id)}
-            className="w-5 h-5 rounded flex-shrink-0 cursor-pointer"
+        <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+          <TouchButton
+            onClick={() => onToggleThemeVisibility(t.id)}
+            className="flex items-center justify-center rounded-full transition-all"
             style={{
-              accentColor: checkboxAccent,
-              borderWidth: "2px",
-              borderColor: `${theme.text}40`,
+              width: "32px",
+              height: "32px",
+              backgroundColor: isHidden ? `${theme.text}08` : `${theme.accent}16`,
+              color: isHidden ? theme.text : theme.accent,
+              border: `1px solid ${isHidden ? `${theme.text}14` : `${theme.accent}28`}`,
             }}
-          />
+            aria-label={isHidden ? `Show ${name}` : `Hide ${name}`}
+            title={isHidden ? "Show theme in selector" : "Hide theme from selector"}
+          >
+            {isHidden ? (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            ) : (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 3l18 18" />
+                <path d="M10.58 10.58A2 2 0 0 0 13.42 13.42" />
+                <path d="M9.36 5.37A10.94 10.94 0 0 1 12 5c6 0 10 7 10 7a17.46 17.46 0 0 1-5.06 5.06" />
+                <path d="M6.23 6.23A17.43 17.43 0 0 0 2 12s4 7 10 7a9.78 9.78 0 0 0 4.19-.93" />
+              </svg>
+            )}
+          </TouchButton>
           <span
             className="w-5 h-5 rounded-full flex-shrink-0"
             style={{
@@ -368,7 +485,7 @@ const SortableThemeItem: React.FC<{
               boxShadow: dotShadow,
             }}
           />
-        </label>
+        </div>
         <div className="flex items-center gap-1.5 flex-1 min-w-0">
           {isEditing ? (
             <input
@@ -493,15 +610,10 @@ const ThemesTab: React.FC<{
   }, [orderedThemeList]);
 
   return (
-    <section className="py-4">
-      <h3 className="text-xs font-medium uppercase tracking-widest mb-1 opacity-50">
-        Visible Presets
-      </h3>
-      <p className="text-[10px] opacity-30 mb-2">Click to edit colors. Double-click name to rename.</p>
-
+    <section className="pt-2 pb-3">
       {/* Scroll-to buttons */}
       {canScroll && (
-        <div className="flex justify-end gap-1 mb-1">
+        <div className="flex justify-end gap-1 mb-2">
           <TouchButton
             onClick={() => listRef.current?.scrollTo({ top: 0, behavior: "smooth" })}
             className="p-1.5 rounded-md opacity-40 hover:opacity-80 transition-opacity"
@@ -549,10 +661,7 @@ const ThemesTab: React.FC<{
       {/* Custom Themes */}
       {savedCustomThemes && savedCustomThemes.length > 0 && (
         <>
-          <h3 className="text-xs font-medium uppercase tracking-widest mt-4 mb-1 opacity-50">
-            Custom Themes
-          </h3>
-          <p className="text-[10px] opacity-30 mb-2">Click to edit. Double-click name to rename.</p>
+          <SectionLabel title="Custom Themes" theme={theme} />
           <div className="space-y-1">
             {savedCustomThemes.map((ct) => (
               <div
@@ -642,11 +751,23 @@ const ThemesTab: React.FC<{
 /** Active theme header with inline rename */
 const ActiveThemeHeader: React.FC<{
   theme: RisoTheme;
+  rhymeColors?: string[];
   isCustomTheme: boolean;
   customThemeNames?: Record<string, string>;
   onThemeRename?: (themeId: string, newName: string) => void;
   onRenameCustomTheme?: (id: string, newName: string) => void;
-}> = ({ theme, isCustomTheme, customThemeNames, onThemeRename, onRenameCustomTheme }) => {
+  onJumpToWordColor?: (key: keyof RisoTheme["highlight"]) => void;
+  onJumpToRhymeColor?: (index: number) => void;
+}> = ({
+  theme,
+  rhymeColors = [],
+  isCustomTheme,
+  customThemeNames,
+  onThemeRename,
+  onRenameCustomTheme,
+  onJumpToWordColor,
+  onJumpToRhymeColor,
+}) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -713,14 +834,45 @@ const ActiveThemeHeader: React.FC<{
             )}
           </span>
         )}
-        <div className="flex flex-wrap gap-1 mt-1">
-          {WORD_TYPE_LABELS.map(({ key }) => (
-            <span
-              key={key}
-              className="w-2.5 h-2.5 rounded-full"
-              style={{ backgroundColor: theme.highlight[key] }}
-            />
-          ))}
+        <div className="mt-2 space-y-2">
+          <div>
+            <div className="text-[9px] font-semibold uppercase tracking-[0.18em] opacity-35">
+              Syntax Colors
+            </div>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {WORD_TYPE_LABELS.map(({ key, short }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => onJumpToWordColor?.(key)}
+                  className="block w-2.5 h-2.5 p-0 border-0 rounded-full appearance-none transition-transform hover:scale-125"
+                  style={{ backgroundColor: theme.highlight[key] }}
+                  title={`Jump to ${short} color`}
+                  aria-label={`Jump to ${short} color`}
+                />
+              ))}
+            </div>
+          </div>
+          {rhymeColors.length > 0 && (
+            <div>
+              <div className="text-[9px] font-semibold uppercase tracking-[0.18em] opacity-35">
+                Song Colors
+              </div>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {rhymeColors.map((color, index) => (
+                  <button
+                    key={`${color}-${index}`}
+                    type="button"
+                    onClick={() => onJumpToRhymeColor?.(index)}
+                    className="block w-2.5 h-2.5 p-0 border-0 rounded-full appearance-none transition-transform hover:scale-125"
+                    style={{ backgroundColor: color }}
+                    title={`Jump to ${RHYME_COLOR_LABELS[index] || `Color ${index + 1}`}`}
+                    aria-label={`Jump to ${RHYME_COLOR_LABELS[index] || `Color ${index + 1}`}`}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -758,7 +910,6 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
   onThemeRename,
   onSelectThemeForEditing,
   hasOverridesForTheme,
-  songMode,
   initialTab,
   onInitialTabConsumed,
   savedCustomThemes,
@@ -772,24 +923,30 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
   lineHeight = 1.6,
   onLineHeightChange,
 }) => {
-  const [activeTab, setActiveTab] = useState<TabId>("colors");
+  const [activeTab, setActiveTab] = useState<TabId>("themes");
   const [showSaveForm, setShowSaveForm] = useState(false);
 
   // Handle initialTab from parent (e.g. click theme row -> switch to colors)
   useEffect(() => {
     if (initialTab && isOpen) {
-      setActiveTab(initialTab as TabId);
+      setActiveTab(initialTab === "colors" ? "themes" : (initialTab as TabId));
       onInitialTabConsumed?.();
     }
   }, [initialTab, isOpen, onInitialTabConsumed]);
 
-  // Handle theme select for editing (activate + switch to colors tab)
+  // Handle theme select for editing (activate + stay in combined themes tab)
   const handleSelectForEditing = useCallback((themeId: string) => {
     if (onSelectThemeForEditing) {
       onSelectThemeForEditing(themeId);
     }
-    setActiveTab("colors");
+    setActiveTab("themes");
   }, [onSelectThemeForEditing]);
+
+  const scrollToColorTarget = useCallback((targetId: string) => {
+    const node = document.getElementById(targetId);
+    if (!node) return;
+    node.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, []);
 
   if (!isOpen) return null;
 
@@ -855,10 +1012,13 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
         {/* Active Preview Swatch with inline rename */}
         <ActiveThemeHeader
           theme={theme}
+          rhymeColors={rhymeColors}
           isCustomTheme={!!isCustomTheme}
           customThemeNames={customThemeNames}
           onThemeRename={onThemeRename}
           onRenameCustomTheme={onRenameCustomTheme}
+          onJumpToWordColor={(key) => scrollToColorTarget(`theme-color-${key}`)}
+          onJumpToRhymeColor={(index) => scrollToColorTarget(`rhyme-color-${index}`)}
         />
 
         {/* Tab Bar */}
@@ -891,9 +1051,30 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
             key={activeTab}
             className="animate-tab-fade-in"
           >
-          {/* Colors Tab */}
-          {activeTab === "colors" && (
+          {/* Themes Tab */}
+          {activeTab === "themes" && (
             <>
+              {onToggleThemeVisibility && (
+                <>
+                  <SectionLabel title="Base Theme" theme={theme} />
+                  <ThemeActionLegend theme={theme} />
+                  <ThemesTab
+                    theme={theme}
+                    hiddenThemeIds={hiddenThemeIds}
+                    onToggleThemeVisibility={onToggleThemeVisibility}
+                    themeOrder={themeOrder}
+                    onReorderThemes={onReorderThemes}
+                    customThemeNames={customThemeNames}
+                    onThemeRename={onThemeRename}
+                    onSelectThemeForEditing={handleSelectForEditing}
+                    hasOverridesForTheme={hasOverridesForTheme}
+                    savedCustomThemes={savedCustomThemes}
+                    onDeleteCustomTheme={onDeleteCustomTheme}
+                    onRenameCustomTheme={onRenameCustomTheme}
+                  />
+                </>
+              )}
+
               {/* Editor Colors — flat, always visible */}
               <SectionLabel title="Editor Colors" theme={theme} />
               <div className="space-y-1 pb-2">
@@ -949,7 +1130,12 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
               />
               <div className="grid grid-cols-2 gap-x-4 gap-y-3 pb-2 pt-2">
                 {WORD_TYPE_LABELS.map(({ key, short }) => (
-                  <div key={key} className="flex items-center gap-1.5" style={{ minHeight: "44px" }}>
+                  <div
+                    key={key}
+                    id={`theme-color-${key}`}
+                    className="flex items-center gap-1.5 scroll-mt-24"
+                    style={{ minHeight: "44px" }}
+                  >
                     <span
                       className="w-3 h-3 rounded-full flex-shrink-0"
                       style={{ backgroundColor: theme.highlight[key], boxShadow: dotShadow }}
@@ -1040,7 +1226,11 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                   </div>
                   <div className="grid grid-cols-2 gap-x-2 gap-y-1 pb-2">
                     {rhymeColors.map((color, index) => (
-                      <div key={index} className="flex items-center gap-1.5">
+                      <div
+                        key={index}
+                        id={`rhyme-color-${index}`}
+                        className="flex items-center gap-1.5 scroll-mt-24"
+                      >
                         <span
                           className="w-3 h-3 rounded-full flex-shrink-0"
                           style={{ backgroundColor: color, boxShadow: dotShadow }}
@@ -1150,7 +1340,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
           {activeTab === "typography" && (
             <section className="py-4">
               {/* Line Height control */}
-              {onLineHeightChange && (
+              {SHOW_TYPOGRAPHY_SLIDERS && onLineHeightChange && (
                 <div className="mb-5">
                   <h3 className="text-[10px] font-semibold uppercase tracking-[0.15em] mb-2 opacity-40">
                     Line Height
@@ -1186,7 +1376,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
               )}
 
               {/* Letter Spacing control */}
-              {onLetterSpacingChange && (
+              {SHOW_TYPOGRAPHY_SLIDERS && onLetterSpacingChange && (
                 <div className="mb-5">
                   <h3 className="text-[10px] font-semibold uppercase tracking-[0.15em] mb-2 opacity-40">
                     Letter Spacing
@@ -1248,24 +1438,6 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                 </div>
               ))}
             </section>
-          )}
-
-          {/* Themes Tab */}
-          {activeTab === "themes" && onToggleThemeVisibility && (
-            <ThemesTab
-              theme={theme}
-              hiddenThemeIds={hiddenThemeIds}
-              onToggleThemeVisibility={onToggleThemeVisibility}
-              themeOrder={themeOrder}
-              onReorderThemes={onReorderThemes}
-              customThemeNames={customThemeNames}
-              onThemeRename={onThemeRename}
-              onSelectThemeForEditing={handleSelectForEditing}
-              hasOverridesForTheme={hasOverridesForTheme}
-              savedCustomThemes={savedCustomThemes}
-              onDeleteCustomTheme={onDeleteCustomTheme}
-              onRenameCustomTheme={onRenameCustomTheme}
-            />
           )}
 
           {/* Display Tab */}

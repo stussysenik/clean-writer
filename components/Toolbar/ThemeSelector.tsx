@@ -15,7 +15,6 @@ interface ThemeSelectorProps {
   hasOverridesForTheme?: (id: string) => boolean;
 }
 
-// Shared swatch circle used for preset themes
 const SwatchCircle = ({
   id, name, color, isSelected, hasEdits, isCustom, currentTheme, onClick,
 }: {
@@ -39,6 +38,7 @@ const SwatchCircle = ({
             ? `2px solid ${currentTheme.text}`
             : "2px solid transparent",
           outlineOffset: "2px",
+          boxShadow: hasEdits ? `0 0 0 2px ${currentTheme.background}, 0 0 0 3px ${currentTheme.accent}55` : undefined,
           transition: "all 200ms cubic-bezier(0.34, 1.56, 0.64, 1)",
         }}
         aria-label={name}

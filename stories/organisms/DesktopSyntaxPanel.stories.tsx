@@ -23,7 +23,6 @@ const meta: Meta<typeof DesktopSyntaxPanel> = {
     onToggleHighlight: () => {},
     soloMode: null,
     onSoloToggle: () => {},
-    isOpen: true,
     onCategoryHover: () => {},
   },
   decorators: [
@@ -39,9 +38,7 @@ type Story = StoryObj<typeof DesktopSyntaxPanel>;
 
 export const Default: Story = {};
 
-export const SongMode: Story = {
-  args: { songMode: true },
-};
+export const WithSongData: Story = {};
 
 export const DarkTheme: Story = {
   args: { theme: MIDNIGHT_THEME },

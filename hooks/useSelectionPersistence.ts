@@ -8,6 +8,7 @@ interface SavedSelection {
 interface SelectionPersistence {
   saveSelection: () => void;
   getSavedSelection: () => { start: number; end: number } | null;
+  restoreSelection: () => void;
   savedSelection: { start: number; end: number } | null;
   clearSelection: () => void;
 }
@@ -71,6 +72,13 @@ export function useSelectionPersistence(
     return { start: saved.start, end: saved.end };
   }, []);
 
+  const restoreSelection = useCallback(() => {
+    const textarea = textareaRef.current;
+    const saved = savedSelection.current;
+    if (!textarea || !saved) return;
+    textarea.setSelectionRange(saved.start, saved.end);
+  }, [textareaRef]);
+
   const clearSelection = useCallback(() => {
     savedSelection.current = null;
     setSavedSelectionState(null);
@@ -112,6 +120,7 @@ export function useSelectionPersistence(
   return {
     saveSelection,
     getSavedSelection,
+    restoreSelection,
     savedSelection: savedSelectionState,
     clearSelection,
   };

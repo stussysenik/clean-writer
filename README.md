@@ -14,10 +14,10 @@
 </div>
 
 <div align="center">
-  <img src="docs/images/editor.png" width="600" alt="Editor with syntax highlighting" />
+  <img src="docs/images/editor-overview.png" width="900" alt="Clean Writer editor with live syntax highlighting and desktop analysis panel" />
   <br/><br/>
-  <img src="docs/images/tab-overlay.png" width="300" alt="Tab shortcut overlay" />
-  <img src="docs/images/help-modal.png" width="300" alt="Help modal" />
+  <img src="docs/images/syntax-panel.png" width="260" alt="Dedicated syntax and song analysis panel" />
+  <img src="docs/images/theme-customizer.png" width="320" alt="Theme customizer with preset and color editing" />
 </div>
 
 ---
@@ -31,7 +31,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+Open [http://localhost:5173](http://localhost:5173)
 
 ## Install on Your Phone
 
@@ -98,8 +98,8 @@ All shortcuts managed by `@tanstack/react-hotkeys`. Hold **Tab** to see the chea
 npm run dev          # Start dev server
 npm run build        # Production build
 npm run preview      # Preview production build
-npm run test         # Run Playwright tests
-npm run test:ui      # Run tests with UI
+npm run test         # Run Cypress specs
+npm run cy:open      # Open Cypress runner
 ```
 
 ## Build Identity
@@ -138,7 +138,7 @@ Click colored circles (top-right) to switch. Theme visibility can be customized 
 │   └── spacing.ts           # Golden ratio spacing system
 ├── constants.ts         # Theme definitions (legacy)
 ├── types.ts             # TypeScript interfaces
-└── tests/e2e/           # Playwright tests
+└── tests/cypress/       # Cypress tests
 ```
 
 ## Tech Stack
@@ -146,7 +146,7 @@ Click colored circles (top-right) to switch. Theme visibility can be customized 
 - React 19 + TypeScript
 - Vite + vite-plugin-pwa
 - Tailwind CSS
-- Playwright (testing)
+- Cypress (testing)
 - Compromise (NLP)
 
 ---

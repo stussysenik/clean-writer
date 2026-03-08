@@ -255,7 +255,7 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
                   className="flex-1 h-px"
                   style={{ backgroundColor: `${theme.text}20` }}
                 />
-                <span>Breakdown</span>
+                <span>{songMode ? "Song" : "Syntax"}</span>
                 <span
                   className="flex-1 h-px"
                   style={{ backgroundColor: `${theme.text}20` }}

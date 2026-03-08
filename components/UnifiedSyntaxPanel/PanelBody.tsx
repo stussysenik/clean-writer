@@ -85,7 +85,7 @@ const EXTRAS_CONFIG = [
 
 type WordTypeKey = (typeof WORD_TYPE_CONFIG)[number]["key"];
 
-const ITEM_HEIGHT = 44;
+const ITEM_HEIGHT = 58;
 const LONG_PRESS_MS = 400;
 const ORDER_STORAGE_KEY = "clean_writer_word_type_order";
 const BREAKDOWN_COLLAPSED_KEY = "clean_writer_breakdown_collapsed";
@@ -471,55 +471,452 @@ const PanelBody: React.FC<PanelBodyProps> = ({
     };
   }, []);
 
+  // Prevent pointer-down from stealing focus from textarea (keeps mobile keyboard open)
+  const preventFocusSteal = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+  }, []);
+
+  const showSongModeToggle = Boolean(onToggleSongMode);
+
   return (
     <div
       className="font-mono text-sm"
+      onPointerDown={preventFocusSteal}
       style={{
         color: theme.text,
-        width: "min(320px, calc(100vw - 72px))",
-        minWidth: "260px",
+        width: "100%",
+        minWidth: 0,
       }}
     >
       {/* Word Count Header */}
-      <div className="w-full px-[21px] py-[21px] flex items-center justify-between">
-        <WordCount count={wordCount} theme={theme} />
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {/* Song Mode toggle pill */}
-          {onToggleSongMode && (
-            <TouchButton
-              onClick={onToggleSongMode}
-              className="px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all"
-              style={{
-                backgroundColor: songMode
-                  ? `${theme.accent}25`
-                  : `${theme.text}10`,
-                color: songMode ? theme.accent : theme.text,
-                opacity: songMode ? 1 : 0.5,
-                border: songMode
-                  ? `1px solid ${theme.accent}40`
-                  : `1px solid ${theme.text}15`,
-                minHeight: "32px",
-              }}
-            >
-              Song
-            </TouchButton>
-          )}
-          {/* Close button */}
+      <div className="w-full px-[21px] pt-[21px] pb-[18px]">
+        <div className="flex items-start justify-between gap-3">
+          <WordCount count={wordCount} theme={theme} />
           {onClose && (
             <TouchButton
               onClick={onClose}
               style={{ minWidth: 44, minHeight: 44 }}
-              className="flex items-center justify-center"
+              className="flex items-center justify-center -mt-1 -mr-1"
             >
               <span style={{ color: theme.text, opacity: 0.4, fontSize: 20, fontWeight: 300 }}>×</span>
             </TouchButton>
           )}
         </div>
+
+        {showSongModeToggle && (
+          <div className="mt-4 flex justify-end">
+            <div
+              className="grid w-full max-w-[196px] grid-cols-2 items-center gap-1 rounded-full border p-1"
+              data-testid="panel-mode-switch"
+              style={{
+                backgroundColor: `${theme.text}08`,
+                borderColor: `${theme.text}12`,
+                boxShadow: `inset 0 0 0 1px ${theme.background}55`,
+              }}
+            >
+              <TouchButton
+                onClick={() => {
+                  if (songMode) onToggleSongMode?.();
+                }}
+                data-testid="panel-mode-syntax"
+                className="px-3 py-1.5 rounded-full text-[10px] font-semibold uppercase tracking-[0.18em] transition-all"
+                style={{
+                  minHeight: "34px",
+                  backgroundColor: songMode ? "transparent" : `${theme.background}F2`,
+                  color: songMode ? theme.text : theme.accent,
+                  boxShadow: songMode ? "none" : `0 8px 20px ${theme.text}14`,
+                  opacity: songMode ? 0.55 : 1,
+                }}
+              >
+                Syntax
+              </TouchButton>
+              <TouchButton
+                onClick={() => {
+                  if (!songMode) onToggleSongMode?.();
+                }}
+                data-testid="panel-mode-song"
+                className="px-3 py-1.5 rounded-full text-[10px] font-semibold uppercase tracking-[0.18em] transition-all"
+                style={{
+                  minHeight: "34px",
+                  backgroundColor: songMode ? `${theme.accent}18` : "transparent",
+                  color: songMode ? theme.accent : theme.text,
+                  boxShadow: songMode ? `0 10px 24px ${theme.accent}18` : "none",
+                  opacity: songMode ? 1 : 0.55,
+                }}
+              >
+                Song
+              </TouchButton>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Word Type Breakdown — hidden in song mode */}
-      {!songMode && (
+      {/* Song View */}
+      {songMode && (
         <div className="px-[21px] pb-[13px]">
+          {!songData && (
+            <div
+              className="rounded-2xl border px-4 py-4 text-center"
+              style={{
+                borderColor: `${theme.text}14`,
+                backgroundColor: `${theme.text}04`,
+                color: theme.text,
+              }}
+            >
+              <div className="text-[10px] font-semibold uppercase tracking-[0.2em] opacity-45">
+                Song Mode
+              </div>
+              <div className="mt-2 text-xs opacity-55">
+                Analyzing rhyme groups and syllable flow...
+              </div>
+            </div>
+          )}
+
+          {songData && (
+            <>
+              {/* Non-Latin warning */}
+              {songData.nonLatinWarning && (
+                <div
+                  className="mb-3 px-3 py-2 rounded-lg text-xs"
+                  style={{
+                    backgroundColor: `${theme.text}08`,
+                    border: `1px solid ${theme.text}15`,
+                    color: theme.text,
+                    opacity: 0.6,
+                  }}
+                >
+                  Rhyme analysis supports English only
+                </div>
+              )}
+
+          {/* "— SONG —" header with inline syllable toggle */}
+          <div
+            className="text-xs uppercase tracking-widest mb-[13px] flex items-center gap-2"
+            style={{ color: theme.text, opacity: 0.5 }}
+          >
+            <span
+              className="flex-1 h-px"
+              style={{ backgroundColor: `${theme.text}20` }}
+            />
+            <span>Song</span>
+            {onToggleSyllableAnnotations && (
+              <TouchButton
+                onClick={onToggleSyllableAnnotations}
+                className="transition-all"
+                style={{
+                  opacity: showSyllableAnnotations ? 0.8 : 0.35,
+                  color: showSyllableAnnotations ? theme.accent : theme.text,
+                }}
+                title={showSyllableAnnotations ? "Hide syllable annotations" : "Show syllable annotations"}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  {showSyllableAnnotations ? (
+                    <>
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </>
+                  ) : (
+                    <>
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                      <line x1="1" y1="1" x2="23" y2="23"/>
+                    </>
+                  )}
+                </svg>
+              </TouchButton>
+            )}
+            <span
+              className="flex-1 h-px"
+              style={{ backgroundColor: `${theme.text}20` }}
+            />
+          </div>
+
+          {/* Quick counts row */}
+          <div className="mb-3 grid grid-cols-3 gap-3 text-center">
+            <div className="flex flex-col items-center">
+              <span
+                className="text-xl font-bold tabular-nums block"
+                style={{ color: theme.accent }}
+              >
+                {songData.totalSyllables}
+              </span>
+              <span className="text-[10px] uppercase tracking-wider" style={{ color: theme.text, opacity: 0.4 }}>
+                Syllables
+              </span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span
+                className="text-xl font-bold tabular-nums block"
+                style={{ color: theme.text, opacity: 0.7 }}
+              >
+                {songData.lines.filter((l) => l.words.length > 0).length}
+              </span>
+              <span className="text-[10px] uppercase tracking-wider" style={{ color: theme.text, opacity: 0.4 }}>
+                Lines
+              </span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span
+                className="text-xl font-bold tabular-nums block"
+                style={{ color: rhymeColors.length > 0 ? rhymeColors[0] : theme.text }}
+              >
+                {songData.rhymeGroups.length}
+              </span>
+              <span className="text-[10px] uppercase tracking-wider" style={{ color: theme.text, opacity: 0.4 }}>
+                Rhymes
+              </span>
+            </div>
+          </div>
+
+          {/* RHYMES section — collapsible */}
+          <TouchButton
+            onClick={() => setIsRhymesCollapsed(prev => !prev)}
+            className="w-full text-[10px] uppercase tracking-widest mb-3 flex items-center gap-2 cursor-pointer hover:opacity-80 transition-all"
+            style={{ color: theme.text, opacity: 0.5 }}
+          >
+            <span
+              className="flex-1 h-px"
+              style={{ backgroundColor: `${theme.text}20` }}
+            />
+            <span className="flex items-center gap-2">
+              <span
+                className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] transition-all duration-200"
+                style={{
+                  backgroundColor: isRhymesCollapsed ? `${theme.accent}25` : `${theme.accent}40`,
+                  color: theme.accent,
+                  transform: isRhymesCollapsed ? "rotate(-90deg)" : "rotate(0deg)",
+                  boxShadow: isRhymesCollapsed ? "none" : `0 0 8px ${theme.accent}30`,
+                }}
+              >
+                ▼
+              </span>
+              <span>Rhymes</span>
+            </span>
+            <span
+              className="flex-1 h-px"
+              style={{ backgroundColor: `${theme.text}20` }}
+            />
+          </TouchButton>
+
+          <div
+            className="overflow-hidden transition-all duration-300 ease-out"
+            style={{
+              maxHeight: isRhymesCollapsed ? "0px" : "600px",
+              opacity: isRhymesCollapsed ? 0 : 1,
+            }}
+          >
+            {/* Rhyme scheme */}
+            {songData.rhymeScheme.label !== "—" && (
+              <div className="mb-3 flex items-baseline justify-between gap-2 px-1">
+                <span className="text-sm font-bold tracking-wider font-mono flex-1 min-w-0 truncate">
+                  {(songData.rhymeScheme.pattern.length > 16
+                    ? songData.rhymeScheme.pattern.slice(0, 16) + "…"
+                    : songData.rhymeScheme.pattern
+                  ).split("").map((letter, i) => {
+                    const letterIndex = letter.charCodeAt(0) - 65;
+                    const color = rhymeColors && letterIndex >= 0 && letterIndex < rhymeColors.length
+                      ? rhymeColors[letterIndex]
+                      : theme.text;
+                    return (
+                      <span key={i} style={{ color, opacity: letterIndex >= rhymeColors.length ? 0.5 : 1 }}>
+                        {letter}
+                      </span>
+                    );
+                  })}
+                </span>
+                <span className="text-xs font-medium flex-shrink-0" style={{ color: theme.text, opacity: 0.5 }}>
+                  {songData.rhymeScheme.label}
+                </span>
+              </div>
+            )}
+
+            {/* Rhyme groups — interactive */}
+            {songData.rhymeGroups.length > 0 ? (
+              <div className="grid grid-cols-1 gap-2">
+                {songData.rhymeGroups.map((group) => {
+                  const color = rhymeColors[group.colorIndex] || theme.accent;
+                  const isDisabled = disabledRhymeKeys.has(group.key);
+                  const isFocused = focusedRhymeKey === group.key;
+                  const isDimmed = focusedRhymeKey !== null && !isFocused;
+                  const rhymeLabel = String.fromCharCode(65 + group.colorIndex);
+                  return (
+                    <div
+                      key={group.key}
+                      data-testid="rhyme-group-row"
+                      className="relative flex items-center justify-between gap-3 min-h-[44px] px-3 py-2 rounded-xl cursor-pointer select-none transition-all duration-150"
+                      style={{
+                        opacity: isDimmed ? 0.35 : isDisabled ? 0.35 : 1,
+                        filter: isDimmed ? "grayscale(0.5)" : "none",
+                        backgroundColor: isFocused ? `${color}14` : `${theme.text}04`,
+                        border: `1px solid ${isFocused ? `${color}35` : `${theme.text}10`}`,
+                        boxShadow: isFocused
+                          ? `0 12px 28px ${color}14, inset 0 0 0 1px ${color}12`
+                          : "none",
+                      }}
+                      onClick={() => onToggleRhymeKey?.(group.key)}
+                      onDoubleClick={() => {
+                        onFocusRhymeKey?.(focusedRhymeKey === group.key ? null : group.key);
+                      }}
+                      onMouseEnter={() => onHoverRhymeKey?.(group.key)}
+                      onMouseLeave={() => onHoverRhymeKey?.(null)}
+                    >
+                      <div
+                        className="absolute left-3 bottom-0 h-[2px] rounded-full pointer-events-none"
+                        style={{
+                          width: `${Math.max(16, Math.min(84, group.words.length * 12))}%`,
+                          backgroundColor: color,
+                          opacity: 0.28,
+                        }}
+                      />
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span
+                          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: color }}
+                        />
+                        <span
+                          className="text-xl font-bold tabular-nums min-w-[28px] text-right"
+                          style={{ color }}
+                        >
+                          {group.words.length}
+                        </span>
+                        <span className="opacity-25 text-xs font-medium">•</span>
+                        <span
+                          className="text-sm font-medium flex-1 min-w-0 truncate"
+                          style={{ color: theme.text }}
+                        >
+                          {group.words.slice(0, 5).join(", ")}
+                          {group.words.length > 5 ? ` +${group.words.length - 5}` : ""}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {group.approximate && (
+                          <span
+                            className="text-[10px] font-medium"
+                            style={{ color: theme.text, opacity: 0.45 }}
+                            title="Approximate rhyme (word not in dictionary)"
+                          >
+                            ~
+                          </span>
+                        )}
+                        <span
+                          className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-mono font-bold"
+                          style={{ backgroundColor: `${color}18`, color }}
+                        >
+                          {rhymeLabel}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-xs text-center py-2" style={{ color: theme.text, opacity: 0.4 }}>
+                No rhyme groups detected yet
+              </p>
+            )}
+          </div>
+
+          {/* LINES section — collapsible */}
+              {songData.lines.filter((l) => l.totalSyllables > 0).length > 0 && (() => {
+                const syllableCounts = songData.lines
+                  .filter((l) => l.totalSyllables > 0)
+                  .map((l) => l.totalSyllables);
+                const maxSyl = Math.max(...syllableCounts, 1);
+                const minSyl = Math.min(...syllableCounts, 0);
+                return (
+                  <>
+                    <TouchButton
+                      onClick={() => setIsLinesCollapsed(prev => !prev)}
+                      className="w-full text-[10px] uppercase tracking-widest mt-3 mb-3 flex items-center gap-2 cursor-pointer hover:opacity-80 transition-all"
+                      style={{ color: theme.text, opacity: 0.5 }}
+                    >
+                      <span
+                        className="flex-1 h-px"
+                        style={{ backgroundColor: `${theme.text}20` }}
+                      />
+                      <span className="flex items-center gap-2">
+                        <span
+                          className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] transition-all duration-200"
+                          style={{
+                            backgroundColor: isLinesCollapsed ? `${theme.accent}25` : `${theme.accent}40`,
+                            color: theme.accent,
+                            transform: isLinesCollapsed ? "rotate(-90deg)" : "rotate(0deg)",
+                            boxShadow: isLinesCollapsed ? "none" : `0 0 8px ${theme.accent}30`,
+                          }}
+                        >
+                          ▼
+                        </span>
+                        <span>Lines</span>
+                      </span>
+                      <span
+                        className="flex-1 h-px"
+                        style={{ backgroundColor: `${theme.text}20` }}
+                      />
+                    </TouchButton>
+
+                    <div
+                      className="overflow-hidden transition-all duration-300 ease-out"
+                      style={{
+                        maxHeight: isLinesCollapsed ? "0px" : "300px",
+                        opacity: isLinesCollapsed ? 0 : 1,
+                      }}
+                    >
+                      <div className="relative">
+                        <div
+                          className="overflow-y-auto space-y-1"
+                          style={{ maxHeight: "200px" }}
+                        >
+                          {songData.lines.map((line, i) => {
+                            if (line.totalSyllables === 0) return null;
+                            const density = maxSyl > minSyl
+                              ? (line.totalSyllables - minSyl) / (maxSyl - minSyl)
+                              : 0.5;
+                            const countOpacity = 0.35 + density * 0.55;
+                            return (
+                              <div
+                                key={i}
+                                className="flex items-center justify-between text-xs min-h-[24px]"
+                                style={{ color: theme.text }}
+                              >
+                                <span className="truncate flex-1 mr-3" style={{ opacity: 0.45 }}>
+                                  {line.text.trim()}
+                                </span>
+                                <span
+                                  className="tabular-nums font-medium text-right min-w-[24px]"
+                                  style={{
+                                    color: density > 0.7 ? theme.accent : theme.text,
+                                    opacity: countOpacity,
+                                    fontVariantNumeric: "tabular-nums",
+                                  }}
+                                >
+                                  {line.totalSyllables}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {/* Bottom fade mask when content overflows */}
+                        {songData.lines.filter((l) => l.totalSyllables > 0).length > 12 && (
+                          <div
+                            className="absolute bottom-0 left-0 right-0 h-6 pointer-events-none"
+                            style={{
+                              background: `linear-gradient(transparent, ${theme.background}E6)`,
+                            }}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Syntax View */}
+      {!songMode && (
+      <div className="px-[21px] pb-[13px]">
           {/* Collapsible header with toggle */}
           <button
             onClick={toggleBreakdown}
@@ -592,7 +989,8 @@ const PanelBody: React.FC<PanelBodyProps> = ({
                 return (
                   <div
                     key={item.key}
-                    className={`absolute left-0 right-0 flex items-center justify-between py-2 px-2.5 rounded-lg select-none ${
+                    data-testid={`syntax-breakdown-row-${item.key}`}
+                    className={`absolute left-0 right-0 grid grid-cols-[14px_64px_12px_minmax(0,1fr)_44px] items-center gap-x-3 px-3 rounded-lg select-none ${
                       isBeingDragged
                         ? "z-50 cursor-grabbing"
                         : "z-10 cursor-grab"
@@ -622,6 +1020,7 @@ const PanelBody: React.FC<PanelBodyProps> = ({
                       opacity: isDimmed ? 0.4 : !isActive ? 0.4 : 1,
                       filter: isDimmed ? "grayscale(0.6)" : "none",
                       borderRadius: "8px",
+                      overflow: "visible",
                     }}
                     onDoubleClick={() =>
                       handleDoubleClick(item.key as keyof HighlightConfig)
@@ -644,82 +1043,85 @@ const PanelBody: React.FC<PanelBodyProps> = ({
                   >
                     {/* Proportional bar — thin bottom line */}
                     <div
-                      className="absolute left-2 bottom-0 rounded-full pointer-events-none"
+                      className="absolute left-8 bottom-[5px] rounded-full pointer-events-none"
                       style={{
                         width:
                           item.count > 0
-                            ? `${Math.max(4, (item.count / maxCount) * 60)}%`
+                            ? `${Math.max(12, (item.count / maxCount) * 66)}%`
                             : "0%",
                         height: "2px",
                         backgroundColor: categoryColor,
                         opacity: 0.3,
                         transition:
                           "width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease",
+                        }}
+                    />
+                    <span
+                      ref={(el) => {
+                        dotsRef.current[index] = el;
+                      }}
+                      className="w-3.5 h-3.5 rounded-full"
+                      style={{
+                        backgroundColor: categoryColor,
+                        transform: isBeingDragged
+                          ? "scale(1.4)"
+                          : isBeingPushed
+                            ? `scale(${1.1 + pushIntensity * 0.15})`
+                            : "scale(1)",
+                        boxShadow: isBeingDragged
+                          ? `0 0 16px ${categoryColor}90, 0 0 32px ${categoryColor}40`
+                          : isBeingPushed
+                            ? `0 0 8px ${categoryColor}50`
+                            : "none",
+                        transition:
+                          "transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 150ms ease",
                       }}
                     />
-                    <div className="flex items-center gap-2">
-                      <span
-                        ref={(el) => {
-                          dotsRef.current[index] = el;
-                        }}
-                        className="w-3 h-3 rounded-full"
-                        style={{
-                          backgroundColor: categoryColor,
-                          transform: isBeingDragged
-                            ? "scale(1.4)"
-                            : isBeingPushed
-                              ? `scale(${1.1 + pushIntensity * 0.15})`
-                              : "scale(1)",
-                          boxShadow: isBeingDragged
-                            ? `0 0 16px ${categoryColor}90, 0 0 32px ${categoryColor}40`
-                            : isBeingPushed
-                              ? `0 0 8px ${categoryColor}50`
-                              : "none",
-                          transition:
-                            "transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 150ms ease",
-                        }}
-                      />
-                      <span
-                        className="text-xl font-bold tabular-nums min-w-[40px] text-right"
-                        style={{ color: categoryColor }}
-                      >
-                        {item.count}
-                      </span>
-                      <span className="opacity-30 text-xs font-medium">×</span>
-                      <span className="font-medium">{item.label}</span>
-                    </div>
+                    <span
+                      data-testid={`syntax-breakdown-count-${item.key}`}
+                      className="text-[2rem] leading-[1.05] font-bold tabular-nums text-right tracking-[-0.04em]"
+                      style={{ color: categoryColor, fontVariantNumeric: "tabular-nums" }}
+                    >
+                      {item.count}
+                    </span>
+                    <span className="opacity-22 text-sm font-medium justify-self-center">×</span>
+                    <span
+                      data-testid={`syntax-breakdown-label-${item.key}`}
+                      className="min-w-0 truncate text-[1.08rem] leading-none font-medium tracking-[-0.02em]"
+                    >
+                      {item.label}
+                    </span>
 
-                    <div className="flex items-center gap-3">
-                      {/* Shortcut badge — small keyboard hint inside 44px touch target */}
-                      <TouchButton
-                        onClick={() =>
-                          onToggleHighlight(item.key as keyof HighlightConfig)
-                        }
-                        className={`flex items-center justify-center transition-all ${
-                          isSoloed ? "ring-2 ring-offset-1" : ""
-                        }`}
-                        style={
-                          {
-                            minWidth: "44px",
-                            minHeight: "44px",
-                            "--tw-ring-color": categoryColor,
-                            "--tw-ring-offset-color": theme.background,
-                          } as React.CSSProperties
-                        }
+                    {/* Shortcut badge — small keyboard hint inside 44px touch target */}
+                    <TouchButton
+                      onClick={() =>
+                        onToggleHighlight(item.key as keyof HighlightConfig)
+                      }
+                      data-testid={`syntax-breakdown-toggle-${item.key}`}
+                      className={`flex items-center justify-center justify-self-end transition-all ${
+                        isSoloed ? "ring-2 ring-offset-1" : ""
+                      }`}
+                      style={
+                        {
+                          minWidth: "44px",
+                          minHeight: "44px",
+                          "--tw-ring-color": categoryColor,
+                          "--tw-ring-offset-color": theme.background,
+                        } as React.CSSProperties
+                      }
+                    >
+                      <span
+                        className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-mono font-bold"
+                        style={{
+                          backgroundColor: isActive
+                            ? `${categoryColor}30`
+                            : `${theme.text}10`,
+                          color: isActive ? categoryColor : theme.text,
+                        }}
                       >
-                        <span
-                          className="w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-mono font-bold"
-                          style={{
-                            backgroundColor: isActive
-                              ? `${categoryColor}30`
-                              : `${theme.text}10`,
-                            color: isActive ? categoryColor : theme.text,
-                          }}
-                        >
-                          {item.shortKey}
-                        </span>
-                      </TouchButton>
-                    </div>
+                        {item.shortKey}
+                      </span>
+                    </TouchButton>
                   </div>
                 );
               })}
@@ -826,342 +1228,24 @@ const PanelBody: React.FC<PanelBodyProps> = ({
         </div>
       )}
 
-      {/* Song Mode: Dedicated panel view — replaces breakdown */}
-      {songMode && songData && (
-        <div className="px-[21px] pb-[13px]">
-          {/* Non-Latin warning */}
-          {songData.nonLatinWarning && (
-            <div
-              className="mb-3 px-3 py-2 rounded-lg text-xs"
-              style={{
-                backgroundColor: `${theme.text}08`,
-                border: `1px solid ${theme.text}15`,
-                color: theme.text,
-                opacity: 0.6,
-              }}
-            >
-              Rhyme analysis supports English only
-            </div>
-          )}
-
-          {/* 1. "— SONG —" header with inline syllable toggle */}
-          <div
-            className="text-xs uppercase tracking-widest mb-[13px] flex items-center gap-2"
-            style={{ color: theme.text, opacity: 0.5 }}
-          >
-            <span
-              className="flex-1 h-px"
-              style={{ backgroundColor: `${theme.text}20` }}
-            />
-            <span>Song</span>
-            {onToggleSyllableAnnotations && (
-              <TouchButton
-                onClick={onToggleSyllableAnnotations}
-                className="transition-all"
-                style={{
-                  opacity: showSyllableAnnotations ? 0.8 : 0.35,
-                  color: showSyllableAnnotations ? theme.accent : theme.text,
-                }}
-                title={showSyllableAnnotations ? "Hide syllable annotations" : "Show syllable annotations"}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  {showSyllableAnnotations ? (
-                    <>
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                      <circle cx="12" cy="12" r="3"/>
-                    </>
-                  ) : (
-                    <>
-                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-                      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-                      <line x1="1" y1="1" x2="23" y2="23"/>
-                    </>
-                  )}
-                </svg>
-              </TouchButton>
-            )}
-            <span
-              className="flex-1 h-px"
-              style={{ backgroundColor: `${theme.text}20` }}
-            />
-          </div>
-
-          {/* 2. Quick counts row — moved up, right after header */}
-          <div
-            className="mb-3 grid grid-cols-3 gap-3 text-center"
-          >
-            <div className="flex flex-col items-center">
-              <span
-                className="text-xl font-bold tabular-nums block"
-                style={{ color: theme.accent }}
-              >
-                {songData.totalSyllables}
-              </span>
-              <span className="text-[10px] uppercase tracking-wider" style={{ color: theme.text, opacity: 0.4 }}>
-                Syllables
-              </span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span
-                className="text-xl font-bold tabular-nums block"
-                style={{ color: theme.text, opacity: 0.7 }}
-              >
-                {songData.lines.filter((l) => l.words.length > 0).length}
-              </span>
-              <span className="text-[10px] uppercase tracking-wider" style={{ color: theme.text, opacity: 0.4 }}>
-                Lines
-              </span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span
-                className="text-xl font-bold tabular-nums block"
-                style={{ color: rhymeColors.length > 0 ? rhymeColors[0] : theme.text }}
-              >
-                {songData.rhymeGroups.length}
-              </span>
-              <span className="text-[10px] uppercase tracking-wider" style={{ color: theme.text, opacity: 0.4 }}>
-                Rhymes
-              </span>
-            </div>
-          </div>
-
-          {/* RHYMES section — collapsible */}
-          <TouchButton
-            onClick={() => setIsRhymesCollapsed(prev => !prev)}
-            className="w-full text-[10px] uppercase tracking-widest mb-3 flex items-center gap-2 cursor-pointer hover:opacity-80 transition-all"
-            style={{ color: theme.text, opacity: 0.5 }}
-          >
-            <span
-              className="flex-1 h-px"
-              style={{ backgroundColor: `${theme.text}20` }}
-            />
-            <span className="flex items-center gap-2">
-              <span
-                className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] transition-all duration-200"
-                style={{
-                  backgroundColor: isRhymesCollapsed ? `${theme.accent}25` : `${theme.accent}40`,
-                  color: theme.accent,
-                  transform: isRhymesCollapsed ? "rotate(-90deg)" : "rotate(0deg)",
-                  boxShadow: isRhymesCollapsed ? "none" : `0 0 8px ${theme.accent}30`,
-                }}
-              >
-                ▼
-              </span>
-              <span>Rhymes</span>
-            </span>
-            <span
-              className="flex-1 h-px"
-              style={{ backgroundColor: `${theme.text}20` }}
-            />
-          </TouchButton>
-
-          <div
-            className="overflow-hidden transition-all duration-300 ease-out"
-            style={{
-              maxHeight: isRhymesCollapsed ? "0px" : "600px",
-              opacity: isRhymesCollapsed ? 0 : 1,
-            }}
-          >
-            {/* Rhyme scheme */}
-            {songData.rhymeScheme.label !== "—" && (
-              <div className="mb-3 flex items-baseline justify-between gap-2 px-1">
-                <span className="text-sm font-bold tracking-wider font-mono flex-1 min-w-0 truncate">
-                  {(songData.rhymeScheme.pattern.length > 16
-                    ? songData.rhymeScheme.pattern.slice(0, 16) + "…"
-                    : songData.rhymeScheme.pattern
-                  ).split("").map((letter, i) => {
-                    const letterIndex = letter.charCodeAt(0) - 65;
-                    const color = rhymeColors && letterIndex >= 0 && letterIndex < rhymeColors.length
-                      ? rhymeColors[letterIndex]
-                      : theme.text;
-                    return (
-                      <span key={i} style={{ color, opacity: letterIndex >= rhymeColors.length ? 0.5 : 1 }}>
-                        {letter}
-                      </span>
-                    );
-                  })}
-                </span>
-                <span className="text-xs font-medium flex-shrink-0" style={{ color: theme.text, opacity: 0.5 }}>
-                  {songData.rhymeScheme.label}
-                </span>
-              </div>
-            )}
-
-            {/* Rhyme groups — interactive */}
-            {songData.rhymeGroups.length > 0 ? (
-              <div className="grid grid-cols-1 gap-2">
-                {songData.rhymeGroups.map((group) => {
-                  const color = rhymeColors[group.colorIndex] || theme.accent;
-                  const isDisabled = disabledRhymeKeys.has(group.key);
-                  const isFocused = focusedRhymeKey === group.key;
-                  const isDimmed = focusedRhymeKey !== null && !isFocused;
-                  return (
-                    <div
-                      key={group.key}
-                      className="flex items-center gap-2 min-h-[32px] px-1 rounded-md cursor-pointer select-none transition-all duration-150"
-                      style={{
-                        opacity: isDimmed ? 0.35 : isDisabled ? 0.35 : 1,
-                        filter: isDimmed ? "grayscale(0.5)" : "none",
-                        backgroundColor: isFocused ? `${color}15` : "transparent",
-                        boxShadow: isFocused ? `inset 0 0 0 1.5px ${color}40` : "none",
-                      }}
-                      onClick={() => onToggleRhymeKey?.(group.key)}
-                      onDoubleClick={() => {
-                        onFocusRhymeKey?.(focusedRhymeKey === group.key ? null : group.key);
-                      }}
-                      onMouseEnter={() => onHoverRhymeKey?.(group.key)}
-                      onMouseLeave={() => onHoverRhymeKey?.(null)}
-                    >
-                      <span
-                        className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: color }}
-                      />
-                      <span className="text-xs flex-1 min-w-0 truncate" style={{ color: theme.text, opacity: 0.6 }}>
-                        {group.words.slice(0, 5).join(", ")}
-                        {group.words.length > 5
-                          ? ` +${group.words.length - 5}`
-                          : ""}
-                      </span>
-                      <div className="flex items-center gap-0.5 flex-shrink-0">
-                        <span
-                          className="text-[10px] tabular-nums font-medium leading-none rounded-full px-1.5 py-0.5"
-                          style={{ backgroundColor: `${color}18`, color }}
-                        >
-                          {group.words.length}
-                        </span>
-                        <span
-                          className="w-3 text-[9px] text-center flex-shrink-0"
-                          style={{ color: theme.text, opacity: group.approximate ? 0.4 : 0 }}
-                          title={group.approximate ? "Approximate rhyme (word not in dictionary)" : undefined}
-                        >
-                          {group.approximate ? "~" : ""}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="text-xs text-center py-2" style={{ color: theme.text, opacity: 0.4 }}>
-                No rhyme groups detected yet
-              </p>
-            )}
-          </div>
-
-          {/* LINES section — collapsible */}
-          {songData.lines.filter((l) => l.totalSyllables > 0).length > 0 && (() => {
-            const syllableCounts = songData.lines
-              .filter((l) => l.totalSyllables > 0)
-              .map((l) => l.totalSyllables);
-            const maxSyl = Math.max(...syllableCounts, 1);
-            const minSyl = Math.min(...syllableCounts, 0);
-            return (
-              <>
-                <TouchButton
-                  onClick={() => setIsLinesCollapsed(prev => !prev)}
-                  className="w-full text-[10px] uppercase tracking-widest mt-3 mb-3 flex items-center gap-2 cursor-pointer hover:opacity-80 transition-all"
-                  style={{ color: theme.text, opacity: 0.5 }}
-                >
-                  <span
-                    className="flex-1 h-px"
-                    style={{ backgroundColor: `${theme.text}20` }}
-                  />
-                  <span className="flex items-center gap-2">
-                    <span
-                      className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] transition-all duration-200"
-                      style={{
-                        backgroundColor: isLinesCollapsed ? `${theme.accent}25` : `${theme.accent}40`,
-                        color: theme.accent,
-                        transform: isLinesCollapsed ? "rotate(-90deg)" : "rotate(0deg)",
-                        boxShadow: isLinesCollapsed ? "none" : `0 0 8px ${theme.accent}30`,
-                      }}
-                    >
-                      ▼
-                    </span>
-                    <span>Lines</span>
-                  </span>
-                  <span
-                    className="flex-1 h-px"
-                    style={{ backgroundColor: `${theme.text}20` }}
-                  />
-                </TouchButton>
-
-                <div
-                  className="overflow-hidden transition-all duration-300 ease-out"
-                  style={{
-                    maxHeight: isLinesCollapsed ? "0px" : "300px",
-                    opacity: isLinesCollapsed ? 0 : 1,
-                  }}
-                >
-                  <div className="relative">
-                    <div
-                      className="overflow-y-auto space-y-1"
-                      style={{ maxHeight: "200px" }}
-                    >
-                      {songData.lines.map((line, i) => {
-                        if (line.totalSyllables === 0) return null;
-                        const density = maxSyl > minSyl
-                          ? (line.totalSyllables - minSyl) / (maxSyl - minSyl)
-                          : 0.5;
-                        const countOpacity = 0.35 + density * 0.55;
-                        return (
-                          <div
-                            key={i}
-                            className="flex items-center justify-between text-xs min-h-[24px]"
-                            style={{ color: theme.text }}
-                          >
-                            <span className="truncate flex-1 mr-3" style={{ opacity: 0.45 }}>
-                              {line.text.trim()}
-                            </span>
-                            <span
-                              className="tabular-nums font-medium text-right min-w-[24px]"
-                              style={{
-                                color: density > 0.7 ? theme.accent : theme.text,
-                                opacity: countOpacity,
-                                fontVariantNumeric: "tabular-nums",
-                              }}
-                            >
-                              {line.totalSyllables}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    {/* Bottom fade mask when content overflows */}
-                    {songData.lines.filter((l) => l.totalSyllables > 0).length > 12 && (
-                      <div
-                        className="absolute bottom-0 left-0 right-0 h-6 pointer-events-none"
-                        style={{
-                          background: `linear-gradient(transparent, ${theme.background}E6)`,
-                        }}
-                      />
-                    )}
-                  </div>
-                </div>
-              </>
-            );
-          })()}
-        </div>
-      )}
-
       {/* Keyboard Hint Footer */}
       <div
         className="px-6 py-3 text-center border-t"
         style={{ borderColor: `${theme.text}10` }}
       >
-        <p className="text-xs opacity-40 mt-1">
-          {songMode ? (
-            "Rhyme groups highlighted"
-          ) : (
-            <>
-              Press{" "}
-              <Kbd theme={theme}>1</Kbd>
-              {" - "}
-              <Kbd theme={theme}>9</Kbd>{" "}
-              to toggle
-            </>
-          )}
-        </p>
+        {songMode ? (
+          <p className="text-xs opacity-40 mt-1">
+            Click a rhyme to toggle, double-click to solo
+          </p>
+        ) : (
+          <p className="text-xs opacity-40 mt-1">
+            Press{" "}
+            <Kbd theme={theme}>1</Kbd>
+            {" - "}
+            <Kbd theme={theme}>9</Kbd>{" "}
+            to toggle
+          </p>
+        )}
       </div>
     </div>
   );

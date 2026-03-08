@@ -18,6 +18,37 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose, theme }) => {
   const view = SHORTCUTS.filter((s) => s.category === "view");
   const focus = SHORTCUTS.filter((s) => s.category === "focus");
   const debug = SHORTCUTS.filter((s) => s.category === "debug");
+  const shortcutRowClass =
+    "grid grid-cols-[minmax(0,1fr)_max-content] items-center gap-x-8 py-3 sm:gap-x-10";
+
+  const ShortcutSection = ({
+    title,
+    items,
+  }: {
+    title: string;
+    items: Array<{ id: string; label: string; hotkey: string }>;
+  }) => (
+    <section className="min-w-0">
+      <h3 className="text-sm font-bold uppercase tracking-wider opacity-50 mb-4">
+        {title}
+      </h3>
+      <div className="space-y-1 text-sm">
+        {items.map((s, index) => (
+          <div
+            key={s.id}
+            className={`${shortcutRowClass} ${
+              index < items.length - 1 ? "border-b border-current/10" : ""
+            }`}
+          >
+            <span className="opacity-70">{s.label}</span>
+            <span className="justify-self-end">
+              <Kbd theme={theme} hotkey={s.hotkey} />
+            </span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
 
   return (
     <>
@@ -29,7 +60,8 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose, theme }) => {
 
       {/* Modal */}
       <div
-        className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-md max-h-[80vh] overflow-y-auto z-[101] liquid-glass p-6 md:p-8"
+        data-testid="help-modal"
+        className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[94vw] max-w-5xl max-h-[84vh] overflow-y-auto z-[101] liquid-glass p-6 md:p-10"
         style={{
           backgroundColor: `${theme.background}f5`,
           color: theme.text,
@@ -58,109 +90,70 @@ const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose, theme }) => {
           </TouchButton>
         </div>
 
-        {/* Editing Shortcuts */}
-        <section className="mb-5">
-          <h3 className="text-sm font-bold uppercase tracking-wider opacity-50 mb-3">
-            Editing
-          </h3>
-          <div className="space-y-3 text-sm">
-            {editing.map((s) => (
-              <div
-                key={s.id}
-                className="flex justify-between items-center py-2 border-b border-current/10"
-              >
-                <span className="opacity-70">{s.label}</span>
-                <Kbd theme={theme} hotkey={s.hotkey} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-14 gap-y-8">
+          <div className="space-y-8 min-w-0">
+            <ShortcutSection title="Editing" items={editing} />
+
+            <section className="min-w-0">
+              <h3 className="text-sm font-bold uppercase tracking-wider opacity-50 mb-4">
+                Word Types
+              </h3>
+              <div className="space-y-1 text-sm">
+                <div className={`${shortcutRowClass} border-b border-current/10`}>
+                  <span className="opacity-70">Toggle word types</span>
+                  <span className="justify-self-end">
+                    <Kbd theme={theme}>1 – 9</Kbd>
+                  </span>
+                </div>
               </div>
-            ))}
-          </div>
-        </section>
+            </section>
 
-        {/* View Shortcuts */}
-        <section className="mb-5">
-          <h3 className="text-sm font-bold uppercase tracking-wider opacity-50 mb-3">
-            View
-          </h3>
-          <div className="space-y-3 text-sm">
-            {view.map((s) => (
-              <div
-                key={s.id}
-                className="flex justify-between items-center py-2 border-b border-current/10"
-              >
-                <span className="opacity-70">{s.label}</span>
-                <Kbd theme={theme} hotkey={s.hotkey} />
+            <section className="min-w-0">
+              <h3 className="text-sm font-bold uppercase tracking-wider opacity-50 mb-4">
+                Focus Mode
+              </h3>
+              <div className="space-y-1 text-sm">
+                <div className={`${shortcutRowClass} border-b border-current/10`}>
+                  <span className="opacity-70">Navigate in focus mode</span>
+                  <span className="justify-self-end">
+                    <Kbd theme={theme}>← →</Kbd>
+                  </span>
+                </div>
+                <div className={`${shortcutRowClass} border-b border-current/10`}>
+                  <span className="opacity-70">Change focus level</span>
+                  <span className="justify-self-end">
+                    <Kbd theme={theme}>↑ ↓</Kbd>
+                  </span>
+                </div>
+                <div className={shortcutRowClass}>
+                  <span className="opacity-70">Exit focus mode</span>
+                  <span className="justify-self-end">
+                    <Kbd theme={theme} hotkey="Escape" />
+                  </span>
+                </div>
               </div>
-            ))}
+            </section>
           </div>
-        </section>
 
-        {/* Word Types */}
-        <section className="mb-5">
-          <h3 className="text-sm font-bold uppercase tracking-wider opacity-50 mb-3">
-            Word Types
-          </h3>
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between items-center py-2 border-b border-current/10">
-              <span className="opacity-70">Toggle word types</span>
-              <Kbd theme={theme}>1 – 9</Kbd>
-            </div>
+          <div className="space-y-8 min-w-0">
+            <ShortcutSection title="View" items={view} />
+            <ShortcutSection title="Debug" items={debug} />
+
+            <section className="min-w-0">
+              <h3 className="text-sm font-bold uppercase tracking-wider opacity-50 mb-4">
+                Mobile
+              </h3>
+              <ul className="space-y-3 text-sm opacity-70">
+                <li>Select text + tap strikethrough to mark, then clean to remove</li>
+                <li>In Focus mode, tap the text to target a word, sentence, or paragraph</li>
+                <li>Tap a theme chip to switch, then open settings to customize colors</li>
+              </ul>
+            </section>
           </div>
-        </section>
-
-        {/* Focus Mode */}
-        <section className="mb-5">
-          <h3 className="text-sm font-bold uppercase tracking-wider opacity-50 mb-3">
-            Focus Mode
-          </h3>
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between items-center py-2 border-b border-current/10">
-              <span className="opacity-70">Navigate in focus mode</span>
-              <Kbd theme={theme}>← →</Kbd>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b border-current/10">
-              <span className="opacity-70">Change focus level</span>
-              <Kbd theme={theme}>↑ ↓</Kbd>
-            </div>
-            <div className="flex justify-between items-center py-2 border-b border-current/10">
-              <span className="opacity-70">Exit focus mode</span>
-              <Kbd theme={theme} hotkey="Escape" />
-            </div>
-          </div>
-        </section>
-
-        {/* Debug */}
-        <section className="mb-5">
-          <h3 className="text-sm font-bold uppercase tracking-wider opacity-50 mb-3">
-            Debug
-          </h3>
-          <div className="space-y-3 text-sm">
-            {debug.map((s, i) => (
-              <div
-                key={s.id}
-                className={`flex justify-between items-center py-2${i < debug.length - 1 ? " border-b border-current/10" : ""}`}
-              >
-                <span className="opacity-70">{s.label}</span>
-                <Kbd theme={theme} hotkey={s.hotkey} />
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* Mobile */}
-        <section className="mb-5">
-          <h3 className="text-sm font-bold uppercase tracking-wider opacity-50 mb-3">
-            Mobile
-          </h3>
-          <ul className="space-y-2 text-sm opacity-70">
-            <li>Select text + tap strikethrough to mark, then "Clean" to remove</li>
-            <li>In Focus mode, tap the text to target a word, sentence, or paragraph</li>
-            <li>Tap a color dot to switch themes, swipe to cycle</li>
-            <li>Open Settings to reorder, hide, or customize themes</li>
-          </ul>
-        </section>
+        </div>
 
         {/* Privacy */}
-        <p className="text-xs opacity-50 text-center">
+        <p className="text-xs opacity-50 text-center mt-6">
           Your work stays in your browser — nothing leaves this device.
         </p>
       </div>

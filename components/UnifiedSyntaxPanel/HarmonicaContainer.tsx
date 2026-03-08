@@ -203,10 +203,11 @@ const HarmonicaContainer: React.FC<HarmonicaContainerProps> = ({
           {children.expand}
         </div>
 
-        {/* Full content */}
+        {/* Full content — onPointerDown prevents focus steal from textarea */}
         <div
           data-testid="mobile-panel-scroll-region"
           className="absolute transition-opacity duration-200"
+          onPointerDown={(e) => e.preventDefault()}
           style={{
             left: 0,
             right: 0,

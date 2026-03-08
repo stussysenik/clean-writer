@@ -58,6 +58,7 @@ const DesktopSyntaxPanel: React.FC<DesktopSyntaxPanelProps> = ({
   onToggleRhymeKey,
 }) => {
   const panelRef = useRef<HTMLDivElement>(null);
+  const panelWidth = "min(360px, calc(100vw - 72px))";
 
   return (
     <div
@@ -74,7 +75,10 @@ const DesktopSyntaxPanel: React.FC<DesktopSyntaxPanelProps> = ({
         // Enhanced shadow with glass effect
         boxShadow: `0 8px 32px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.08), inset 0 0 0 1px ${theme.text}08`,
         opacity: 1,
+        width: panelWidth,
+        minWidth: "288px",
         maxHeight: "calc(100vh - 120px)",
+        overflowX: "hidden",
         overflowY: "auto",
       }}
     >

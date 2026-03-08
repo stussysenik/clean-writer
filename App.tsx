@@ -57,8 +57,11 @@ import {
 import { useFocusNavigation } from "./hooks/useFocusNavigation";
 import { initOverlapDebug } from "./utils/overlapDebug";
 import useResponsiveBreakpoint from "./hooks/useResponsiveBreakpoint";
+import { useMobileEditState } from "./hooks/useMobileEditState";
+import { oklchInterpolate } from "./utils/oklch";
 
 const UTF8_DISPLAY_STORAGE_KEY = "clean_writer_utf8_display_enabled";
+const SHOW_LINE_WIDTH_SLIDER = false;
 
 const FRESH_LOAD_TEXT = `"It is the time you have wasted for your rose that makes your rose so important."
 
@@ -249,7 +252,7 @@ const App: React.FC = () => {
 
   const handleSelectThemeForEditing = useCallback((id: string) => {
     setThemeId(id);
-    setCustomizerInitialTab("colors");
+    setCustomizerInitialTab("themes");
   }, []);
 
   const handleThemeRename = useCallback((themeId: string, newName: string) => {
@@ -286,7 +289,7 @@ const App: React.FC = () => {
     }
   });
 
-  // Song Mode state
+  // Dedicated song view state
   const [songMode, setSongMode] = useState(false);
   const [songData, setSongData] = useState<SongAnalysis | null>(null);
   const [showSyllableAnnotations, setShowSyllableAnnotations] = useState<boolean>(() => {
@@ -388,14 +391,16 @@ const App: React.FC = () => {
     hasOverridesForTheme,
   } = useCustomTheme(themeId, savedCustomThemes);
 
-  // Compute effective rhyme colors: for custom themes, use their saved rhyme colors as defaults
+  // Compute effective rhyme colors: prefer current theme's OKLCH-derived rhymeColors,
+  // then custom theme overrides, then static fallback
   const customThemeEntry = savedCustomThemes.find((t) => t.id === themeId);
+  const presetTheme = THEMES.find((t) => t.id === themeId);
   const effectiveRhymeColors = useMemo(
     () => {
-      const defaults = customThemeEntry?.rhymeColors || RHYME_COLORS;
+      const defaults = presetTheme?.rhymeColors || customThemeEntry?.rhymeColors || RHYME_COLORS;
       return defaults.map((def, i) => rhymeColorOverrides?.[i] ?? def);
     },
-    [rhymeColorOverrides, customThemeEntry],
+    [rhymeColorOverrides, customThemeEntry, presetTheme?.rhymeColors],
   );
 
   // Use theme visibility hook
@@ -438,7 +443,7 @@ const App: React.FC = () => {
     useSyntaxWorker();
 
   // Selection persistence for mobile strikethrough
-  const { saveSelection, getSavedSelection, savedSelection, clearSelection } =
+  const { saveSelection, getSavedSelection, restoreSelection, savedSelection, clearSelection } =
     useSelectionPersistence(textareaRef);
 
   // Toast state for last-theme warning
@@ -535,6 +540,15 @@ const App: React.FC = () => {
 
   // Responsive breakpoint for desktop panel padding & shortcut overlay
   const { isDesktop, isMobile } = useResponsiveBreakpoint();
+
+  // Mobile edit/view state for visual distinction
+  const mobileEditState = useMobileEditState(textareaRef, isMobile);
+
+  // Warm background tint when editing on mobile (5% shift towards a warm tone)
+  const mobileBackground = useMemo(() => {
+    if (!isMobile || mobileEditState !== "editing") return currentTheme.background;
+    return oklchInterpolate(currentTheme.background, "#FFF0E0", 0.05);
+  }, [isMobile, mobileEditState, currentTheme.background]);
 
   // First-time mobile welcome popup
   useEffect(() => {
@@ -757,7 +771,7 @@ const App: React.FC = () => {
     return () => clearTimeout(handler);
   }, [content, analyzeInWorker]);
 
-  // Song analysis (runs in Web Worker when song mode is active)
+  // Song analysis (runs only while the dedicated song view is active)
   useEffect(() => {
     if (!songMode || content.length === 0) {
       setSongData(null);
@@ -938,7 +952,7 @@ const App: React.FC = () => {
     <div
       className="w-full h-[100dvh] flex flex-col relative overflow-x-hidden transition-colors duration-500"
       style={{
-        backgroundColor: currentTheme.background,
+        backgroundColor: isMobile ? mobileBackground : currentTheme.background,
         color: currentTheme.text,
         fontFamily: displayFontFamily,
       }}
@@ -992,9 +1006,9 @@ const App: React.FC = () => {
         theme={currentTheme}
       />
 
-      <ThemeCustomizer
-        isOpen={isCustomizerOpen}
-        onClose={() => setIsCustomizerOpen(false)}
+        <ThemeCustomizer
+          isOpen={isCustomizerOpen}
+          onClose={() => setIsCustomizerOpen(false)}
         theme={currentTheme}
         hasCustomizations={hasCustomizations}
         onSetColor={setColor}
@@ -1021,10 +1035,9 @@ const App: React.FC = () => {
         onThemeRename={handleThemeRename}
         onSelectThemeForEditing={handleSelectThemeForEditing}
         hasOverridesForTheme={hasOverridesForTheme}
-        songMode={songMode}
         initialTab={customizerInitialTab}
         onInitialTabConsumed={() => setCustomizerInitialTab(null)}
-        savedCustomThemes={savedCustomThemes}
+          savedCustomThemes={savedCustomThemes}
         onSaveCustomTheme={handleSaveCustomTheme}
         onDeleteCustomTheme={handleDeleteCustomTheme}
         onRenameCustomTheme={renameCustomTheme}
@@ -1152,6 +1165,7 @@ const App: React.FC = () => {
                   onClick={() => setIsCustomizerOpen(true)}
                   className="p-2 rounded-xl hover:bg-current/5 transition-all duration-200"
                   title="Customize Theme"
+                  data-testid="open-theme-customizer"
                   style={{
                     color: getIconColor(currentTheme),
                   }}
@@ -1185,6 +1199,7 @@ const App: React.FC = () => {
             textareaRef={textareaRef}
             hoveredCategory={hoveredCategory}
             persistedSelection={savedSelection}
+            onRestoreSelection={restoreSelection}
             songMode={songMode}
             songData={songData}
             rhymeColors={effectiveRhymeColors}
@@ -1239,7 +1254,7 @@ const App: React.FC = () => {
       />
 
       {/* Floating Line Width Slider — centered in viewport */}
-      {viewMode === "write" && (
+      {viewMode === "write" && SHOW_LINE_WIDTH_SLIDER && (
         <div
           className="absolute left-1/2 bottom-[21%] -translate-x-1/2 z-40 pointer-events-auto"
         >
@@ -1282,6 +1297,7 @@ const App: React.FC = () => {
         viewMode={viewMode}
         hasStrikethroughs={hasStrikethroughs}
         focusMode={focusMode}
+        dimmed={isMobile && mobileEditState === "viewing"}
         onToggleView={toggleViewMode}
         onStrikethrough={handleStrikethroughWithFocus}
         onStrikethroughPointerDown={handleStrikethroughPointerDown}
