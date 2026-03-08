@@ -5,6 +5,7 @@ import React, {
   useMemo,
   useRef,
 } from "react";
+import { formatForDisplay } from "@tanstack/react-hotkeys";
 import {
   THEMES,
   THEME_STORAGE_KEY,
@@ -15,6 +16,7 @@ import {
   RHYME_COLORS,
   FontId,
 } from "./constants";
+import { SHORTCUTS } from "./constants/shortcuts";
 import { countWords } from "./services/localSyntaxService";
 import {
   SyntaxAnalysis,
@@ -26,6 +28,7 @@ import {
   FocusMode,
 } from "./types";
 import { useSyntaxWorker } from "./hooks/useSyntaxWorker";
+import { useAppHotkeys } from "./hooks/useAppHotkeys";
 import Typewriter from "./components/Typewriter";
 import MarkdownPreview from "./components/MarkdownPreview";
 import ConfirmDialog from "./components/ConfirmDialog";
@@ -54,19 +57,6 @@ import {
 import { useFocusNavigation } from "./hooks/useFocusNavigation";
 import { initOverlapDebug } from "./utils/overlapDebug";
 import useResponsiveBreakpoint from "./hooks/useResponsiveBreakpoint";
-
-// Keyboard shortcut mapping (1-9 for word types)
-const NUMBER_KEY_MAP: { [key: string]: keyof HighlightConfig } = {
-  "1": "nouns",
-  "2": "verbs",
-  "3": "adjectives",
-  "4": "adverbs",
-  "5": "pronouns",
-  "6": "prepositions",
-  "7": "conjunctions",
-  "8": "articles",
-  "9": "interjections",
-};
 
 const UTF8_DISPLAY_STORAGE_KEY = "clean_writer_utf8_display_enabled";
 
@@ -541,53 +531,7 @@ const App: React.FC = () => {
     setThemeId(id);
   }, []);
 
-  // Keyboard shortcuts for word type toggles (1-9)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if typing in an input/textarea or if modifier keys are pressed
-      const target = e.target as HTMLElement;
-      if (
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.isContentEditable ||
-        e.metaKey ||
-        e.ctrlKey ||
-        e.altKey
-      ) {
-        return;
-      }
-
-      const key = e.key;
-      if (key in NUMBER_KEY_MAP) {
-        e.preventDefault();
-        toggleHighlight(NUMBER_KEY_MAP[key]);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [toggleHighlight]);
-
-  // Stable ref for action shortcuts (avoids re-registering listener on content changes)
-  // NOTE: initialized empty — assigned after the callbacks are declared below (TDZ safety)
-  const shortcutActionsRef = useRef<{ handleStrikethrough: () => void; handleCleanStrikethroughs: () => void; handleExport: () => void }>(null!);
-
-  // Global keyboard shortcuts: Cmd/Ctrl + Shift + letter
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (!(e.metaKey || e.ctrlKey) || !e.shiftKey) return;
-      const a = shortcutActionsRef.current;
-      switch (e.key.toLowerCase()) {
-        case "x": e.preventDefault(); a.handleStrikethrough(); break;
-        case "k": e.preventDefault(); a.handleCleanStrikethroughs(); break;
-        case "p": e.preventDefault(); setViewMode(v => v === "write" ? "preview" : "write"); break;
-        case "e": e.preventDefault(); a.handleExport(); break;
-        case "f": e.preventDefault(); cycleFocusMode(); break;
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, []);
+  // Keyboard shortcuts moved to useAppHotkeys (called after all callbacks are declared)
 
   // Responsive breakpoint for desktop panel padding & shortcut overlay
   const { isDesktop, isMobile } = useResponsiveBreakpoint();
@@ -609,34 +553,7 @@ const App: React.FC = () => {
     } catch {}
   }, []);
 
-  // Hold-Tab cheat sheet state
-  const [tabHeld, setTabHeld] = useState(false);
-  useEffect(() => {
-    if (isMobile) { setTabHeld(false); return; }
-    const down = (e: KeyboardEvent) => {
-      if (e.key === "Tab" && !e.repeat) {
-        e.preventDefault();
-        setTabHeld(true);
-      }
-    };
-    const up = (e: KeyboardEvent) => {
-      if (e.key === "Tab") setTabHeld(false);
-    };
-    const blur = () => setTabHeld(false);
-    window.addEventListener("keydown", down);
-    window.addEventListener("keyup", up);
-    window.addEventListener("blur", blur);
-    return () => {
-      window.removeEventListener("keydown", down);
-      window.removeEventListener("keyup", up);
-      window.removeEventListener("blur", blur);
-    };
-  }, [isMobile]);
-
-  const isMac = useMemo(
-    () => /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent),
-    [],
-  );
+  // Tab hold state managed by useAppHotkeys (called after all callbacks are declared)
 
   // Font size now uses CSS clamp() — no JS resize handler needed
 
@@ -991,8 +908,18 @@ const App: React.FC = () => {
     }
   }, [focusNavState, applyStrikethroughAtFocus, handleStrikethrough]);
 
-  // Assign action refs now that all callbacks are declared (see useRef above)
-  shortcutActionsRef.current = { handleStrikethrough: handleStrikethroughWithFocus, handleCleanStrikethroughs, handleExport };
+  // Centralized keyboard shortcuts via TanStack Hotkeys
+  // Called after all callbacks are declared — useHotkey auto-syncs each render (no stale closures)
+  const { tabHeld } = useAppHotkeys({
+    toggleHighlight,
+    handleStrikethroughWithFocus,
+    handleCleanStrikethroughs,
+    handleExport,
+    handleClearRequest,
+    setViewMode,
+    cycleFocusMode,
+    isMobile,
+  });
 
   // Capture-phase listener for arrow keys in focus mode (must fire before textarea)
   useEffect(() => {
@@ -1063,7 +990,6 @@ const App: React.FC = () => {
         isOpen={isHelpOpen}
         onClose={() => setIsHelpOpen(false)}
         theme={currentTheme}
-        isMac={isMac}
       />
 
       <ThemeCustomizer
@@ -1315,10 +1241,10 @@ const App: React.FC = () => {
       {/* Floating Line Width Slider — centered in viewport */}
       {viewMode === "write" && (
         <div
-          className="absolute left-1/2 bottom-[18%] -translate-x-1/2 z-40 pointer-events-auto"
+          className="absolute left-1/2 bottom-[21%] -translate-x-1/2 z-40 pointer-events-auto"
         >
           <div
-            className="flex items-center gap-3 px-3 py-2 rounded-xl"
+            className="flex items-center gap-3 px-4 py-2.5 rounded-xl"
             style={{
               backgroundColor: `${currentTheme.background}80`,
               backdropFilter: "blur(8px)",
@@ -1332,7 +1258,7 @@ const App: React.FC = () => {
               step="50"
               value={maxWidth}
               onChange={(e) => setMaxWidth(Number(e.target.value))}
-              className="w-28 md:w-36 h-1 rounded-lg appearance-none cursor-pointer touch-manipulation"
+              className="w-36 md:w-44 h-1 rounded-lg appearance-none cursor-pointer touch-manipulation"
               style={{
                 accentColor: currentTheme.accent,
                 background: `linear-gradient(to right, ${currentTheme.accent} 0%, ${currentTheme.accent} ${((maxWidth - 300) / 1100) * 100}%, ${currentTheme.text}20 ${((maxWidth - 300) / 1100) * 100}%, ${currentTheme.text}20 100%)`,
@@ -1341,7 +1267,7 @@ const App: React.FC = () => {
               title="Line width"
             />
             <span
-              className="text-[9px] opacity-50 tabular-nums font-mono pointer-events-none"
+              className="text-[11px] opacity-50 tabular-nums font-mono pointer-events-none"
               style={{ color: currentTheme.text }}
             >
               {maxWidth}px
@@ -1390,17 +1316,33 @@ const App: React.FC = () => {
               Keyboard Shortcuts
             </h3>
             <div
-              className="grid gap-2 text-sm items-center"
+              className="grid gap-3 text-sm items-center"
               style={{ gridTemplateColumns: "auto 1fr" }}
             >
-              {[
-                [isMac ? "⌘⇧X" : "Ctrl+Shift+X", "Strikethrough"],
-                [isMac ? "⌘⇧K" : "Ctrl+Shift+K", "Clean struck text"],
-                [isMac ? "⌘⇧P" : "Ctrl+Shift+P", "Toggle preview"],
-                [isMac ? "⌘⇧E" : "Ctrl+Shift+E", "Export markdown"],
-                [isMac ? "⌘⇧F" : "Ctrl+Shift+F", "Cycle focus mode"],
-                ["1 – 9", "Toggle word types"],
-              ].map(([key, desc]) => (
+              {/* Editing & View shortcuts from registry */}
+              {SHORTCUTS
+                .filter((s) => s.category === "editing" || s.category === "view")
+                .map((s) => (
+                  <React.Fragment key={s.id}>
+                    <span className="text-right pr-3">
+                      <Kbd theme={currentTheme}>{formatForDisplay(s.hotkey)}</Kbd>
+                    </span>
+                    <span style={{ opacity: 0.7 }}>{s.label}</span>
+                  </React.Fragment>
+                ))}
+              {/* Word types grouped */}
+              <React.Fragment key="wordtypes">
+                <span className="text-right pr-3">
+                  <Kbd theme={currentTheme}>1 – 9</Kbd>
+                </span>
+                <span style={{ opacity: 0.7 }}>Toggle word types</span>
+              </React.Fragment>
+              {/* Focus navigation */}
+              {([
+                ["← →", "Navigate in focus mode"],
+                ["↑ ↓", "Change focus level"],
+                [formatForDisplay("Escape"), "Exit focus mode"],
+              ] as const).map(([key, desc]) => (
                 <React.Fragment key={key}>
                   <span className="text-right pr-3">
                     <Kbd theme={currentTheme}>{key}</Kbd>

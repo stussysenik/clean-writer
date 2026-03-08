@@ -194,15 +194,14 @@ test.describe("Responsive Syntax Panel", () => {
       await textarea.pressSequentially("cat", { delay: 10 });
       await page.waitForTimeout(600); // Wait for syntax analysis
 
-      // The ghost cursor should have the noun color
-      const ghostCursor = page.locator(".whitespace-pre-wrap > span").last();
-      const bgColor = await ghostCursor.evaluate((el) => {
-        return getComputedStyle(el).backgroundColor;
-      });
+      // The textarea caret should have a syntax-derived color
+      const caretColor = await textarea.evaluate(
+        (el) => getComputedStyle(el).caretColor,
+      );
 
       // Should have some color (not transparent)
-      expect(bgColor).not.toBe("rgba(0, 0, 0, 0)");
-      expect(bgColor).not.toBe("transparent");
+      expect(caretColor).not.toBe("rgba(0, 0, 0, 0)");
+      expect(caretColor).not.toBe("transparent");
     });
   });
 

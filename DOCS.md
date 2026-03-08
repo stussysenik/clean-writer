@@ -811,6 +811,28 @@ export const GOLDEN_SCALE = {
 
 ## Keyboard Shortcuts
 
+![Tab shortcut overlay](docs/images/tab-overlay.png)
+
+All shortcuts are managed via `@tanstack/react-hotkeys` (centralized in `constants/shortcuts.ts`). `Mod` resolves to `Cmd` on macOS and `Ctrl` on Windows/Linux.
+
+### Editing
+
+| Key | Action |
+|-----|--------|
+| Mod+Shift+X | Strikethrough |
+| Mod+Shift+K | Clean struck text |
+| Mod+Shift+D | Delete all |
+| Mod+Shift+E | Export markdown |
+
+### View
+
+| Key | Action |
+|-----|--------|
+| Mod+Shift+P | Toggle preview |
+| Mod+Shift+F | Cycle focus mode |
+
+### Word Types
+
 | Key | Action |
 |-----|--------|
 | 1 | Toggle Nouns |
@@ -823,9 +845,24 @@ export const GOLDEN_SCALE = {
 | 8 | Toggle Articles |
 | 9 | Toggle Interjections |
 
-| Cmd+Shift+Alt+O | Toggle overlap debug overlay |
+*Note: Number shortcuts only work when not typing in the editor (`ignoreInputs: true`).*
 
-*Note: Number shortcuts only work when not typing in the editor.*
+### Focus Mode
+
+| Key | Action |
+|-----|--------|
+| ← → | Navigate focus left/right |
+| ↑ ↓ | Change focus level up/down |
+| Escape | Exit focus mode |
+
+*Focus arrows use a capture-phase listener (not TanStack) to intercept before the textarea.*
+
+### Debug
+
+| Key | Action |
+|-----|--------|
+| Mod+Shift+Alt+O | Toggle overlap debug overlay |
+| Mod+Shift+Alt+D | Toggle overlap debug overlay (alt) |
 
 ---
 

@@ -6,6 +6,14 @@ Changelog and development progress for Clean Typewriter Experience t.
 
 ## Latest Release
 
+### v2.2.0 - TanStack Hotkeys Migration + Complete Shortcut Documentation
+
+**Release Date:** March 8, 2026
+
+Migrated all global keyboard shortcuts to `@tanstack/react-hotkeys` v0.4.0, replacing 3 manual `useEffect` listeners and the `shortcutActionsRef` TDZ workaround with a single declarative `useAppHotkeys` hook. Created a centralized shortcut registry (`constants/shortcuts.ts`) as the single source of truth consumed by the Tab overlay, HelpModal, and docs. Added missing shortcuts to the HelpModal (Export, Cycle Focus, Debug) and focus navigation to the Tab overlay. Platform-specific key display (`⌘` vs `Ctrl`) now auto-detected via `formatForDisplay()`, removing all `isMac` ternaries. Added optional `hotkey` prop to `Kbd` component for auto-formatting.
+
+---
+
 ### v2.1.0 - Custom Cursor, Label Truncation Fix, Lo-Fi Preview
 
 **Release Date:** February 25, 2026

@@ -113,82 +113,46 @@ test.describe("Motion Design", () => {
     });
   });
 
-  test.describe("Garfield Cursor", () => {
+  test.describe("Caret Cursor", () => {
     test.use({ viewport: { width: 1280, height: 800 } });
 
-    test("ghost cursor exists", async ({ page }) => {
-      await page.locator("textarea").click();
-      await page.locator("textarea").pressSequentially("cat", { delay: 10 });
+    test("caret has a non-transparent color", async ({ page }) => {
+      const textarea = page.locator("textarea");
+      await textarea.click();
+      await textarea.pressSequentially("cat", { delay: 10 });
       await page.waitForTimeout(600);
 
-      const ghostCursor = page.locator('[data-testid="ghost-cursor"]');
-      await expect(ghostCursor).toBeAttached();
-    });
-
-    test("ghost cursor has background color", async ({ page }) => {
-      await page.locator("textarea").click();
-      await page.locator("textarea").pressSequentially("cat", { delay: 10 });
-      await page.waitForTimeout(600);
-
-      const ghostCursor = page.locator('[data-testid="ghost-cursor"]');
-      const bgColor = await ghostCursor.evaluate(
-        (el) => getComputedStyle(el).backgroundColor,
+      const caretColor = await textarea.evaluate(
+        (el) => getComputedStyle(el).caretColor,
       );
 
-      // Should have some color (not transparent)
-      expect(bgColor).not.toBe("rgba(0, 0, 0, 0)");
-      expect(bgColor).not.toBe("transparent");
+      expect(caretColor).not.toBe("rgba(0, 0, 0, 0)");
+      expect(caretColor).not.toBe("transparent");
     });
 
-    test("cursor color changes based on last word syntax", async ({ page }) => {
-      const ghostCursor = page.locator('[data-testid="ghost-cursor"]');
+    test("caret color changes based on last word syntax", async ({ page }) => {
+      const textarea = page.locator("textarea");
 
       // Type a noun
-      await page.locator("textarea").click();
-      await page.locator("textarea").pressSequentially("cat", { delay: 10 });
+      await textarea.click();
+      await textarea.pressSequentially("cat", { delay: 10 });
       await page.waitForTimeout(600);
 
-      const nounColor = await ghostCursor.evaluate(
-        (el) => getComputedStyle(el).backgroundColor,
+      const nounColor = await textarea.evaluate(
+        (el) => getComputedStyle(el).caretColor,
       );
 
-      // Clear and type an adjective
-      await page.locator("textarea").click();
-      await page.locator("textarea").pressSequentially("quick", { delay: 10 });
+      // Type an adjective
+      await textarea.pressSequentially(" quick", { delay: 10 });
       await page.waitForTimeout(600);
 
-      const adjColor = await ghostCursor.evaluate(
-        (el) => getComputedStyle(el).backgroundColor,
+      const adjColor = await textarea.evaluate(
+        (el) => getComputedStyle(el).caretColor,
       );
 
-      // Colors may be different based on syntax category
-      // At minimum, both should be colored
+      // Both should be non-transparent
       expect(nounColor).not.toBe("rgba(0, 0, 0, 0)");
       expect(adjColor).not.toBe("rgba(0, 0, 0, 0)");
-    });
-
-    test("cursor blinks", async ({ page }) => {
-      await page.locator("textarea").click();
-      await page.locator("textarea").pressSequentially("test", { delay: 10 });
-      await page.waitForTimeout(100);
-
-      const ghostCursor = page.locator('[data-testid="ghost-cursor"]');
-
-      // Get initial opacity
-      const opacity1 = await ghostCursor.evaluate(
-        (el) => getComputedStyle(el).opacity,
-      );
-
-      // Wait for blink interval (530ms as per code)
-      await page.waitForTimeout(600);
-
-      const opacity2 = await ghostCursor.evaluate(
-        (el) => getComputedStyle(el).opacity,
-      );
-
-      // Opacity should change (blink effect)
-      // Note: Both could be same if we catch it at same phase
-      // This test documents the blink behavior exists
     });
   });
 

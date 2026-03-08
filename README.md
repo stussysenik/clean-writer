@@ -13,6 +13,13 @@
 
 </div>
 
+<div align="center">
+  <img src="docs/images/editor.png" width="600" alt="Editor with syntax highlighting" />
+  <br/><br/>
+  <img src="docs/images/tab-overlay.png" width="300" alt="Tab shortcut overlay" />
+  <img src="docs/images/help-modal.png" width="300" alt="Help modal" />
+</div>
+
 ---
 
 A distraction-free writing app with real-time syntax highlighting and PWA support.
@@ -66,6 +73,24 @@ Open [http://localhost:3000](http://localhost:3000)
 - **Type** → Characters append to end
 - **Enter** → New line
 - **Backspace** → Disabled (typewriter mode)
+
+## Shortcuts
+
+All shortcuts managed by `@tanstack/react-hotkeys`. Hold **Tab** to see the cheat sheet overlay.
+
+| Key | Action |
+|-----|--------|
+| Mod+Shift+X | Strikethrough |
+| Mod+Shift+K | Clean struck text |
+| Mod+Shift+D | Delete all |
+| Mod+Shift+E | Export markdown |
+| Mod+Shift+P | Toggle preview |
+| Mod+Shift+F | Cycle focus mode |
+| 1 – 9 | Toggle word types |
+| ← → ↑ ↓ | Focus navigation |
+| Escape | Exit focus mode |
+
+`Mod` = `Cmd` on macOS, `Ctrl` on Windows/Linux.
 
 ## Commands
 

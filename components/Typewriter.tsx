@@ -803,23 +803,6 @@ const Typewriter: React.FC<TypewriterProps> = ({
         }}
       >
         {songMode && songData ? renderSongHighlights() : renderHighlights()}
-        {!isMobile && (
-          <span
-            data-testid="ghost-cursor"
-            style={{
-              opacity: 1,
-              transition: "background-color 0.3s ease, box-shadow 0.3s ease",
-              marginLeft: "2px",
-              backgroundColor: theme.accent,
-              boxShadow: `0 0 6px ${theme.accent}`,
-              display: "inline-block",
-              width: "3px",
-              height: "1em",
-              verticalAlign: "text-bottom",
-              borderRadius: "1px",
-            }}
-          />
-        )}
       </div>
 
       {/* Last-focused-word overlay — visible when in sentence/paragraph mode */}
@@ -911,9 +894,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
           lineHeight: effectiveLineHeight,
           letterSpacing: effectiveLetterSpacing,
           color: "transparent",
-          caretColor: isMobile && focusMode !== "none"
-            ? "transparent"
-            : lastWordColor,
+          caretColor: lastWordColor,
           opacity: 1,
           WebkitTouchCallout: "none",
         }}

@@ -888,7 +888,7 @@ const PanelBody: React.FC<PanelBodyProps> = ({
 
           {/* 2. Quick counts row — moved up, right after header */}
           <div
-            className="mb-3 grid grid-cols-3 gap-2 text-center"
+            className="mb-3 grid grid-cols-3 gap-3 text-center"
           >
             <div className="flex flex-col items-center">
               <span
@@ -928,7 +928,7 @@ const PanelBody: React.FC<PanelBodyProps> = ({
           {/* RHYMES section — collapsible */}
           <TouchButton
             onClick={() => setIsRhymesCollapsed(prev => !prev)}
-            className="w-full text-[10px] uppercase tracking-widest mb-2 flex items-center gap-2 cursor-pointer hover:opacity-80 transition-all"
+            className="w-full text-[10px] uppercase tracking-widest mb-3 flex items-center gap-2 cursor-pointer hover:opacity-80 transition-all"
             style={{ color: theme.text, opacity: 0.5 }}
           >
             <span
@@ -989,7 +989,7 @@ const PanelBody: React.FC<PanelBodyProps> = ({
 
             {/* Rhyme groups — interactive */}
             {songData.rhymeGroups.length > 0 ? (
-              <div className="grid grid-cols-1 gap-1.5">
+              <div className="grid grid-cols-1 gap-2">
                 {songData.rhymeGroups.map((group) => {
                   const color = rhymeColors[group.colorIndex] || theme.accent;
                   const isDisabled = disabledRhymeKeys.has(group.key);
@@ -998,7 +998,7 @@ const PanelBody: React.FC<PanelBodyProps> = ({
                   return (
                     <div
                       key={group.key}
-                      className="flex items-center gap-1.5 min-h-[28px] px-1 rounded-md cursor-pointer select-none transition-all duration-150"
+                      className="flex items-center gap-2 min-h-[32px] px-1 rounded-md cursor-pointer select-none transition-all duration-150"
                       style={{
                         opacity: isDimmed ? 0.35 : isDisabled ? 0.35 : 1,
                         filter: isDimmed ? "grayscale(0.5)" : "none",
@@ -1059,7 +1059,7 @@ const PanelBody: React.FC<PanelBodyProps> = ({
               <>
                 <TouchButton
                   onClick={() => setIsLinesCollapsed(prev => !prev)}
-                  className="w-full text-[10px] uppercase tracking-widest mt-3 mb-2 flex items-center gap-2 cursor-pointer hover:opacity-80 transition-all"
+                  className="w-full text-[10px] uppercase tracking-widest mt-3 mb-3 flex items-center gap-2 cursor-pointer hover:opacity-80 transition-all"
                   style={{ color: theme.text, opacity: 0.5 }}
                 >
                   <span
@@ -1095,7 +1095,7 @@ const PanelBody: React.FC<PanelBodyProps> = ({
                 >
                   <div className="relative">
                     <div
-                      className="overflow-y-auto space-y-0.5"
+                      className="overflow-y-auto space-y-1"
                       style={{ maxHeight: "200px" }}
                     >
                       {songData.lines.map((line, i) => {
@@ -1107,7 +1107,7 @@ const PanelBody: React.FC<PanelBodyProps> = ({
                         return (
                           <div
                             key={i}
-                            className="flex items-center justify-between text-xs min-h-[20px]"
+                            className="flex items-center justify-between text-xs min-h-[24px]"
                             style={{ color: theme.text }}
                           >
                             <span className="truncate flex-1 mr-3" style={{ opacity: 0.45 }}>
