@@ -494,26 +494,45 @@ Generates:
 ### Run Tests
 
 ```bash
-npm run test              # All 151 tests, headless
-npm run test:ui           # Interactive UI
-npm run test:headed       # Headed browsers
+npx cypress run           # All 164 Cypress tests, headless
+npx cypress open          # Open Cypress interactive runner
+npx playwright test       # All 11 Playwright E2E tests
 ```
 
-### Test Suite Overview
+### Test Suite Overview (175 tests total)
+
+**Cypress E2E (164 tests, 22 specs):**
 
 | File | Tests | Category |
 |------|-------|----------|
-| `core-mechanics.spec.ts` | 17 | Append-only typing, backspace disabled, strikethrough |
-| `syntax-analysis.spec.ts` | 20 | NLP word detection, category counts, highlighting |
-| `responsive-paradigm.spec.ts` | 19 | Desktop/mobile mutual exclusivity at 1024px |
-| `state-persistence.spec.ts` | 22 | localStorage, content recovery, theme persistence |
-| `motion-design.spec.ts` | 20 | Glassmorphism, GSAP animations, cursor color |
-| `mobile-paradigm.spec.ts` | 27 | Touch targets, virtual keyboard, fold-tab |
-| `desktop-paradigm.spec.ts` | 26 | Always-visible panel, hover effects, toggles |
-| `responsive.spec.ts` | varies | Breakpoint behavior |
-| `theme-switching.spec.ts` | varies | Theme application, persistence |
-| `responsive-syntax-panel.spec.ts` | varies | Panel responsive behavior |
-| `mobile-touch.spec.ts` | varies | Touch interaction |
+| `typewriter-input.cy.ts` | 12 | Core input, paste, emoji, special chars, rapid typing |
+| `ime-composition.cy.ts` | 8 | CJK/Unicode input, mixed scripts, word counting |
+| `strikethrough.cy.ts` | 6 | Apply, remove, clean, backdrop rendering |
+| `focus-mode.cy.ts` | 7 | Mode cycling, navigation, empty state |
+| `keyboard-shortcuts.cy.ts` | 9 | Toolbar button interactions, toggle isolation |
+| `markdown-extended.cy.ts` | 14 | Heading/todo/code edge cases, nesting, boundaries |
+| `markdown-features.cy.ts` | 12 | H1-H4 headings, todo checkboxes, code blocks |
+| `code-mode.cy.ts` | 9 | Toggle, panel stats, mutual exclusion, monospace |
+| `theme-color-editing.cy.ts` | 9 | Swatch switching, customizer, persistence |
+| `song-mode.cy.ts` | 8 | Rhymes, mode switching, non-Latin warning |
+| `panel-interactions.cy.ts` | 10 | Word counts, toggles, solo mode, heading/todo rows |
+| `font-controls.cy.ts` | 7 | A-/0/A+, min/max disabled, rapid clicks |
+| `responsive-layout.cy.ts` | 9 | Desktop/mobile, resize transitions |
+| `accessibility.cy.ts` | 9 | ARIA labels, focus, duplicate IDs |
+| `chaos-monkey.cy.ts` | 11 | Mode mashing, button storms, paste bombs, resize chaos |
+| `cursor-sync-mobile.cy.ts` | 3 | Mobile keyboard focus, selection persistence |
+| `duo-panel.cy.ts` | 4 | Panel mode switching, layout alignment |
+| `edit-view-mode.cy.ts` | 3 | Mobile background transitions, toolbar opacity |
+| `help-modal.cy.ts` | 1 | Modal width, layout |
+| `oklch-theme-colors.cy.ts` | 6 | Theme swatches, switching, contrast |
+| `selection-highlight.cy.ts` | 1 | Live selection highlight |
+| `ui-polish.cy.ts` | 6 | Cursor dot, toolbar layout, scroll animation |
+
+**Playwright E2E (11 tests):**
+
+| File | Tests | Category |
+|------|-------|----------|
+| `writing-experience.spec.ts` | 11 | Typing, headings, todos, code blocks, panel, tabs |
 
 ### Testing Patterns
 
@@ -540,8 +559,20 @@ await panel.getByText('Nouns', { exact: true });
 **Data-testid Attributes:**
 - `desktop-syntax-panel` - Desktop right panel (≥1024px)
 - `mobile-fold-tab` - Mobile right fold-tab (<1024px)
-- `ghost-cursor` - Blinking cursor in typewriter
-- `strikethrough-btn` - Strikethrough toolbar button
+- `cursor-dot` - Garfield-colored dot at typing frontier
+- `heading-1` through `heading-4` - Markdown heading elements
+- `todo-checkbox-{n}` - Todo checkbox by line index
+- `code-block` - Fenced code block container
+- `panel-header` - Panel header area
+- `panel-word-count` - Word count display
+- `panel-mode-switch` - Mode tab container
+- `panel-mode-syntax` / `panel-mode-song` / `panel-mode-code` - Mode tabs
+- `syntax-breakdown-row-{type}` - Breakdown rows (nouns, verbs, etc.)
+- `syntax-breakdown-toggle-{type}` - Toggle buttons per category
+- `markdown-headings-row` - Heading word count in breakdown
+- `markdown-todos-row` - Todo progress in breakdown
+- `open-theme-customizer` - Settings gear button
+- `frontier-marker` - Green "available" badge when cursor mid-text
 
 ### Critical Test Assertions
 

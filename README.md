@@ -31,7 +31,7 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173)
+Open [http://localhost:3002](http://localhost:3002)
 
 ## Install on Your Phone
 
@@ -57,6 +57,11 @@ Open [http://localhost:5173](http://localhost:5173)
 | **UTF Support** | UTF-aware word counting + optional emoji code display (`U+...`) |
 | **Quick Stats** | Clean collapsible counters for URLs, numbers, hashtags (no `(All Zero)` label noise) |
 | **Build Identity** | Full build identity + wordism in settings; version-only badge next to the gear icon |
+| **Markdown Headings** | H1-H4 with muted styling, separate word counting in breakdown panel |
+| **Todo Checkboxes** | `- [ ]` / `- [x]` with click-to-toggle, checked items strikethrough |
+| **Code Blocks** | Fenced code blocks with Shiki syntax highlighting (200+ languages) |
+| **Code Mode** | Full code editor mode with monospace font, line numbers, language detection |
+| **Cursor Dot** | Garfield-colored dot at typing frontier with subtle glow |
 | **Song Mode** | Syllable counting, rhyme scheme detection (CMU dictionary), per-line density coloring, syllable annotations |
 | **Interactive Rhymes** | Hover preview, click toggle, double-click solo for rhyme groups (same interaction model as word types) |
 | **Section Headings** | Collapsible RHYMES and LINES sections in song panel with persistent state |
@@ -95,12 +100,37 @@ All shortcuts managed by `@tanstack/react-hotkeys`. Hold **Tab** to see the chea
 ## Commands
 
 ```bash
-npm run dev          # Start dev server
+npm run dev          # Start dev server (port 3002)
 npm run build        # Production build
 npm run preview      # Preview production build
 npm run test         # Run Cypress specs
 npm run cy:open      # Open Cypress runner
+npx playwright test  # Run Playwright E2E tests
 ```
+
+## Testing
+
+**164 Cypress tests** across 22 spec files + **11 Playwright E2E tests** = **175 total**.
+
+| Suite | Tests | Coverage |
+|-------|-------|----------|
+| `typewriter-input` | 12 | Core input, paste, emoji, special chars |
+| `ime-composition` | 8 | CJK, Unicode, mixed scripts |
+| `strikethrough` | 6 | Apply, remove, clean |
+| `focus-mode` | 7 | Mode cycling, navigation |
+| `keyboard-shortcuts` | 9 | Toolbar interactions, toggles |
+| `markdown-extended` | 14 | Heading/todo/code edge cases |
+| `markdown-features` | 12 | Headings, todos, code blocks |
+| `code-mode` | 9 | Toggle, panel, mutual exclusion |
+| `theme-color-editing` | 9 | Swatch switching, customizer |
+| `song-mode` | 8 | Rhymes, mode switching |
+| `panel-interactions` | 10 | Word counts, toggles, solo mode |
+| `font-controls` | 7 | A-/0/A+, min/max, rapid clicks |
+| `responsive-layout` | 9 | Desktop/mobile, resize transitions |
+| `accessibility` | 9 | ARIA, focus, duplicate IDs |
+| `chaos-monkey` | 11 | Destruction scenarios |
+| + 7 legacy specs | 33 | Selection, panel layout, themes |
+| **Playwright** | **11** | Writing, headings, todos, code |
 
 ## Build Identity
 
@@ -120,25 +150,37 @@ Click colored circles (top-right) to switch. Theme visibility can be customized 
 ## Files
 
 ```
-├── App.tsx              # Main app component
+├── App.tsx                    # Main app component + state management
 ├── components/
-│   ├── Typewriter.tsx   # Editor with syntax highlighting
-│   ├── MarkdownPreview.tsx
-│   ├── Toolbar/         # Extracted toolbar components
-│   ├── UnifiedSyntaxPanel/
-│   │   ├── HarmonicaContainer.tsx  # 3-stage accordion
+│   ├── Typewriter.tsx         # Editor with syntax/markdown/code highlighting
+│   ├── MarkdownPreview.tsx    # Lo-fi markdown preview
+│   ├── Toolbar/               # Extracted toolbar components
+│   ├── ThemeCustomizer/       # Color editing panel
+│   ├── ColorPicker/           # Quick color picker popover
+│   ├── UnifiedSyntaxPanel/    # Word counts + syntax/song/code analysis
+│   │   ├── PanelBody.tsx      # Breakdown rows, mode tabs
+│   │   ├── HarmonicaContainer.tsx  # 3-stage accordion (mobile)
 │   │   ├── CornerFoldTab.tsx       # Drag handle
 │   │   └── DesktopSyntaxPanel.tsx  # Desktop variant
-│   └── TouchButton.tsx  # Mobile-friendly button
+│   └── TouchButton.tsx        # Mobile-friendly button
 ├── hooks/
-│   ├── useTouch.ts          # Touch/haptic feedback hook
-│   └── useHarmonicaDrag.ts  # 3-stage drag state machine
-├── constants/
-│   ├── index.ts             # Theme definitions
-│   └── spacing.ts           # Golden ratio spacing system
-├── constants.ts         # Theme definitions (legacy)
-├── types.ts             # TypeScript interfaces
-└── tests/cypress/       # Cypress tests
+│   ├── useShikiHighlighter.ts # Lazy-loaded Shiki code highlighting
+│   ├── useTypewriterScroll.ts # Golden ratio cursor positioning
+│   ├── useIMEComposition.ts   # CJK input handling
+│   ├── useDynamicPadding.ts   # Content-aware horizontal centering
+│   ├── useHarmonicaDrag.ts    # 3-stage drag state machine
+│   └── useAppHotkeys.ts       # Keyboard shortcut registry
+├── services/
+│   └── localSyntaxService.ts  # NLP word counting + markdown structure
+├── utils/
+│   ├── graphemeUtils.ts       # Cursor metrics + grapheme-aware measurement
+│   ├── colorContrast.ts       # WCAG contrast checking
+│   └── syntaxPatterns.ts      # URL/hashtag/number detection
+├── types.ts                   # TypeScript interfaces
+├── tests/cypress/specs/       # 22 Cypress E2E specs (164 tests)
+├── e2e/                       # 11 Playwright E2E tests
+├── cypress.config.ts          # Cypress config (port 3002)
+└── playwright.config.ts       # Playwright config (port 3002)
 ```
 
 ## Tech Stack
@@ -146,7 +188,8 @@ Click colored circles (top-right) to switch. Theme visibility can be customized 
 - React 19 + TypeScript
 - Vite + vite-plugin-pwa
 - Tailwind CSS
-- Cypress (testing)
+- Shiki (code syntax highlighting, 200+ languages)
+- Cypress + Playwright (testing)
 - Compromise (NLP)
 
 ---

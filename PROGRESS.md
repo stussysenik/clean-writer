@@ -6,6 +6,40 @@ Changelog and development progress for Clean Typewriter Experience t.
 
 ## Latest Release
 
+### v3.0.0 - Markdown Features, Code Mode, Comprehensive Test Suite
+
+**Release Date:** March 26, 2026
+
+Major feature release adding markdown support, code mode with Shiki, UI polish, and a comprehensive 175-test suite.
+
+**UI Polish:**
+- Cursor dot at typing frontier with Garfield-colored glow (matches last word's syntax category)
+- Flattened top-right controls into single row (A- 0 A+ ? gear) with subtle size hierarchy
+- Color swatches forced to single scrollable row (flex-nowrap)
+- Calmer typewriter scroll animation (250ms quadratic easing, was 120ms cubic)
+- Fixed native caret visibility bug in empty lines between paragraphs
+- Fixed 3-tab mode switcher (SYNTAX/SONG/CODE) overflow in panel
+
+**Markdown Features:**
+- H1-H4 headings with muted styling (50% opacity, scaled font, no syntax coloring)
+- Todo checkboxes (`- [ ]` / `- [x]`) with click-to-toggle in the backdrop layer
+- Heading word count and todo progress tracked separately in breakdown panel
+- `stripMarkdownStructure()` excludes heading words from NLP syntax analysis
+
+**Code Mode:**
+- Shiki syntax highlighting with 14 bundled languages (JS, TS, Python, Go, Rust, HTML, CSS, JSON, etc.)
+- Fenced code blocks (` ```lang ... ``` `) in writing mode with language labels
+- CODE tab in analysis panel with language, line count, character count
+- Full code mode toggle: monospace font, Shiki highlighting, NLP disabled
+
+**Testing (175 tests, all green):**
+- 14 new Cypress E2E suites: typewriter input, IME/CJK, strikethrough, focus mode, toolbar interactions, markdown edge cases, code mode, theme/color editing, song mode, panel interactions, font controls, responsive layout, accessibility, chaos monkey (11 destruction scenarios)
+- 11 Playwright E2E tests covering writing flow, markdown features, and panel state
+- Fixed Cypress baseUrl (5173 to 3002), added custom commands (clearEditor, switchMode)
+- Chaos monkey tests: mode mashing, button storms, paste bombs, resize chaos, empty state stress, concurrent feature stress
+
+---
+
 ### v2.2.0 - TanStack Hotkeys Migration + Complete Shortcut Documentation
 
 **Release Date:** March 8, 2026
