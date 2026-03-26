@@ -7,6 +7,8 @@ import React, {
 } from "react";
 import { RisoTheme, SyntaxSets, HighlightConfig, SongAnalysis, FocusMode, FocusNavState } from "../types";
 import { useIMEComposition } from "../hooks/useIMEComposition";
+import { useTypewriterScroll } from "../hooks/useTypewriterScroll";
+import { useDynamicPadding } from "../hooks/useDynamicPadding";
 import {
   isHashtagToken,
   isNumberToken,
@@ -15,6 +17,7 @@ import {
 } from "../utils/syntaxPatterns";
 import { replaceEmojisWithUTF } from "../utils/emojiUtils";
 import { isDarkBackground } from "../utils/colorContrast";
+import { useShikiHighlighter } from "../hooks/useShikiHighlighter";
 
 interface TypewriterProps {
   content: string;
@@ -45,6 +48,9 @@ interface TypewriterProps {
   focusNavState?: FocusNavState | null;
   isMobile?: boolean;
   onFocusTap?: (index: number) => void;
+  codeMode?: boolean;
+  codeLanguage?: string;
+  unstylizedMode?: boolean;
 }
 
 // Known non-text keys to reject (control, navigation, function keys).
@@ -132,6 +138,9 @@ const Typewriter: React.FC<TypewriterProps> = ({
   focusNavState = null,
   isMobile = false,
   onFocusTap,
+  codeMode = false,
+  codeLanguage = "javascript",
+  unstylizedMode = false,
 }) => {
   const effectiveLineHeight = songMode && showSyllableAnnotations ? "2.4" : String(lineHeightProp);
   const effectiveLetterSpacing = letterSpacingProp ? `${letterSpacingProp}em` : undefined;
@@ -164,6 +173,96 @@ const Typewriter: React.FC<TypewriterProps> = ({
     handleCompositionUpdate,
     handleCompositionEnd,
   } = useIMEComposition();
+
+  // Full Typewriter mode: cursor-aware layout
+  const { scrollToSweetSpot } = useTypewriterScroll({
+    textareaRef: textareaRef as React.RefObject<HTMLTextAreaElement>,
+    enabled: true,
+  });
+
+  // Shiki syntax highlighting for code mode and fenced code blocks
+  const { ready: shikiReady, highlightCode } = useShikiHighlighter();
+
+  // Cache for highlighted code blocks to avoid re-highlighting on every render
+  const [codeHighlightCache, setCodeHighlightCache] = useState<
+    Map<string, Array<{ content: string; color: string }>>
+  >(new Map());
+
+  // Highlight code blocks when content or mode changes
+  useEffect(() => {
+    if (!shikiReady) return;
+
+    const isDark = isDarkBackground(theme.background);
+
+    if (codeMode) {
+      // Full code mode — highlight entire content
+      const cacheKey = `full:${codeLanguage}:${isDark}:${content}`;
+      if (codeHighlightCache.has(cacheKey)) return;
+
+      highlightCode(content, codeLanguage, isDark).then((tokens) => {
+        setCodeHighlightCache((prev) => new Map(prev).set(cacheKey, tokens));
+      });
+      return;
+    }
+
+    // Writing mode — find and highlight fenced code blocks
+    const codeBlockRegex = /```(\w*)\n([\s\S]*?)```/g;
+    let match;
+    const promises: Array<{ key: string; promise: Promise<Array<{ content: string; color: string }>> }> = [];
+
+    while ((match = codeBlockRegex.exec(content)) !== null) {
+      const lang = match[1] || "text";
+      const code = match[2];
+      const cacheKey = `block:${lang}:${isDark}:${code}`;
+      if (!codeHighlightCache.has(cacheKey)) {
+        promises.push({ key: cacheKey, promise: highlightCode(code, lang, isDark) });
+      }
+    }
+
+    if (promises.length > 0) {
+      Promise.all(promises.map((p) => p.promise)).then((results) => {
+        setCodeHighlightCache((prev) => {
+          const next = new Map(prev);
+          results.forEach((tokens, i) => next.set(promises[i].key, tokens));
+          return next;
+        });
+      });
+    }
+  }, [content, codeMode, codeLanguage, shikiReady, highlightCode, theme.background]);
+
+  const { paddingLeft, paddingRight, recalculatePadding } = useDynamicPadding({
+    textareaRef: textareaRef as React.RefObject<HTMLTextAreaElement>,
+    enabled: true,
+  });
+
+  // Track whether cursor is at the content frontier (end of text)
+  const [cursorAtFrontier, setCursorAtFrontier] = useState(true);
+
+  // Update frontier status on selection changes
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const checkFrontier = () => {
+      setCursorAtFrontier(textarea.selectionStart >= content.length);
+    };
+    textarea.addEventListener("select", checkFrontier);
+    textarea.addEventListener("click", checkFrontier);
+    textarea.addEventListener("keyup", checkFrontier);
+    return () => {
+      textarea.removeEventListener("select", checkFrontier);
+      textarea.removeEventListener("click", checkFrontier);
+      textarea.removeEventListener("keyup", checkFrontier);
+    };
+  }, [textareaRef, content.length]);
+
+  // Recalculate typewriter layout whenever content changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      scrollToSweetSpot();
+      recalculatePadding();
+    }, 16);
+    return () => clearTimeout(timer);
+  }, [content, scrollToSweetSpot, recalculatePadding]);
 
   // Garfield cursor: Calculate the color for the last word typed
   const lastWordColor = useMemo(() => {
@@ -415,7 +514,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
               textDecoration: "line-through",
               opacity: 0.5,
               textDecorationThickness: "2px",
-              textDecorationColor: theme.strikethrough,
+              textDecorationColor: unstylizedMode ? "#000000" : theme.strikethrough,
               transition: "color 0.3s ease, text-shadow 0.3s ease",
             }}
           >
@@ -560,17 +659,24 @@ const Typewriter: React.FC<TypewriterProps> = ({
               hoveredCategory && matchCategory === hoveredCategory;
             const glowColor = shouldGlow ? color : "transparent";
 
-            const style: React.CSSProperties = {
-              color: isMatch ? color : theme.text,
-              fontWeight: isMatch ? 700 : "inherit",
-              textShadow: shouldGlow
-                ? `0 0 8px ${glowColor}, 0 0 16px ${glowColor}80`
-                : theme.id === "blueprint" && isMatch
-                  ? `0 0 1px ${color}`
-                  : "none",
-              transition:
-                "color 0.3s ease, text-shadow 0.3s ease, font-weight 0.3s ease",
-            };
+            const style: React.CSSProperties = unstylizedMode
+              ? {
+                  color: "#000000",
+                  fontWeight: "inherit",
+                  borderBottom: isMatch ? "1px solid #999" : "none",
+                  transition: "color 0.3s ease",
+                }
+              : {
+                  color: isMatch ? color : theme.text,
+                  fontWeight: isMatch ? 700 : "inherit",
+                  textShadow: shouldGlow
+                    ? `0 0 8px ${glowColor}, 0 0 16px ${glowColor}80`
+                    : theme.id === "blueprint" && isMatch
+                      ? `0 0 1px ${color}`
+                      : "none",
+                  transition:
+                    "color 0.3s ease, text-shadow 0.3s ease, font-weight 0.3s ease",
+                };
 
             return (
               <span key={`${chunkIndex}-${index}`} style={style}>
@@ -587,15 +693,330 @@ const Typewriter: React.FC<TypewriterProps> = ({
     highlightConfig,
     hoveredCategory,
     showUtfEmojiCodes,
+    unstylizedMode,
   ]);
+
+  // Render Shiki-highlighted tokens as React spans
+  const renderCodeTokens = useCallback(
+    (tokens: Array<{ content: string; color: string }>) => {
+      return tokens.map((token, i) => (
+        <span key={i} style={token.color ? { color: token.color } : undefined}>
+          {token.content}
+        </span>
+      ));
+    },
+    [],
+  );
+
+  // Markdown-aware renderer: detects headings, todos, and fenced code blocks
+  // Wraps lines with special styling while delegating regular text to renderHighlightsForText
+  const renderContentWithMarkdown = useCallback(
+    (text: string) => {
+      if (!text) return null;
+
+      // First, split by fenced code blocks
+      const codeBlockRegex = /(```\w*\n[\s\S]*?```)/g;
+      const segments = text.split(codeBlockRegex);
+      const isDark = isDarkBackground(theme.background);
+
+      return segments.map((segment, segIdx) => {
+        // Check if this segment is a fenced code block
+        const blockMatch = segment.match(/^```(\w*)\n([\s\S]*?)```$/);
+        if (blockMatch) {
+          const lang = blockMatch[1] || "text";
+          const code = blockMatch[2];
+
+          if (unstylizedMode) {
+            return (
+              <span key={`code-${segIdx}`} style={{ display: "block", whiteSpace: "pre" }}>
+                {`\`\`\`${lang}\n${code}\`\`\``}
+              </span>
+            );
+          }
+
+          const cacheKey = `block:${lang}:${isDark}:${code}`;
+          const tokens = codeHighlightCache.get(cacheKey);
+          const codeLines = code.split("\n");
+
+          return (
+            <span
+              key={`code-${segIdx}`}
+              style={{
+                display: "block",
+                fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace',
+                fontSize: "0.9em",
+                lineHeight: "1.5",
+                backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
+                borderRadius: "8px",
+                padding: "12px 16px",
+                margin: "8px 0",
+                overflowX: "auto",
+                whiteSpace: "pre",
+              }}
+              data-testid="code-block"
+            >
+              {/* Language label */}
+              {lang && lang !== "text" && (
+                <span
+                  style={{
+                    display: "block",
+                    fontSize: "10px",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.1em",
+                    opacity: 0.4,
+                    marginBottom: "8px",
+                    fontWeight: 500,
+                  }}
+                >
+                  {lang}
+                </span>
+              )}
+              {/* Line numbers + highlighted code */}
+              {tokens ? (
+                renderCodeTokens(tokens)
+              ) : (
+                // Fallback: plain code with line numbers
+                codeLines.map((codeLine, lineIdx) => (
+                  <React.Fragment key={lineIdx}>
+                    <span style={{ opacity: 0.3, userSelect: "none", display: "inline-block", width: "2em", textAlign: "right", marginRight: "1em" }}>
+                      {lineIdx + 1}
+                    </span>
+                    {codeLine}
+                    {lineIdx < codeLines.length - 1 && "\n"}
+                  </React.Fragment>
+                ))
+              )}
+            </span>
+          );
+        }
+
+        // Regular text segment — process line by line for headings/todos
+        const lines = segment.split("\n");
+        const elements: React.ReactNode[] = [];
+        let regularLines: string[] = [];
+
+        const flushRegular = (trailingNewline = false) => {
+          if (regularLines.length === 0) return;
+          const joined = regularLines.join("\n");
+          elements.push(
+            <React.Fragment key={`reg-${elements.length}`}>
+              {renderHighlightsForText(joined)}
+              {trailingNewline && "\n"}
+            </React.Fragment>,
+          );
+          regularLines = [];
+        };
+
+        const headingSizes: Record<number, { fontSize: string; fontWeight: number }> = {
+          1: { fontSize: "1.8em", fontWeight: 700 },
+          2: { fontSize: "1.5em", fontWeight: 700 },
+          3: { fontSize: "1.25em", fontWeight: 600 },
+          4: { fontSize: "1.1em", fontWeight: 600 },
+        };
+
+        // Track character offset for todo toggles (relative to full content)
+        // Find where this segment starts in the original content
+        let segmentStart = 0;
+        for (let s = 0; s < segIdx; s++) {
+          segmentStart += segments[s].length;
+        }
+        let charOffset = segmentStart;
+
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+          const isLast = i === lines.length - 1;
+
+          // Check for heading: # through ####
+          const headingMatch = line.match(/^(#{1,4})\s(.+)$/);
+          if (headingMatch) {
+            flushRegular(true);
+            const level = headingMatch[1].length as 1 | 2 | 3 | 4;
+            const hashes = headingMatch[1];
+            const headingText = headingMatch[2];
+            const style = headingSizes[level];
+
+            if (unstylizedMode) {
+              elements.push(
+                <React.Fragment key={`h-${segIdx}-${i}`}>
+                  <span>{hashes} {headingText}</span>
+                  {!isLast && "\n"}
+                </React.Fragment>,
+              );
+              charOffset += line.length + (isLast ? 0 : 1);
+              continue;
+            }
+
+            elements.push(
+              <React.Fragment key={`h-${segIdx}-${i}`}>
+                <span
+                  style={{
+                    fontSize: style.fontSize,
+                    fontWeight: style.fontWeight,
+                    color: theme.text,
+                    opacity: 0.5,
+                    display: "inline",
+                  }}
+                  data-testid={`heading-${level}`}
+                >
+                  <span style={{ opacity: 0.5 }}>{hashes} </span>
+                  {headingText}
+                </span>
+                {!isLast && "\n"}
+              </React.Fragment>,
+            );
+            charOffset += line.length + (isLast ? 0 : 1);
+            continue;
+          }
+
+          // Check for todo: - [ ] or - [x]/- [X]
+          const todoMatch = line.match(/^(- \[)([ xX])(\] ?)(.*)$/);
+          if (todoMatch) {
+            flushRegular(true);
+            const isChecked = todoMatch[2].toLowerCase() === "x";
+            const todoText = todoMatch[4];
+            const checkboxOffset = charOffset + 3;
+
+            if (unstylizedMode) {
+              elements.push(
+                <React.Fragment key={`todo-${segIdx}-${i}`}>
+                  <span>{line}</span>
+                  {!isLast && "\n"}
+                </React.Fragment>,
+              );
+              charOffset += line.length + (isLast ? 0 : 1);
+              continue;
+            }
+
+            elements.push(
+              <React.Fragment key={`todo-${segIdx}-${i}`}>
+                <span style={{ display: "inline" }}>
+                  <span
+                    role="checkbox"
+                    aria-checked={isChecked}
+                    data-checkbox-offset={checkboxOffset}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const toggleChar = isChecked ? " " : "x";
+                      const newContent =
+                        content.slice(0, checkboxOffset) +
+                        toggleChar +
+                        content.slice(checkboxOffset + 1);
+                      setContent(newContent);
+                    }}
+                    style={{
+                      display: "inline-flex",
+                      width: "14px",
+                      height: "14px",
+                      borderRadius: "3px",
+                      border: `2px solid ${theme.accent}`,
+                      backgroundColor: isChecked ? theme.accent : "transparent",
+                      verticalAlign: "middle",
+                      cursor: "pointer",
+                      pointerEvents: "auto",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginRight: "4px",
+                      position: "relative",
+                      top: "-1px",
+                      flexShrink: 0,
+                    }}
+                    data-testid={`todo-checkbox-${i}`}
+                  >
+                    {isChecked && (
+                      <svg
+                        width="10"
+                        height="10"
+                        viewBox="0 0 10 10"
+                        fill="none"
+                        stroke={isDarkBackground(theme.accent) ? "#fff" : "#000"}
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="2,5 4,7.5 8,2.5" />
+                      </svg>
+                    )}
+                  </span>
+                  <span
+                    style={
+                      isChecked
+                        ? {
+                            opacity: 0.5,
+                            textDecoration: "line-through",
+                            textDecorationColor: theme.text,
+                            textDecorationThickness: "2px",
+                          }
+                        : undefined
+                    }
+                  >
+                    {renderHighlightsForText(todoText)}
+                  </span>
+                </span>
+                {!isLast && "\n"}
+              </React.Fragment>,
+            );
+            charOffset += line.length + (isLast ? 0 : 1);
+            continue;
+          }
+
+          // Regular line
+          regularLines.push(line);
+          charOffset += line.length + (isLast ? 0 : 1);
+        }
+
+        flushRegular();
+        return <React.Fragment key={`seg-${segIdx}`}>{elements}</React.Fragment>;
+      });
+    },
+    [content, setContent, renderHighlightsForText, renderCodeTokens, codeHighlightCache, theme.text, theme.accent, theme.background, unstylizedMode],
+  );
+
+  // Full code mode renderer — entire content highlighted as code
+  const renderCodeMode = useCallback(() => {
+    if (!content) return null;
+
+    const isDark = isDarkBackground(theme.background);
+    const cacheKey = `full:${codeLanguage}:${isDark}:${content}`;
+    const tokens = codeHighlightCache.get(cacheKey);
+    const lines = content.split("\n");
+
+    return (
+      <span style={{ whiteSpace: "pre-wrap" }}>
+        {tokens ? (
+          // Shiki-highlighted tokens
+          renderCodeTokens(tokens)
+        ) : (
+          // Fallback: plain text with line numbers
+          lines.map((line, idx) => (
+            <React.Fragment key={idx}>
+              <span
+                style={{
+                  opacity: 0.3,
+                  userSelect: "none",
+                  display: "inline-block",
+                  width: "2.5em",
+                  textAlign: "right",
+                  marginRight: "1em",
+                }}
+              >
+                {idx + 1}
+              </span>
+              {line}
+              {idx < lines.length - 1 && "\n"}
+            </React.Fragment>
+          ))
+        )}
+      </span>
+    );
+  }, [content, codeLanguage, codeHighlightCache, renderCodeTokens, theme.background]);
 
   // Wrapper that applies focus mode dimming by splitting content into 3 parts
   const renderHighlights = useCallback(() => {
     if (!content) return null;
 
-    // No focus mode — render normally
+    // No focus mode — render with markdown-aware pipeline
     if (!hasFocusNav || !focusRange) {
-      return renderHighlightsForText(content);
+      return renderContentWithMarkdown(content);
     }
 
     // Adjust split points to avoid breaking inside ~~...~~ blocks
@@ -626,7 +1047,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
               transition: "opacity 0.4s ease",
             }}
           >
-            {renderHighlightsForText(dimBeforeText)}
+            {renderContentWithMarkdown(dimBeforeText)}
           </span>
         )}
         <span
@@ -647,7 +1068,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
               "opacity 0.4s ease, background-color 0.2s ease, box-shadow 0.2s ease",
           }}
         >
-          {renderHighlightsForText(focusText)}
+          {renderContentWithMarkdown(focusText)}
         </span>
         {dimAfterText && (
           <span
@@ -656,7 +1077,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
               transition: "opacity 0.4s ease",
             }}
           >
-            {renderHighlightsForText(dimAfterText)}
+            {renderContentWithMarkdown(dimAfterText)}
           </span>
         )}
       </>
@@ -666,7 +1087,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
     hasFocusNav,
     focusRange,
     isMobile,
-    renderHighlightsForText,
+    renderContentWithMarkdown,
     theme.accent,
   ]);
 
@@ -795,28 +1216,101 @@ const Typewriter: React.FC<TypewriterProps> = ({
       {/* Backdrop (Visual Layer) */}
       <div
         ref={backdropRef}
-        className="absolute inset-0 px-[13px] pt-[55px] pb-[50vh] md:px-[21px] md:pt-[55px] lg:px-[34px] lg:pt-[55px] whitespace-pre-wrap break-words pointer-events-none z-0 overflow-hidden"
+        className="absolute inset-0 pt-[55px] pb-[50vh] md:pt-[55px] lg:pt-[55px] whitespace-pre-wrap break-words pointer-events-none z-0 overflow-hidden"
         style={{
-          fontFamily,
+          fontFamily: unstylizedMode
+            ? "'Courier New', Courier, monospace"
+            : codeMode
+              ? 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace'
+              : fontFamily,
           fontSize,
           lineHeight: effectiveLineHeight,
-          letterSpacing: effectiveLetterSpacing,
-          color: theme.text,
+          letterSpacing: unstylizedMode ? "0px" : effectiveLetterSpacing,
+          color: unstylizedMode ? "#000000" : theme.text,
+          paddingLeft: `${paddingLeft}px`,
+          paddingRight: `${paddingRight}px`,
+          transition: "padding-left 200ms ease, padding-right 200ms ease",
         }}
       >
-        {songMode && songData ? renderSongHighlights() : renderHighlights()}
+        {unstylizedMode
+          ? renderHighlights()
+          : codeMode
+            ? renderCodeMode()
+            : songMode && songData
+              ? renderSongHighlights()
+              : renderHighlights()}
+        {/* Cursor dot — Garfield-colored dot at end of text when cursor is at frontier */}
+        {cursorAtFrontier && content.length > 0 && (
+          <span
+            style={{
+              display: "inline-block",
+              width: "6px",
+              height: "6px",
+              borderRadius: "50%",
+              backgroundColor: unstylizedMode ? "#000000" : lastWordColor,
+              boxShadow: unstylizedMode ? "none" : `0 0 6px 1px ${lastWordColor}55`,
+              verticalAlign: "baseline",
+              marginLeft: "2px",
+              marginBottom: "2px",
+            }}
+            data-testid="cursor-dot"
+          />
+        )}
+        {/* Frontier marker — green "available" badge when cursor is mid-text */}
+        {!cursorAtFrontier && content.length > 0 && (
+          <span
+            className="animate-frontier-in"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "5px",
+              marginLeft: "6px",
+              padding: "2px 10px 2px 8px",
+              borderRadius: "9999px",
+              backgroundColor: "rgba(34, 197, 94, 0.10)",
+              verticalAlign: "middle",
+              lineHeight: "1",
+            }}
+            data-testid="frontier-marker"
+          >
+            <span
+              className="animate-frontier-dot"
+              style={{
+                display: "inline-block",
+                width: "7px",
+                height: "7px",
+                borderRadius: "50%",
+                backgroundColor: "#22c55e",
+                flexShrink: 0,
+              }}
+            />
+            <span
+              style={{
+                fontSize: "11px",
+                fontWeight: 500,
+                color: "#22c55e",
+                letterSpacing: "0.01em",
+              }}
+            >
+              available
+            </span>
+          </span>
+        )}
       </div>
 
       {/* Last-focused-word overlay — visible when in sentence/paragraph mode */}
       {!isMobile && focusNavState && focusNavState.mode !== "word" && focusNavState.mode !== "none" && focusNavState.lastFocusedWordRange && (
         <div
-          className="absolute inset-0 px-[13px] pt-[55px] pb-[50vh] md:px-[21px] md:pt-[55px] lg:px-[34px] lg:pt-[55px] whitespace-pre-wrap break-words pointer-events-none z-[3] overflow-hidden"
+          className="absolute inset-0 pt-[55px] pb-[50vh] md:pt-[55px] lg:pt-[55px] whitespace-pre-wrap break-words pointer-events-none z-[3] overflow-hidden"
           style={{
             fontFamily,
             fontSize,
             lineHeight: effectiveLineHeight,
             letterSpacing: effectiveLetterSpacing,
             color: "transparent",
+            paddingLeft: `${paddingLeft}px`,
+            paddingRight: `${paddingRight}px`,
+            transition: "padding-left 200ms ease, padding-right 200ms ease",
           }}
         >
           <span>{content.slice(0, focusNavState.lastFocusedWordRange.start)}</span>
@@ -841,13 +1335,16 @@ const Typewriter: React.FC<TypewriterProps> = ({
         <div
           ref={selectionOverlayRef}
           data-testid="persisted-selection-overlay"
-          className="absolute inset-0 px-[13px] pt-[55px] pb-[50vh] md:px-[21px] md:pt-[55px] lg:px-[34px] lg:pt-[55px] whitespace-pre-wrap break-words pointer-events-none z-[5] overflow-hidden"
+          className="absolute inset-0 pt-[55px] pb-[50vh] md:pt-[55px] lg:pt-[55px] whitespace-pre-wrap break-words pointer-events-none z-[5] overflow-hidden"
           style={{
             fontFamily,
             fontSize,
             lineHeight: effectiveLineHeight,
             letterSpacing: effectiveLetterSpacing,
             color: "transparent",
+            paddingLeft: `${paddingLeft}px`,
+            paddingRight: `${paddingRight}px`,
+            transition: "padding-left 200ms ease, padding-right 200ms ease",
           }}
         >
           <span>{content.slice(0, normalizedPersistedSelection.start)}</span>
@@ -894,16 +1391,23 @@ const Typewriter: React.FC<TypewriterProps> = ({
         inputMode="text"
         enterKeyHint="enter"
         autoFocus
-        className="absolute inset-0 w-full h-full px-[13px] pt-[55px] pb-[50vh] md:px-[21px] md:pt-[55px] lg:px-[34px] lg:pt-[55px] bg-transparent resize-none border-none outline-none z-10 whitespace-pre-wrap break-words overflow-y-auto no-scrollbar selection:text-transparent"
+        className="absolute inset-0 w-full h-full pt-[55px] pb-[50vh] md:pt-[55px] lg:pt-[55px] bg-transparent resize-none border-none outline-none z-10 whitespace-pre-wrap break-words overflow-y-auto no-scrollbar selection:text-transparent"
         style={{
-          fontFamily,
+          fontFamily: unstylizedMode
+            ? "'Courier New', Courier, monospace"
+            : codeMode
+              ? 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace'
+              : fontFamily,
           fontSize,
           lineHeight: effectiveLineHeight,
-          letterSpacing: effectiveLetterSpacing,
+          letterSpacing: unstylizedMode ? "0px" : effectiveLetterSpacing,
           color: "transparent",
-          caretColor: lastWordColor,
+          caretColor: cursorAtFrontier ? "transparent" : lastWordColor,
           opacity: 1,
           scrollbarWidth: "none",
+          paddingLeft: `${paddingLeft}px`,
+          paddingRight: `${paddingRight}px`,
+          transition: "padding-left 200ms ease, padding-right 200ms ease",
           msOverflowStyle: "none",
           WebkitTouchCallout: "none",
         }}

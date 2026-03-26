@@ -1,0 +1,93 @@
+<h2>Toolbar Reorganization</h2>
+<p class="subtitle">Here's the proposed button order with unstylized mode added. View modes grouped together.</p>
+
+<div class="mockup" style="margin-top: 24px;">
+  <div class="mockup-header">Proposed Toolbar Layout</div>
+  <div class="mockup-body" style="padding: 24px; background: #f5f0e8;">
+
+    <!-- Current -->
+    <div style="margin-bottom: 32px;">
+      <div class="label" style="margin-bottom: 12px;">CURRENT</div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 8px; background: rgba(0,0,0,0.06); font-size: 12px; font-family: system-ui;">
+          <span style="font-size: 16px;">👁</span> Preview
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 8px; background: rgba(0,0,0,0.06); font-size: 12px; font-family: system-ui;">
+          <span style="font-size: 14px; text-decoration: line-through;">S</span> Strike
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 8px; background: rgba(0,0,0,0.06); font-size: 12px; font-family: system-ui;">
+          <span style="font-size: 14px;">✨</span> Clean
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 8px; background: rgba(0,0,0,0.06); font-size: 12px; font-family: system-ui;">
+          <span style="font-size: 14px;">↓</span> Export
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 8px; background: rgba(0,0,0,0.06); font-size: 12px; font-family: system-ui;">
+          <span style="font-size: 14px;">⊕</span> Focus
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 8px; background: rgba(0,0,0,0.06); font-size: 12px; font-family: system-ui;">
+          <span style="font-size: 14px;">🗑</span> Clear
+        </div>
+      </div>
+    </div>
+
+    <!-- Proposed -->
+    <div>
+      <div class="label" style="margin-bottom: 12px;">PROPOSED</div>
+      <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+        <!-- View modes group -->
+        <div style="display: flex; gap: 4px; padding: 2px; border-radius: 10px; background: rgba(0,0,0,0.03);">
+          <div style="display: flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 8px; background: rgba(0,0,0,0.06); font-size: 12px; font-family: system-ui;">
+            <span style="font-size: 16px;">👁</span> Preview
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 8px; background: rgba(0,0,0,0.12); font-size: 12px; font-family: 'Courier New', monospace; font-weight: bold;">
+            T<span style="font-family: system-ui; font-weight: normal; margin-left: 2px;">Plain</span>
+          </div>
+        </div>
+
+        <!-- Edit tools group -->
+        <div style="display: flex; gap: 4px;">
+          <div style="display: flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 8px; background: rgba(0,0,0,0.06); font-size: 12px; font-family: system-ui;">
+            <span style="font-size: 14px; text-decoration: line-through;">S</span> Strike
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 8px; background: rgba(0,0,0,0.06); font-size: 12px; font-family: system-ui;">
+            <span style="font-size: 14px;">✨</span> Clean
+          </div>
+        </div>
+
+        <!-- Focus -->
+        <div style="display: flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 8px; background: rgba(0,0,0,0.06); font-size: 12px; font-family: system-ui;">
+          <span style="font-size: 14px;">⊕</span> Focus
+        </div>
+
+        <!-- File ops -->
+        <div style="display: flex; gap: 4px;">
+          <div style="display: flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 8px; background: rgba(0,0,0,0.06); font-size: 12px; font-family: system-ui;">
+            <span style="font-size: 14px;">↓</span> Export
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px; padding: 6px 10px; border-radius: 8px; background: rgba(0,0,0,0.06); font-size: 12px; font-family: system-ui;">
+            <span style="font-size: 14px;">🗑</span> Clear
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<h3 style="margin-top: 32px;">Does this layout work?</h3>
+<div class="options">
+  <div class="option" data-choice="yes-reorder" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Yes, reorder with grouping</h3>
+      <p>Preview + Plain grouped together, edit tools together, file ops together</p>
+    </div>
+  </div>
+  <div class="option" data-choice="just-add" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Just add the button, keep current order</h3>
+      <p>Put the Plain button next to Preview, don't change anything else</p>
+    </div>
+  </div>
+</div>

@@ -12,6 +12,7 @@ import {
   SyntaxSets,
   HighlightConfig,
   SongAnalysis,
+  ColorEditTarget,
 } from "../../types";
 import { countWords } from "../../services/localSyntaxService";
 import { useResponsiveBreakpoint } from "../../hooks/useResponsiveBreakpoint";
@@ -45,6 +46,11 @@ interface UnifiedSyntaxPanelProps {
   onHoverRhymeKey?: (key: string | null) => void;
   disabledRhymeKeys?: Set<string>;
   onToggleRhymeKey?: (key: string) => void;
+  onEditColor?: (target: ColorEditTarget) => void;
+  onQuickEditColor?: (target: ColorEditTarget, anchorEl: HTMLElement) => void;
+  codeMode?: boolean;
+  onToggleCodeMode?: () => void;
+  codeLanguage?: string;
 }
 
 const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
@@ -71,6 +77,11 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
   onHoverRhymeKey,
   disabledRhymeKeys,
   onToggleRhymeKey,
+  onEditColor,
+  onQuickEditColor,
+  codeMode = false,
+  onToggleCodeMode,
+  codeLanguage = "javascript",
 }) => {
   const wordCount = countWords(content);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -189,6 +200,11 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
           onHoverRhymeKey={onHoverRhymeKey}
           disabledRhymeKeys={disabledRhymeKeys}
           onToggleRhymeKey={onToggleRhymeKey}
+          onEditColor={onEditColor}
+          onQuickEditColor={onQuickEditColor}
+          codeMode={codeMode}
+          onToggleCodeMode={onToggleCodeMode}
+          codeLanguage={codeLanguage}
         />
       </div>
     );
@@ -289,6 +305,11 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
               onHoverRhymeKey={onHoverRhymeKey}
               disabledRhymeKeys={disabledRhymeKeys}
               onToggleRhymeKey={onToggleRhymeKey}
+              onEditColor={onEditColor}
+              onQuickEditColor={onQuickEditColor}
+              codeMode={codeMode}
+              onToggleCodeMode={onToggleCodeMode}
+              codeLanguage={codeLanguage}
             />
           ),
         }}

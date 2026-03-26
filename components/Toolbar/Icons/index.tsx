@@ -161,7 +161,7 @@ export const IconMagicClean = () => (
   </svg>
 );
 
-export const IconSettings = () => <GearIcon width={24} height={24} />;
+export const IconSettings = () => <GearIcon width={30} height={30} />;
 
 // Info icon for legend
 export const IconInfo = () => <InfoCircledIcon width={20} height={20} />;
@@ -187,5 +187,23 @@ export const IconFocus = () => (
     <line x1="12" y1="19" x2="12" y2="22" />
     <line x1="2" y1="12" x2="5" y2="12" />
     <line x1="19" y1="12" x2="22" y2="12" />
+  </svg>
+);
+
+// Plain text mode icon — monospace "T" for raw text
+export const IconPlainText = () => (
+  <svg
+    width={24}
+    height={24}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <polyline points="4 7 4 4 20 4 20 7" />
+    <line x1="12" y1="4" x2="12" y2="20" />
+    <line x1="8" y1="20" x2="16" y2="20" />
   </svg>
 );

@@ -38,14 +38,7 @@ describe("OKLCH Theme Colors", () => {
       cy.contains("button", "Colors").should("not.exist");
       cy.contains("Base Theme").should("exist");
       cy.contains("Pick a preset, then tune editor, syntax, and song colors in one surface.").should("not.exist");
-      cy.getByTestId("theme-actions-legend").within(() => {
-        cy.contains("Show").should("exist");
-        cy.contains("Order").should("exist");
-        cy.contains("Edit").should("exist");
-      });
       cy.getByTestId("themes-list").should("exist");
-      cy.contains("Syntax Colors").should("exist");
-      cy.contains("Song Colors").should("exist");
       cy.contains("Editor Colors").should("exist");
       cy.contains("Word Colors").should("exist");
       cy.getByTestId("themes-list").find('input[type="checkbox"]').should("not.exist");

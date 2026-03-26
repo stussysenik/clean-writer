@@ -1,0 +1,38 @@
+<h2>What does "highlights work" mean in Notepad mode?</h2>
+<p class="subtitle">You mentioned highlights and deletion should still work. Strikethrough is clear — it renders as line-through. But what about syntax highlights in a raw Notepad view?</p>
+
+<div class="cards" style="margin-top: 24px;">
+
+  <!-- Option A: No colors, functionality preserved -->
+  <div class="card" data-choice="no-colors" onclick="toggleSelect(this)" style="min-height: 280px;">
+    <div class="card-image" style="padding: 20px; background: #fff; border-bottom: 1px solid #eee;">
+      <div style="font-family: 'Courier New', Courier, monospace; font-size: 13px; line-height: 1.6; color: #000; white-space: pre-wrap; text-align: left;">The morning light filtered through
+the curtains, casting long <span style="text-decoration: line-through; opacity: 0.5;">dim</span> shadows
+across the wooden floor.
+
+She sat at her desk, pen in hand,
+staring at the blank page.</div>
+    </div>
+    <div class="card-body">
+      <h3>A — No colors, just strikethrough</h3>
+      <p>All text is plain black. No syntax coloring. Strikethrough works. When you toggle back to normal mode, your highlight config is remembered and re-applied.</p>
+    </div>
+  </div>
+
+  <!-- Option B: Subtle underline highlights -->
+  <div class="card" data-choice="underline-hints" onclick="toggleSelect(this)" style="min-height: 280px;">
+    <div class="card-image" style="padding: 20px; background: #fff; border-bottom: 1px solid #eee;">
+      <div style="font-family: 'Courier New', Courier, monospace; font-size: 13px; line-height: 1.6; color: #000; white-space: pre-wrap; text-align: left;">The <span style="border-bottom: 1px solid #999;">morning</span> <span style="border-bottom: 1px solid #999;">light</span> filtered through
+the <span style="border-bottom: 1px solid #999;">curtains</span>, casting long <span style="text-decoration: line-through; opacity: 0.5;">dim</span> <span style="border-bottom: 1px solid #999;">shadows</span>
+across the wooden <span style="border-bottom: 1px solid #999;">floor</span>.
+
+She sat at her <span style="border-bottom: 1px solid #999;">desk</span>, <span style="border-bottom: 1px solid #999;">pen</span> in <span style="border-bottom: 1px solid #999;">hand</span>,
+staring at the blank <span style="border-bottom: 1px solid #999;">page</span>.</div>
+    </div>
+    <div class="card-body">
+      <h3>B — Subtle underline hints</h3>
+      <p>All text is plain black but matched syntax words get a subtle gray underline. You can still see what's being highlighted without color noise.</p>
+    </div>
+  </div>
+
+</div>

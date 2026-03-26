@@ -1,0 +1,82 @@
+<h2>Issues Identified from Your Screenshots</h2>
+<p class="subtitle">Confirm what's in scope before we design the solution</p>
+
+<div class="options" data-multiselect>
+
+  <div class="option" data-choice="mobile-dots" onclick="toggleSelect(this)" style="border-left: 4px solid #E53935;">
+    <div class="letter">1</div>
+    <div class="content">
+      <h3>Mobile Color Dots Untappable</h3>
+      <p>The syntax/song color dots in <code>ActiveThemeHeader</code> are <strong>10×10px</strong> (w-2.5 h-2.5) — far below the 44px WCAG minimum. On mobile, impossible to tap individual colors to jump to their editor.</p>
+      <p style="opacity:0.5; font-size:0.85em;">File: ThemeCustomizer/index.tsx → ActiveThemeHeader (line 842-853)</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="color-sync" onclick="toggleSelect(this)" style="border-left: 4px solid #1E88E5;">
+    <div class="letter">2</div>
+    <div class="content">
+      <h3>Color Sync via IDs</h3>
+      <p>Color dots in <strong>PanelBody</strong> (syntax breakdown) and <strong>ActiveThemeHeader</strong> (customizer) both show syntax colors but aren't connected. Clicking a dot in the syntax panel should open the color picker for that specific <code>SyntaxColorKey</code>. Need type-safe ID mapping between all color displays.</p>
+      <p style="opacity:0.5; font-size:0.85em;">Needs: SyntaxColorKey type, ColorEditTarget discriminated union, shared ID system</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="responsive-grid" onclick="toggleSelect(this)" style="border-left: 4px solid #43A047;">
+    <div class="letter">3</div>
+    <div class="content">
+      <h3>Two-Column Responsive Color Layout</h3>
+      <p>Color palette rows in the Themes tab should adapt: <strong>single column</strong> on mobile (labeled rows with inline picker), <strong>two columns</strong> on desktop. Currently always single-column <code>CompactColorRow</code> list.</p>
+      <p style="opacity:0.5; font-size:0.85em;">File: ThemeCustomizer/index.tsx → CompactColorRow (line 168)</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="panel-position" onclick="toggleSelect(this)" style="border-left: 4px solid #FB8C00;">
+    <div class="letter">4</div>
+    <div class="content">
+      <h3>Panel Too Close to Top</h3>
+      <p>ThemeCustomizer uses <code>top-0</code> — flush with viewport. Should use golden ratio offset: <strong>top-[55px]</strong> desktop, <strong>top-[34px]</strong> tablet. Also extend width left (<code>max-w-lg</code> instead of <code>max-w-md</code>).</p>
+      <p style="opacity:0.5; font-size:0.85em;">File: ThemeCustomizer/index.tsx (line 980) → "fixed right-0 top-0 bottom-0"</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="toggle-language" onclick="toggleSelect(this)" style="border-left: 4px solid #8E24AA;">
+    <div class="letter">5</div>
+    <div class="content">
+      <h3>Toggle Language: "Hide theme" → Neutral</h3>
+      <p>Current tooltip says <em>"Hide theme from selector"</em> — negative framing. Change to positive: <strong>"Show in palette"</strong> (on) / <strong>"Hidden from palette"</strong> (off). More neutral, clearer mental model.</p>
+      <p style="opacity:0.5; font-size:0.85em;">File: ThemeCustomizer/index.tsx (line 465)</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="checkbox-green" onclick="toggleSelect(this)" style="border-left: 4px solid #2E7D32;">
+    <div class="letter">6</div>
+    <div class="content">
+      <h3>Checkbox: Blue → Classic Green</h3>
+      <p>UTF Emoji Display checkbox uses browser default blue. Replace with custom checkbox styled in <strong>classic green</strong> (#22c55e) for a warmer, more intentional feel.</p>
+      <p style="opacity:0.5; font-size:0.85em;">File: ThemeCustomizer/index.tsx (line 1449-1467)</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="type-scaling" onclick="toggleSelect(this)" style="border-left: 4px solid #00ACC1;">
+    <div class="letter">7</div>
+    <div class="content">
+      <h3>Type Tab: Scale to Fit Mobile</h3>
+      <p>Font list in TYPE tab shows full previews that don't fit single viewport on mobile. Scale down font samples and use tighter layout so all options visible without scrolling.</p>
+      <p style="opacity:0.5; font-size:0.85em;">File: ThemeCustomizer/index.tsx → typography tab content</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="type-safety" onclick="toggleSelect(this)" style="border-left: 4px solid #5C6BC0;">
+    <div class="letter">8</div>
+    <div class="content">
+      <h3>Type Safety & Validation</h3>
+      <p>Extract <code>SyntaxColorKey</code> union type, create <code>ColorEditTarget</code> discriminated union, add hex color validation (<code>/^#[0-9a-fA-F]{6}$/</code>), ensure all color path strings are type-checked instead of raw strings.</p>
+      <p style="opacity:0.5; font-size:0.85em;">New file: types/colorTypes.ts + update existing components</p>
+    </div>
+  </div>
+
+</div>
+
+<p style="margin-top: 1.5rem; opacity: 0.7; font-size: 0.9em; text-align: center;">
+  Click to select/deselect items that should be in scope. All 8 selected by default.
+</p>

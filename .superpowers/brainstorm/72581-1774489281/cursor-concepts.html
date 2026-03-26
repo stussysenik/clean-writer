@@ -1,0 +1,302 @@
+<style>
+  .concept { margin-bottom: 48px; }
+  .concept h3 { margin-bottom: 8px; }
+  .concept .subtitle { margin-bottom: 16px; font-size: 0.85em; }
+
+  .keyframes {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  @media (max-width: 900px) { .keyframes { flex-direction: column; } }
+
+  .frame {
+    flex: 1;
+    border: 2px solid rgba(255,255,255,0.15);
+    border-radius: 12px;
+    overflow: hidden;
+    min-width: 220px;
+    position: relative;
+  }
+  .frame-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    opacity: 0.4;
+    padding: 8px 12px 4px;
+    font-weight: 600;
+  }
+  .frame-body {
+    padding: 0 12px 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.8;
+    position: relative;
+    min-height: 200px;
+  }
+
+  .line { color: rgba(255,255,255,0.35); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .line.active { color: rgba(255,255,255,0.9); }
+  .cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1.1em;
+    background: #E53935;
+    vertical-align: text-bottom;
+    animation: blink 1s step-end infinite;
+    margin-left: 1px;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .sweet-spot {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    border-top: 1px dashed rgba(251,140,0,0.5);
+  }
+  .sweet-label {
+    position: absolute;
+    right: 4px;
+    font-size: 9px;
+    color: #FB8C00;
+    opacity: 0.7;
+    font-family: system-ui;
+  }
+
+  .arrow-between {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    opacity: 0.3;
+    min-width: 30px;
+    align-self: center;
+  }
+  @media (max-width: 900px) {
+    .arrow-between { transform: rotate(90deg); min-height: 30px; }
+  }
+
+  .pad-indicator {
+    position: absolute;
+    background: rgba(34,197,94,0.1);
+    border-left: 2px dashed rgba(34,197,94,0.4);
+    top: 0;
+    bottom: 0;
+  }
+  .pad-label {
+    position: absolute;
+    font-size: 8px;
+    color: #22c55e;
+    font-family: system-ui;
+    writing-mode: vertical-rl;
+    opacity: 0.6;
+  }
+
+  .scroll-indicator {
+    position: absolute;
+    right: 6px;
+    font-size: 16px;
+    opacity: 0.3;
+  }
+</style>
+
+<h2>Cursor-Aware Layout — Three Concepts</h2>
+<p class="subtitle">Each shown as 3 keyframes: start → typing → result</p>
+
+<!-- CONCEPT A: Typewriter Scroll -->
+<div class="concept">
+  <h3>A. Typewriter Scroll</h3>
+  <p class="subtitle">Cursor stays at a fixed "sweet spot" (38.2% from top — golden ratio). Content scrolls up as you type. Like a real typewriter where the striking point never moves.</p>
+
+  <div class="keyframes">
+    <!-- Frame 1: Start -->
+    <div class="frame">
+      <div class="frame-label">1. Start typing</div>
+      <div class="frame-body">
+        <div class="sweet-spot" style="top: 38.2%;"><span class="sweet-label">sweet spot ↓</span></div>
+        <div style="padding-top: 38%;"></div>
+        <div class="line active">hello<span class="cursor"></span></div>
+        <div class="line" style="opacity: 0.15;">·</div>
+        <div class="line" style="opacity: 0.15;">·</div>
+        <div class="line" style="opacity: 0.15;">·</div>
+        <div class="line" style="opacity: 0.1;">(empty below)</div>
+      </div>
+    </div>
+
+    <div class="arrow-between">→</div>
+
+    <!-- Frame 2: After several lines -->
+    <div class="frame">
+      <div class="frame-label">2. Keep typing lines</div>
+      <div class="frame-body">
+        <div class="sweet-spot" style="top: 38.2%;"><span class="sweet-label">sweet spot ↓</span></div>
+        <div class="line">hello world this is</div>
+        <div class="line">a long text that</div>
+        <div class="line">keeps going and the</div>
+        <div class="line active">cursor stays here<span class="cursor"></span></div>
+        <div class="line" style="opacity: 0.15;">·</div>
+        <div class="line" style="opacity: 0.15;">·</div>
+        <div class="line" style="opacity: 0.1;">(empty below)</div>
+        <span class="scroll-indicator" style="top: 10px;">↑ scrolled</span>
+      </div>
+    </div>
+
+    <div class="arrow-between">→</div>
+
+    <!-- Frame 3: Many lines -->
+    <div class="frame">
+      <div class="frame-label">3. Full page of text</div>
+      <div class="frame-body">
+        <div class="sweet-spot" style="top: 38.2%;"><span class="sweet-label">sweet spot ↓</span></div>
+        <div class="line">responsible forever</div>
+        <div class="line">for what you have</div>
+        <div class="line">tamed. You are</div>
+        <div class="line active">responsible for<span class="cursor"></span></div>
+        <div class="line" style="opacity: 0.15;">·</div>
+        <div class="line" style="opacity: 0.15;">·</div>
+        <div class="line" style="opacity: 0.15;">·</div>
+        <span class="scroll-indicator" style="top: 10px;">↑↑ scrolled</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 12px; padding: 10px 14px; border-radius: 8px; background: rgba(251,140,0,0.08); border: 1px solid rgba(251,140,0,0.15); font-size: 12px;">
+    <strong style="color: #FB8C00;">Key idea:</strong> The cursor line ALWAYS stays at 38.2% from the top. Previous lines scroll up above it. You always type in the same vertical spot — like a typewriter's striking point.
+  </div>
+</div>
+
+<!-- CONCEPT B: Dynamic Padding -->
+<div class="concept">
+  <h3>B. Dynamic Padding</h3>
+  <p class="subtitle">Left/right padding adjusts so the cursor column stays horizontally centered (or at golden ratio). As you type longer lines, the text shifts left. Short lines get more padding.</p>
+
+  <div class="keyframes">
+    <!-- Frame 1: Short text, lots of padding -->
+    <div class="frame">
+      <div class="frame-label">1. Short text</div>
+      <div class="frame-body">
+        <div class="pad-indicator" style="left: 0; width: 35%;"></div>
+        <div class="pad-label" style="left: 28%; top: 30%;">padding</div>
+        <div style="padding-top: 30%; padding-left: 35%;">
+          <div class="line active">hello<span class="cursor"></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-between">→</div>
+
+    <!-- Frame 2: Medium text, medium padding -->
+    <div class="frame">
+      <div class="frame-label">2. Longer line</div>
+      <div class="frame-body">
+        <div class="pad-indicator" style="left: 0; width: 18%;"></div>
+        <div class="pad-label" style="left: 10%; top: 30%;">pad</div>
+        <div style="padding-top: 30%; padding-left: 18%;">
+          <div class="line active">hello world great 💎<span class="cursor"></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-between">→</div>
+
+    <!-- Frame 3: Long text, minimal padding -->
+    <div class="frame">
+      <div class="frame-label">3. Full line</div>
+      <div class="frame-body">
+        <div class="pad-indicator" style="left: 0; width: 6%;"></div>
+        <div style="padding-top: 30%; padding-left: 6%;">
+          <div class="line active">It is the time you have wasted<span class="cursor"></span></div>
+          <div class="line">for your rose that makes your</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 12px; padding: 10px 14px; border-radius: 8px; background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.15); font-size: 12px;">
+    <strong style="color: #22c55e;">Key idea:</strong> Padding is calculated from cursor's column position. Short lines = lots of padding (text centered). Full lines = minimal padding. The cursor stays in a comfortable horizontal zone.
+  </div>
+</div>
+
+<!-- CONCEPT C: Both Combined -->
+<div class="concept">
+  <h3>C. Both Combined — Full Typewriter</h3>
+  <p class="subtitle">Vertical sweet spot + horizontal centering. The cursor lives in a fixed "focus zone" and everything else adjusts around it.</p>
+
+  <div class="keyframes">
+    <!-- Frame 1 -->
+    <div class="frame">
+      <div class="frame-label">1. First words</div>
+      <div class="frame-body" style="display: flex; align-items: center; justify-content: center; min-height: 200px;">
+        <div style="text-align: center;">
+          <div class="sweet-spot" style="top: 38.2%;"><span class="sweet-label">focus zone</span></div>
+          <div class="line active" style="font-size: 14px;">hello<span class="cursor"></span></div>
+          <div style="font-size: 9px; opacity: 0.25; margin-top: 8px; font-family: system-ui;">cursor is the center of the universe</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-between">→</div>
+
+    <!-- Frame 2 -->
+    <div class="frame">
+      <div class="frame-label">2. Growing text</div>
+      <div class="frame-body">
+        <div class="sweet-spot" style="top: 38.2%;"><span class="sweet-label">focus zone</span></div>
+        <div class="line" style="padding-left: 10%;">hello world this is</div>
+        <div class="line" style="padding-left: 10%;">a text that keeps</div>
+        <div class="line active" style="padding-left: 10%;">growing naturally<span class="cursor"></span></div>
+        <div class="line" style="opacity: 0.15;">·</div>
+        <div class="line" style="opacity: 0.15;">·</div>
+        <span class="scroll-indicator" style="top: 6px;">↑</span>
+      </div>
+    </div>
+
+    <div class="arrow-between">→</div>
+
+    <!-- Frame 3 -->
+    <div class="frame">
+      <div class="frame-label">3. Full flow state</div>
+      <div class="frame-body">
+        <div class="sweet-spot" style="top: 38.2%;"><span class="sweet-label">focus zone</span></div>
+        <div class="line" style="padding-left: 6%;">for what you have</div>
+        <div class="line" style="padding-left: 6%;">tamed. You are</div>
+        <div class="line active" style="padding-left: 6%;">responsible for your<span class="cursor"></span></div>
+        <div class="line" style="opacity: 0.15;">·</div>
+        <div class="line" style="opacity: 0.15;">·</div>
+        <div class="line" style="opacity: 0.1;">·</div>
+        <span class="scroll-indicator" style="top: 6px;">↑↑</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top: 12px; padding: 10px 14px; border-radius: 8px; background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.15); font-size: 12px;">
+    <strong style="color: #818CF8;">Key idea:</strong> The cursor occupies a fixed "focus zone" on screen — both vertically (38.2% from top) and horizontally (centered for short lines, natural for long). Everything else — scroll position, padding — adjusts to serve this zone. Pure typewriter experience.
+  </div>
+</div>
+
+<p style="margin-top: 24px; text-align: center; opacity: 0.5; font-size: 0.85em;">Click to select which concept resonates. All three also include the Unicode/emoji cursor fix.</p>
+
+<div class="options">
+  <div class="option" data-choice="typewriter-scroll" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Typewriter Scroll</h3>
+      <p>Vertical only. Cursor stays at fixed sweet spot, content scrolls up.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="dynamic-padding" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Dynamic Padding</h3>
+      <p>Horizontal only. Padding adjusts based on cursor column position.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="full-typewriter" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Full Typewriter (Both)</h3>
+      <p>Vertical sweet spot + horizontal centering. Complete focus zone experience.</p>
+    </div>
+  </div>
+</div>

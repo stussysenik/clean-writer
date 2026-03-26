@@ -1,0 +1,9 @@
+{"type":"server-started","port":49774,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:49774","screen_dir":"/Users/senik/Desktop/clean-writer/.superpowers/brainstorm/67530-1774485968"}
+{"type":"screen-added","file":"/Users/senik/Desktop/clean-writer/.superpowers/brainstorm/67530-1774485968/scope-overview.html"}
+{"type":"screen-added","file":"/Users/senik/Desktop/clean-writer/.superpowers/brainstorm/67530-1774485968/approaches.html"}
+{"type":"screen-updated","file":"/Users/senik/Desktop/clean-writer/.superpowers/brainstorm/67530-1774485968/approaches.html"}
+{"type":"screen-added","file":"/Users/senik/Desktop/clean-writer/.superpowers/brainstorm/67530-1774485968/panel-layout.html"}
+{"type":"screen-updated","file":"/Users/senik/Desktop/clean-writer/.superpowers/brainstorm/67530-1774485968/panel-layout.html"}
+{"type":"screen-added","file":"/Users/senik/Desktop/clean-writer/.superpowers/brainstorm/67530-1774485968/waiting.html"}
+{"type":"screen-updated","file":"/Users/senik/Desktop/clean-writer/.superpowers/brainstorm/67530-1774485968/waiting.html"}
+{"type":"server-stopped","reason":"idle timeout"}

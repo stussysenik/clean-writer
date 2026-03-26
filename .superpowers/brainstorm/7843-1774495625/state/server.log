@@ -1,0 +1,7 @@
+{"type":"server-started","port":62601,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:62601","screen_dir":"/Users/senik/Desktop/clean-writer/.superpowers/brainstorm/7843-1774495625/content","state_dir":"/Users/senik/Desktop/clean-writer/.superpowers/brainstorm/7843-1774495625/state"}
+{"type":"screen-added","file":"/Users/senik/Desktop/clean-writer/.superpowers/brainstorm/7843-1774495625/content/shadow-comparison.html"}
+{"type":"screen-added","file":"/Users/senik/Desktop/clean-writer/.superpowers/brainstorm/7843-1774495625/content/unstylized-feel.html"}
+{"type":"screen-added","file":"/Users/senik/Desktop/clean-writer/.superpowers/brainstorm/7843-1774495625/content/highlights-in-notepad.html"}
+{"type":"screen-added","file":"/Users/senik/Desktop/clean-writer/.superpowers/brainstorm/7843-1774495625/content/toolbar-layout.html"}
+{"type":"screen-added","file":"/Users/senik/Desktop/clean-writer/.superpowers/brainstorm/7843-1774495625/content/waiting.html"}
+{"type":"server-stopped","reason":"idle timeout"}

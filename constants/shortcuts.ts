@@ -29,6 +29,7 @@ export const SHORTCUTS: ShortcutDef[] = [
   // View
   { id: "preview", hotkey: "Mod+Shift+P", label: "Toggle preview", category: "view" },
   { id: "focus-cycle", hotkey: "Mod+Shift+F", label: "Cycle focus mode", category: "view" },
+  { id: "plain-mode", hotkey: "Mod+Shift+U", label: "Toggle plain mode", category: "view" },
   // Word types (1-9)
   ...WORD_TYPE_NAMES.map((name, i) => ({
     id: `toggle-${name}`,

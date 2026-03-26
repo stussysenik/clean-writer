@@ -26,7 +26,9 @@ import {
   toSyntaxSets,
   SongAnalysis,
   FocusMode,
+  ColorEditTarget,
 } from "./types";
+import QuickColorPicker from "./components/ColorPicker/QuickColorPicker";
 import { useSyntaxWorker } from "./hooks/useSyntaxWorker";
 import { useAppHotkeys } from "./hooks/useAppHotkeys";
 import Typewriter from "./components/Typewriter";
@@ -255,6 +257,37 @@ const App: React.FC = () => {
     setCustomizerInitialTab("themes");
   }, []);
 
+  // Color edit handlers — bridge PanelBody → ThemeCustomizer
+  const handleEditColor = useCallback((target: ColorEditTarget) => {
+    setIsCustomizerOpen(true);
+    setCustomizerInitialTab("themes");
+    // Scroll to the target color after the panel opens
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        let elementId: string | null = null;
+        if (target.type === "syntax") {
+          elementId = `theme-color-${target.key}`;
+        } else if (target.type === "rhyme") {
+          elementId = `rhyme-color-${target.index}`;
+        }
+        if (elementId) {
+          document.getElementById(elementId)?.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
+        }
+      }, 300); // wait for panel open animation
+    });
+  }, []);
+
+  const handleQuickEditColor = useCallback(
+    (target: ColorEditTarget, anchorEl: HTMLElement) => {
+      setQuickColorPickerState({ target, anchorEl });
+    },
+    [],
+  );
+
+
   const handleThemeRename = useCallback((themeId: string, newName: string) => {
     setCustomThemeNames(prev => {
       const next = { ...prev };
@@ -279,6 +312,10 @@ const App: React.FC = () => {
   const [isSampleDialogOpen, setIsSampleDialogOpen] = useState(false);
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
   const [customizerInitialTab, setCustomizerInitialTab] = useState<string | null>(null);
+  const [quickColorPickerState, setQuickColorPickerState] = useState<{
+    target: ColorEditTarget;
+    anchorEl: HTMLElement;
+  } | null>(null);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [showMobileWelcome, setShowMobileWelcome] = useState(false);
   const [utf8DisplayEnabled, setUtf8DisplayEnabled] = useState<boolean>(() => {
@@ -291,6 +328,20 @@ const App: React.FC = () => {
 
   // Dedicated song view state
   const [songMode, setSongMode] = useState(false);
+
+  // Code mode state
+  const [codeMode, setCodeMode] = useState(false);
+  const [codeLanguage, setCodeLanguage] = useState("javascript");
+
+  // Unstylized (plain text) mode
+  const [unstylizedMode, setUnstylizedMode] = useState(() => {
+    try {
+      return localStorage.getItem("clean_writer_unstylized_mode") === "true";
+    } catch {
+      return false;
+    }
+  });
+
   const [songData, setSongData] = useState<SongAnalysis | null>(null);
   const [showSyllableAnnotations, setShowSyllableAnnotations] = useState<boolean>(() => {
     try {
@@ -390,6 +441,19 @@ const App: React.FC = () => {
     isRhymeColorCustomized,
     hasOverridesForTheme,
   } = useCustomTheme(themeId, savedCustomThemes);
+
+  const handleQuickColorChange = useCallback(
+    (target: ColorEditTarget, color: string) => {
+      if (target.type === "syntax") {
+        setColor(target.key, color);
+      } else if (target.type === "rhyme") {
+        setRhymeColor(target.index, color);
+      } else if (target.type === "editor") {
+        setColor(target.key, color);
+      }
+    },
+    [setColor, setRhymeColor],
+  );
 
   // Compute effective rhyme colors: prefer current theme's OKLCH-derived rhymeColors,
   // then custom theme overrides, then static fallback
@@ -644,6 +708,15 @@ const App: React.FC = () => {
     }
   }, [viewMode]);
 
+  // Persist unstylizedMode
+  useEffect(() => {
+    try {
+      localStorage.setItem("clean_writer_unstylized_mode", String(unstylizedMode));
+    } catch (e) {
+      console.warn("Could not save unstylized mode");
+    }
+  }, [unstylizedMode]);
+
   // Persist soloMode
   useEffect(() => {
     try {
@@ -883,6 +956,16 @@ const App: React.FC = () => {
     setViewMode(viewMode === "write" ? "preview" : "write");
   };
 
+  const toggleUnstylizedMode = useCallback(() => {
+    setUnstylizedMode((prev) => {
+      if (!prev) {
+        setSongMode(false);
+        setCodeMode(false);
+      }
+      return !prev;
+    });
+  }, []);
+
   // Save selection on pointer/touch down (for mobile strikethrough)
   const handleStrikethroughPointerDown = useCallback(() => {
     saveSelection();
@@ -932,6 +1015,7 @@ const App: React.FC = () => {
     handleClearRequest,
     setViewMode,
     cycleFocusMode,
+    toggleUnstylizedMode,
     isMobile,
   });
 
@@ -952,7 +1036,7 @@ const App: React.FC = () => {
     <div
       className="w-full h-[100dvh] flex flex-col relative overflow-x-hidden transition-colors duration-500"
       style={{
-        backgroundColor: isMobile ? mobileBackground : currentTheme.background,
+        backgroundColor: unstylizedMode ? "#FFFFFF" : (isMobile ? mobileBackground : currentTheme.background),
         color: currentTheme.text,
         fontFamily: displayFontFamily,
       }}
@@ -960,7 +1044,7 @@ const App: React.FC = () => {
       {/* Background Texture */}
       <div
         data-overlap-ignore
-        className="absolute inset-0 pointer-events-none opacity-20 mix-blend-multiply z-0"
+        className={`absolute inset-0 pointer-events-none ${unstylizedMode ? 'opacity-0' : 'opacity-20'} mix-blend-multiply z-0`}
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.15'/%3E%3C/svg%3E")`,
         }}
@@ -1049,6 +1133,30 @@ const App: React.FC = () => {
         onLineHeightChange={setLineHeightValue}
       />
 
+      {/* Quick Color Picker popover (long-press on color dots) */}
+      {quickColorPickerState && (
+        <QuickColorPicker
+          target={quickColorPickerState.target}
+          currentColor={
+            quickColorPickerState.target.type === "syntax"
+              ? currentTheme.highlight[quickColorPickerState.target.key]
+              : quickColorPickerState.target.type === "rhyme"
+                ? (effectiveRhymeColors[quickColorPickerState.target.index] ?? "#888888")
+                : quickColorPickerState.target.type === "editor"
+                  ? currentTheme[quickColorPickerState.target.key]
+                  : "#888888"
+          }
+          anchorEl={quickColorPickerState.anchorEl}
+          theme={currentTheme}
+          onSetColor={handleQuickColorChange}
+          onOpenFull={(target) => {
+            setQuickColorPickerState(null);
+            handleEditColor(target);
+          }}
+          onClose={() => setQuickColorPickerState(null)}
+        />
+      )}
+
       {/* Toast for warnings */}
       <Toast
         message="You need at least one theme"
@@ -1087,7 +1195,7 @@ const App: React.FC = () => {
         </div>
         {/* Hidden when customizer open — customizer has its own close (X) button */}
         {!isCustomizerOpen && (
-          <div className="pointer-events-auto flex items-center gap-2 min-h-[44px]">
+          <div className="pointer-events-auto flex items-center gap-1.5 min-h-[44px]">
             {/* Font Size A-/A+ Controls — segmented pill */}
             <div
               className="flex items-center gap-0 rounded-lg overflow-hidden"
@@ -1134,53 +1242,51 @@ const App: React.FC = () => {
                 A+
               </TouchButton>
             </div>
-            <div className="flex items-center gap-0.5">
-              <Tooltip content="Help & Shortcuts" position="bottom">
-                <TouchButton
-                  onClick={() => setIsHelpOpen(true)}
-                  className="p-2 rounded-xl hover:bg-current/5 transition-all duration-200"
-                  aria-label="Help and shortcuts"
-                  style={{
-                    color: getIconColor(currentTheme),
-                  }}
+            <Tooltip content="Help & Shortcuts" position="bottom">
+              <TouchButton
+                onClick={() => setIsHelpOpen(true)}
+                className="p-1.5 rounded-xl hover:bg-current/5 transition-all duration-200"
+                aria-label="Help and shortcuts"
+                style={{
+                  color: getIconColor(currentTheme),
+                }}
+              >
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 >
-                  <svg
-                    width="23"
-                    height="23"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-                    <line x1="12" y1="17" x2="12.01" y2="17" />
-                  </svg>
-                </TouchButton>
-              </Tooltip>
-              <Tooltip content={`Build ${BUILD_NUMBER} · ${BUILD_HASH}`} position="bottom">
-                <TouchButton
-                  onClick={() => setIsCustomizerOpen(true)}
-                  className="p-2 rounded-xl hover:bg-current/5 transition-all duration-200"
-                  title="Customize Theme"
-                  data-testid="open-theme-customizer"
-                  style={{
-                    color: getIconColor(currentTheme),
-                  }}
-                >
-                  <IconSettings />
-                </TouchButton>
-              </Tooltip>
-            </div>
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+              </TouchButton>
+            </Tooltip>
+            <Tooltip content={`Build ${BUILD_NUMBER} · ${BUILD_HASH}`} position="bottom">
+              <TouchButton
+                onClick={() => setIsCustomizerOpen(true)}
+                className="p-1.5 rounded-xl hover:bg-current/5 transition-all duration-200"
+                title="Customize Theme"
+                data-testid="open-theme-customizer"
+                style={{
+                  color: getIconColor(currentTheme),
+                }}
+              >
+                <IconSettings />
+              </TouchButton>
+            </Tooltip>
           </div>
         )}
       </div>
 
       {/* Main Area */}
       <main
-        className="flex-1 w-full h-full relative z-10 pt-[89px] md:pt-[89px] lg:pt-[89px] transition-all duration-300 ease-in-out"
+        className="flex-1 w-full h-full relative z-10 pt-[70px] md:pt-[80px] lg:pt-[80px] transition-all duration-300 ease-in-out"
         style={{
           paddingRight: isDesktop && content.length > 0 ? 360 : undefined,
         }}
@@ -1215,6 +1321,9 @@ const App: React.FC = () => {
             focusNavState={focusNavState}
             isMobile={isMobile}
             onFocusTap={focusAtTextIndex}
+            codeMode={codeMode}
+            codeLanguage={codeLanguage}
+            unstylizedMode={unstylizedMode}
           />
         ) : (
           <div
@@ -1251,6 +1360,14 @@ const App: React.FC = () => {
         onHoverRhymeKey={setHoveredRhymeKey}
         disabledRhymeKeys={disabledRhymeKeys}
         onToggleRhymeKey={handleToggleRhymeKey}
+        onEditColor={handleEditColor}
+        onQuickEditColor={handleQuickEditColor}
+        codeMode={codeMode}
+        onToggleCodeMode={() => {
+          setCodeMode((prev) => !prev);
+          if (!codeMode) setSongMode(false); // exit song mode when entering code mode
+        }}
+        codeLanguage={codeLanguage}
       />
 
       {/* Floating Line Width Slider — centered in viewport */}
@@ -1306,6 +1423,8 @@ const App: React.FC = () => {
         onClear={handleClearRequest}
         onSampleText={handleSampleTextRequest}
         onCycleFocusMode={cycleFocusMode}
+        unstylizedMode={unstylizedMode}
+        onToggleUnstylized={toggleUnstylizedMode}
       />
 
       {/* Mobile Welcome Popup */}

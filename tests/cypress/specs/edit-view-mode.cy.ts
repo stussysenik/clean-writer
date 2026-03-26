@@ -42,9 +42,11 @@ describe("Edit vs View Mode — Mobile Visual Distinction", () => {
   });
 
   it("toolbar becomes fully opaque when editing", () => {
-    // Focus textarea to enter editing mode
-    cy.get("textarea").first().focus();
-    cy.wait(200);
+    // Click and type into textarea to reliably enter editing mode
+    // (focus alone may not trigger the native focus event in Cypress mobile viewport)
+    cy.get("textarea").first().click();
+    cy.get("textarea").first().type("x", { delay: 5 });
+    cy.wait(500);
 
     // Toolbar should be fully opaque in editing mode
     cy.get("footer")

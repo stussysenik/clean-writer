@@ -10,6 +10,7 @@ interface UseAppHotkeysProps {
   handleClearRequest: () => void;
   setViewMode: React.Dispatch<React.SetStateAction<ViewMode>>;
   cycleFocusMode: () => void;
+  toggleUnstylizedMode: () => void;
   isMobile: boolean;
 }
 
@@ -27,6 +28,7 @@ export function useAppHotkeys({
   handleClearRequest,
   setViewMode,
   cycleFocusMode,
+  toggleUnstylizedMode,
   isMobile,
 }: UseAppHotkeysProps) {
   // Number keys 1-9 for word type toggles
@@ -51,6 +53,7 @@ export function useAppHotkeys({
   useHotkey("Mod+Shift+E", () => handleExport());
   useHotkey("Mod+Shift+D", () => handleClearRequest());
   useHotkey("Mod+Shift+F", () => cycleFocusMode());
+  useHotkey("Mod+Shift+U", () => toggleUnstylizedMode());
 
   // Tab hold — preventDefault stops default tab behavior, useKeyHold tracks state
   // ignoreInputs: false so Tab overlay works even when textarea is focused

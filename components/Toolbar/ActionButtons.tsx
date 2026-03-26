@@ -9,6 +9,7 @@ import {
   IconMagicClean,
   IconSample,
   IconFocus,
+  IconPlainText,
 } from "./Icons";
 import TouchButton from "../TouchButton";
 import Tooltip from "../Tooltip";
@@ -28,6 +29,8 @@ interface ActionButtonsProps {
   onClear: () => void;
   onSampleText?: () => void;
   onCycleFocusMode: () => void;
+  unstylizedMode: boolean;
+  onToggleUnstylized: () => void;
 }
 
 interface ActionButtonProps {
@@ -110,6 +113,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   onClear,
   onSampleText,
   onCycleFocusMode,
+  unstylizedMode,
+  onToggleUnstylized,
 }) => {
   const iconColor = getIconColor(theme);
   const { isMobile } = useResponsiveBreakpoint();
@@ -124,6 +129,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
       className="flex flex-wrap gap-1 md:gap-2 items-center"
       style={{ color: iconColor }}
     >
+      {/* View modes group */}
       <ActionButton
         onClick={onToggleView}
         icon={viewMode === "write" ? <IconEyeOpen /> : <IconEyeClosed />}
@@ -135,6 +141,20 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         }
       />
 
+      <ActionButton
+        onClick={onToggleUnstylized}
+        active={unstylizedMode}
+        icon={<IconPlainText />}
+        label="Plain"
+        tooltip={unstylizedMode ? "Exit plain text mode" : "Plain text mode — monospace, no colors"}
+        shortcut={mod ? `${mod}U` : undefined}
+        ariaLabel={unstylizedMode ? "Exit plain text mode" : "Enter plain text mode"}
+        className={unstylizedMode ? "!opacity-100" : ""}
+        style={unstylizedMode ? { color: theme.accent } : undefined}
+        data-testid="unstylized-mode-btn"
+      />
+
+      {/* Edit tools group */}
       <ActionButton
         onClick={onStrikethrough}
         onMouseDown={(e) => e.preventDefault()}
@@ -160,6 +180,21 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         data-testid="clean-strikethroughs-btn"
       />
 
+      {/* Navigation group */}
+      <ActionButton
+        onClick={onCycleFocusMode}
+        active={focusMode !== "none"}
+        disabled={viewMode === "preview"}
+        icon={<IconFocus />}
+        label={FOCUS_MODE_LABELS[focusMode]}
+        tooltip={focusMode === "none" ? "Focus mode (click to cycle)" : `Focus: ${focusMode} — ←/→ navigate, ↑/↓ change level`}
+        shortcut={mod ? `${mod}F` : undefined}
+        ariaLabel="Cycle focus mode"
+        className={focusMode !== "none" ? "!opacity-100" : ""}
+        style={focusMode !== "none" ? { color: theme.accent } : undefined}
+      />
+
+      {/* File ops group */}
       <ActionButton
         onClick={onExport}
         icon={<IconDownload />}
@@ -178,19 +213,6 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
           ariaLabel="Load sample text"
         />
       )}
-
-      <ActionButton
-        onClick={onCycleFocusMode}
-        active={focusMode !== "none"}
-        disabled={viewMode === "preview"}
-        icon={<IconFocus />}
-        label={FOCUS_MODE_LABELS[focusMode]}
-        tooltip={focusMode === "none" ? "Focus mode (click to cycle)" : `Focus: ${focusMode} — ←/→ navigate, ↑/↓ change level`}
-        shortcut={mod ? `${mod}F` : undefined}
-        ariaLabel="Cycle focus mode"
-        className={focusMode !== "none" ? "!opacity-100" : ""}
-        style={focusMode !== "none" ? { color: theme.accent } : undefined}
-      />
 
       <ActionButton
         onClick={onClear}

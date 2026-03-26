@@ -89,11 +89,11 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
   }, [themeId]);
 
   return (
-    <div className="overflow-hidden md:overflow-visible">
-      {/* Mobile: horizontal scroll strip / Desktop: wrapped grid */}
+    <div className="overflow-hidden">
+      {/* Horizontal scroll strip — single row on all breakpoints */}
       <div
         ref={scrollRef}
-        className="flex gap-2.5 md:gap-3 items-center overflow-x-auto md:overflow-visible md:flex-wrap md:max-w-[336px] no-scrollbar py-3 px-2.5 md:py-[7px] md:px-[7px]"
+        className="flex flex-nowrap gap-2.5 md:gap-3 items-center overflow-x-auto no-scrollbar py-3 px-2.5 md:py-[7px] md:px-[7px]"
         style={{ WebkitOverflowScrolling: "touch" }}
       >
         {visibleThemes.map((t) => (

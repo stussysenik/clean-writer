@@ -1,0 +1,79 @@
+<h2>Two Approaches</h2>
+<p class="subtitle">Both solve all 8 issues. The difference is architecture scope.</p>
+
+<div class="options">
+
+  <div class="option" data-choice="incremental" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Incremental Enhancement (Recommended)</h3>
+      <p>Fix each issue within existing component structure. Add new pieces surgically.</p>
+
+      <div style="margin-top: 12px; font-size: 0.85em; line-height: 1.6;">
+        <strong style="opacity: 0.6;">Changes:</strong><br>
+        <code>types.ts</code> — extract <code>SyntaxColorKey</code>, <code>ColorEditTarget</code> types<br>
+        <code>ThemeCustomizer/index.tsx</code> — golden ratio positioning, 2-col grid, toggle language, checkbox green<br>
+        <code>PanelBody.tsx</code> — add tap + long-press gesture on color dots<br>
+        <code>ActiveThemeHeader</code> — enlarge dots, add labels on mobile<br>
+        <strong>New:</strong> <code>QuickColorPicker.tsx</code> — inline popover for long-press editing<br>
+        <strong>New:</strong> <code>hooks/useColorEditGesture.ts</code> — tap vs long-press handler
+      </div>
+
+      <div class="pros-cons" style="margin-top: 12px;">
+        <div class="pros"><h4>Pros</h4>
+          <ul>
+            <li>Minimal blast radius (~6 files)</li>
+            <li>Reuses CompactColorRow, WORD_TYPE_LABELS</li>
+            <li>Each fix independently verifiable</li>
+            <li>Preserves playful spring animations</li>
+          </ul>
+        </div>
+        <div class="cons"><h4>Cons</h4>
+          <ul>
+            <li>Color edit logic slightly spread across files</li>
+            <li>ThemeCustomizer file grows (already large)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="refactor" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>ColorEditSystem Module</h3>
+      <p>Extract a centralized color editing system. Single source of truth for all color interactions.</p>
+
+      <div style="margin-top: 12px; font-size: 0.85em; line-height: 1.6;">
+        <strong style="opacity: 0.6;">Changes:</strong><br>
+        <strong>New:</strong> <code>types/colorTypes.ts</code> — all color-related types<br>
+        <strong>New:</strong> <code>components/ColorEdit/ColorDotButton.tsx</code> — unified dot component<br>
+        <strong>New:</strong> <code>components/ColorEdit/QuickColorPicker.tsx</code> — inline popover<br>
+        <strong>New:</strong> <code>components/ColorEdit/ResponsiveColorGrid.tsx</code> — 1/2-col layout<br>
+        <strong>New:</strong> <code>hooks/useColorEditSystem.ts</code> — centralized state + gestures<br>
+        <code>ThemeCustomizer</code> — decompose, use new system<br>
+        <code>PanelBody</code> — use ColorDotButton<br>
+        <code>ActiveThemeHeader</code> — use ColorDotButton
+      </div>
+
+      <div class="pros-cons" style="margin-top: 12px;">
+        <div class="pros"><h4>Pros</h4>
+          <ul>
+            <li>Clean architecture, DRY</li>
+            <li>Color dots behave identically everywhere</li>
+            <li>Easier to test each piece</li>
+            <li>ThemeCustomizer gets smaller</li>
+          </ul>
+        </div>
+        <div class="cons"><h4>Cons</h4>
+          <ul>
+            <li>Larger diff (~10 new/modified files)</li>
+            <li>Higher risk of regressions</li>
+            <li>More complex PR review</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

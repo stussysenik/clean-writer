@@ -12,8 +12,10 @@ import {
   SyntaxSets,
   HighlightConfig,
   SongAnalysis,
+  ColorEditTarget,
+  SyntaxColorKey,
 } from "../../types";
-import { getWordTypeOccurrences } from "../../services/localSyntaxService";
+import { getWordTypeOccurrences, stripMarkdownStructure } from "../../services/localSyntaxService";
 import TouchButton from "../TouchButton";
 import Kbd from "../Kbd";
 import WordCount from "../Toolbar/WordCount";
@@ -43,6 +45,11 @@ interface PanelBodyProps {
   onHoverRhymeKey?: (key: string | null) => void;
   disabledRhymeKeys?: Set<string>;
   onToggleRhymeKey?: (key: string) => void;
+  onEditColor?: (target: ColorEditTarget) => void;
+  onQuickEditColor?: (target: ColorEditTarget, anchorEl: HTMLElement) => void;
+  codeMode?: boolean;
+  onToggleCodeMode?: () => void;
+  codeLanguage?: string;
 }
 
 const WORD_TYPE_CONFIG = [
@@ -117,14 +124,68 @@ const PanelBody: React.FC<PanelBodyProps> = ({
   onHoverRhymeKey,
   disabledRhymeKeys = new Set(),
   onToggleRhymeKey,
+  onEditColor,
+  onQuickEditColor,
+  codeMode = false,
+  onToggleCodeMode,
+  codeLanguage = "javascript",
 }) => {
   // Count actual word occurrences per type using O(1) Set lookups
   const wordTypeCounts = useMemo(
     () => getWordTypeOccurrences(content, syntaxSets),
     [content, syntaxSets],
   );
+
+  // Count heading words and todos separately
+  const markdownCounts = useMemo(
+    () => stripMarkdownStructure(content),
+    [content],
+  );
   const dotsRef = useRef<(HTMLSpanElement | null)[]>([]);
   const hasAnimated = useRef(false);
+  const colorDotTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const colorDotFiredRef = useRef(false);
+
+  // Color dot gesture handlers (tap → navigate, long-press → quick picker)
+  const handleColorDotPointerDown = useCallback(
+    (e: React.PointerEvent, colorKey: SyntaxColorKey) => {
+      if (!onEditColor && !onQuickEditColor) return;
+      e.stopPropagation(); // prevent row drag
+      colorDotFiredRef.current = false;
+      const el = e.currentTarget as HTMLElement;
+
+      if (onQuickEditColor) {
+        colorDotTimerRef.current = setTimeout(() => {
+          colorDotFiredRef.current = true;
+          colorDotTimerRef.current = null;
+          onQuickEditColor({ type: "syntax", key: colorKey }, el);
+        }, LONG_PRESS_MS);
+      }
+    },
+    [onEditColor, onQuickEditColor],
+  );
+
+  const handleColorDotPointerUp = useCallback(
+    (e: React.PointerEvent, colorKey: SyntaxColorKey) => {
+      if (colorDotTimerRef.current !== null) {
+        clearTimeout(colorDotTimerRef.current);
+        colorDotTimerRef.current = null;
+      }
+      if (colorDotFiredRef.current) return; // long-press already fired
+      e.stopPropagation();
+      if (onEditColor) {
+        onEditColor({ type: "syntax", key: colorKey });
+      }
+    },
+    [onEditColor],
+  );
+
+  const handleColorDotPointerCancel = useCallback(() => {
+    if (colorDotTimerRef.current !== null) {
+      clearTimeout(colorDotTimerRef.current);
+      colorDotTimerRef.current = null;
+    }
+  }, []);
 
   // Check for reduced motion preference
   const reducedMotion = useMemo(() => {
@@ -477,6 +538,7 @@ const PanelBody: React.FC<PanelBodyProps> = ({
   }, []);
 
   const showSongModeToggle = Boolean(onToggleSongMode);
+  const showCodeModeToggle = Boolean(onToggleCodeMode);
   const useInlineHeader = !onClose;
 
   return (
@@ -501,15 +563,15 @@ const PanelBody: React.FC<PanelBodyProps> = ({
             <WordCount count={wordCount} theme={theme} />
           </div>
           <div
-            className={`flex flex-shrink-0 ${
-              useInlineHeader ? "items-center gap-3" : "flex-col items-end gap-4"
+            className={`flex min-w-0 ${
+              useInlineHeader ? "items-center gap-2 flex-shrink" : "flex-col items-end gap-4 flex-shrink-0"
             }`}
           >
-            {showSongModeToggle && (
+            {(showSongModeToggle || showCodeModeToggle) && (
               <div
-                className={`grid grid-cols-2 items-center gap-1 rounded-full border p-1 ${
-                  useInlineHeader ? "w-[236px]" : "w-full max-w-[196px]"
-                }`}
+                className={`grid items-center gap-0.5 rounded-full border p-1 ${
+                  showCodeModeToggle ? "grid-cols-3" : "grid-cols-2"
+                } ${useInlineHeader ? "w-auto max-w-[280px]" : "w-full max-w-[240px]"}`}
                 data-testid="panel-mode-switch"
                 style={{
                   backgroundColor: `${theme.text}08`,
@@ -520,35 +582,58 @@ const PanelBody: React.FC<PanelBodyProps> = ({
                 <TouchButton
                   onClick={() => {
                     if (songMode) onToggleSongMode?.();
+                    if (codeMode) onToggleCodeMode?.();
                   }}
                   data-testid="panel-mode-syntax"
-                  className="px-3 py-1.5 rounded-full text-[10px] font-semibold uppercase tracking-[0.18em] transition-all"
+                  className="px-2 py-1.5 rounded-full text-[10px] font-semibold uppercase tracking-[0.12em] transition-all"
                   style={{
                     minHeight: "34px",
-                    backgroundColor: songMode ? "transparent" : `${theme.background}F2`,
-                    color: songMode ? theme.text : theme.accent,
-                    boxShadow: songMode ? "none" : `0 8px 20px ${theme.text}14`,
-                    opacity: songMode ? 0.55 : 1,
+                    backgroundColor: !songMode && !codeMode ? `${theme.background}F2` : "transparent",
+                    color: !songMode && !codeMode ? theme.accent : theme.text,
+                    boxShadow: !songMode && !codeMode ? `0 8px 20px ${theme.text}14` : "none",
+                    opacity: !songMode && !codeMode ? 1 : 0.55,
                   }}
                 >
                   Syntax
                 </TouchButton>
-                <TouchButton
-                  onClick={() => {
-                    if (!songMode) onToggleSongMode?.();
-                  }}
-                  data-testid="panel-mode-song"
-                  className="px-3 py-1.5 rounded-full text-[10px] font-semibold uppercase tracking-[0.18em] transition-all"
-                  style={{
-                    minHeight: "34px",
-                    backgroundColor: songMode ? `${theme.accent}18` : "transparent",
-                    color: songMode ? theme.accent : theme.text,
-                    boxShadow: songMode ? `0 10px 24px ${theme.accent}18` : "none",
-                    opacity: songMode ? 1 : 0.55,
-                  }}
-                >
-                  Song
-                </TouchButton>
+                {showSongModeToggle && (
+                  <TouchButton
+                    onClick={() => {
+                      if (codeMode) onToggleCodeMode?.();
+                      if (!songMode) onToggleSongMode?.();
+                    }}
+                    data-testid="panel-mode-song"
+                    className="px-2 py-1.5 rounded-full text-[10px] font-semibold uppercase tracking-[0.12em] transition-all"
+                    style={{
+                      minHeight: "34px",
+                      backgroundColor: songMode ? `${theme.accent}18` : "transparent",
+                      color: songMode ? theme.accent : theme.text,
+                      boxShadow: songMode ? `0 10px 24px ${theme.accent}18` : "none",
+                      opacity: songMode ? 1 : 0.55,
+                    }}
+                  >
+                    Song
+                  </TouchButton>
+                )}
+                {showCodeModeToggle && (
+                  <TouchButton
+                    onClick={() => {
+                      if (songMode) onToggleSongMode?.();
+                      if (!codeMode) onToggleCodeMode?.();
+                    }}
+                    data-testid="panel-mode-code"
+                    className="px-2 py-1.5 rounded-full text-[10px] font-semibold uppercase tracking-[0.12em] transition-all"
+                    style={{
+                      minHeight: "34px",
+                      backgroundColor: codeMode ? `${theme.accent}18` : "transparent",
+                      color: codeMode ? theme.accent : theme.text,
+                      boxShadow: codeMode ? `0 10px 24px ${theme.accent}18` : "none",
+                      opacity: codeMode ? 1 : 0.55,
+                    }}
+                  >
+                    Code
+                  </TouchButton>
+                )}
               </div>
             )}
             {onClose && (
@@ -564,8 +649,65 @@ const PanelBody: React.FC<PanelBodyProps> = ({
         </div>
       </div>
 
+      {/* Code View */}
+      {codeMode && (
+        <div className="px-[21px] pb-[13px]">
+          <div className="flex flex-col gap-4">
+            {/* Language indicator */}
+            <div
+              className="rounded-lg border px-4 py-3"
+              style={{
+                borderColor: `${theme.text}18`,
+                backgroundColor: `${theme.background}f4`,
+              }}
+            >
+              <div className="text-[10px] uppercase tracking-widest mb-2" style={{ color: theme.text, opacity: 0.5 }}>
+                Language
+              </div>
+              <div className="text-lg font-bold" style={{ color: theme.accent }}>
+                {codeLanguage.charAt(0).toUpperCase() + codeLanguage.slice(1)}
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div
+              className="grid grid-cols-2 gap-3"
+            >
+              <div
+                className="rounded-lg border px-4 py-3"
+                style={{
+                  borderColor: `${theme.text}18`,
+                  backgroundColor: `${theme.background}f4`,
+                }}
+              >
+                <div className="text-[10px] uppercase tracking-widest mb-1" style={{ color: theme.text, opacity: 0.5 }}>
+                  Lines
+                </div>
+                <div className="text-2xl font-bold tabular-nums" style={{ color: theme.text }}>
+                  {content.split("\n").length}
+                </div>
+              </div>
+              <div
+                className="rounded-lg border px-4 py-3"
+                style={{
+                  borderColor: `${theme.text}18`,
+                  backgroundColor: `${theme.background}f4`,
+                }}
+              >
+                <div className="text-[10px] uppercase tracking-widest mb-1" style={{ color: theme.text, opacity: 0.5 }}>
+                  Characters
+                </div>
+                <div className="text-2xl font-bold tabular-nums" style={{ color: theme.text }}>
+                  {content.length}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Song View */}
-      {songMode && (
+      {songMode && !codeMode && (
         <div className="px-[21px] pb-[13px]">
           {!songData && (
             <div
@@ -920,7 +1062,7 @@ const PanelBody: React.FC<PanelBodyProps> = ({
       )}
 
       {/* Syntax View */}
-      {!songMode && (
+      {!songMode && !codeMode && (
       <div className="px-[21px] pb-[13px]">
           {/* Collapsible header with toggle */}
           <button
@@ -1065,7 +1207,9 @@ const PanelBody: React.FC<PanelBodyProps> = ({
                       ref={(el) => {
                         dotsRef.current[index] = el;
                       }}
-                      className="w-3.5 h-3.5 rounded-full"
+                      role={onEditColor ? "button" : undefined}
+                      tabIndex={onEditColor ? 0 : undefined}
+                      className={`w-3.5 h-3.5 rounded-full${onEditColor ? " cursor-pointer" : ""}`}
                       style={{
                         backgroundColor: categoryColor,
                         transform: isBeingDragged
@@ -1080,7 +1224,15 @@ const PanelBody: React.FC<PanelBodyProps> = ({
                             : "none",
                         transition:
                           "transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 150ms ease",
+                        touchAction: "manipulation",
                       }}
+                      onPointerDown={(e) =>
+                        handleColorDotPointerDown(e, item.colorKey as SyntaxColorKey)
+                      }
+                      onPointerUp={(e) =>
+                        handleColorDotPointerUp(e, item.colorKey as SyntaxColorKey)
+                      }
+                      onPointerCancel={handleColorDotPointerCancel}
                     />
                     <span
                       data-testid={`syntax-breakdown-count-${item.key}`}
@@ -1131,6 +1283,68 @@ const PanelBody: React.FC<PanelBodyProps> = ({
                 );
               })}
             </div>
+
+            {/* Markdown structure counts (headings + todos) */}
+            {(markdownCounts.headingWordCount > 0 || markdownCounts.todoCount > 0) && (
+              <div className="mt-3 flex flex-col gap-2 px-3">
+                {markdownCounts.headingWordCount > 0 && (
+                  <div
+                    className="grid grid-cols-[14px_64px_12px_minmax(0,1fr)] items-center gap-x-3"
+                    style={{ height: 40 }}
+                    data-testid="markdown-headings-row"
+                  >
+                    <span
+                      className="w-3.5 h-3.5 rounded-sm"
+                      style={{
+                        backgroundColor: theme.text,
+                        opacity: 0.35,
+                      }}
+                    />
+                    <span
+                      className="text-[1.5rem] leading-[1.05] font-bold tabular-nums text-right tracking-[-0.04em]"
+                      style={{ color: theme.text, opacity: 0.5, fontVariantNumeric: "tabular-nums" }}
+                    >
+                      {markdownCounts.headingWordCount}
+                    </span>
+                    <span className="opacity-22 text-sm font-medium justify-self-center">×</span>
+                    <span
+                      className="min-w-0 truncate text-[0.95rem] leading-none font-medium tracking-[-0.02em]"
+                      style={{ opacity: 0.5 }}
+                    >
+                      Heading words
+                    </span>
+                  </div>
+                )}
+                {markdownCounts.todoCount > 0 && (
+                  <div
+                    className="grid grid-cols-[14px_64px_12px_minmax(0,1fr)] items-center gap-x-3"
+                    style={{ height: 40 }}
+                    data-testid="markdown-todos-row"
+                  >
+                    <span
+                      className="w-3.5 h-3.5 rounded-sm flex items-center justify-center"
+                      style={{
+                        border: `2px solid ${theme.accent}`,
+                        backgroundColor: markdownCounts.todoDoneCount > 0 ? `${theme.accent}40` : "transparent",
+                      }}
+                    />
+                    <span
+                      className="text-[1.5rem] leading-[1.05] font-bold tabular-nums text-right tracking-[-0.04em]"
+                      style={{ color: theme.accent, opacity: 0.7, fontVariantNumeric: "tabular-nums" }}
+                    >
+                      {markdownCounts.todoDoneCount}/{markdownCounts.todoCount}
+                    </span>
+                    <span className="opacity-22 text-sm font-medium justify-self-center">×</span>
+                    <span
+                      className="min-w-0 truncate text-[0.95rem] leading-none font-medium tracking-[-0.02em]"
+                      style={{ opacity: 0.5 }}
+                    >
+                      Todos
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div
               className="mt-4 rounded-lg border px-2 py-2"

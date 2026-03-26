@@ -16,6 +16,8 @@ interface ToolbarProps {
   onClear: () => void;
   onSampleText?: () => void;
   onCycleFocusMode: () => void;
+  unstylizedMode: boolean;
+  onToggleUnstylized: () => void;
 }
 
 const Toolbar: React.FC<ToolbarProps> = ({
@@ -32,6 +34,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
   onClear,
   onSampleText,
   onCycleFocusMode,
+  unstylizedMode,
+  onToggleUnstylized,
 }) => {
   return (
     <footer
@@ -57,6 +61,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
           onClear={onClear}
           onSampleText={onSampleText}
           onCycleFocusMode={onCycleFocusMode}
+          unstylizedMode={unstylizedMode}
+          onToggleUnstylized={onToggleUnstylized}
         />
       </div>
     </footer>

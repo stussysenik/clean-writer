@@ -5,6 +5,7 @@ import {
   SyntaxSets,
   HighlightConfig,
   SongAnalysis,
+  ColorEditTarget,
 } from "../../types";
 import PanelBody from "./PanelBody";
 
@@ -31,6 +32,11 @@ interface DesktopSyntaxPanelProps {
   onHoverRhymeKey?: (key: string | null) => void;
   disabledRhymeKeys?: Set<string>;
   onToggleRhymeKey?: (key: string) => void;
+  onEditColor?: (target: ColorEditTarget) => void;
+  onQuickEditColor?: (target: ColorEditTarget, anchorEl: HTMLElement) => void;
+  codeMode?: boolean;
+  onToggleCodeMode?: () => void;
+  codeLanguage?: string;
 }
 
 const DesktopSyntaxPanel: React.FC<DesktopSyntaxPanelProps> = ({
@@ -56,6 +62,11 @@ const DesktopSyntaxPanel: React.FC<DesktopSyntaxPanelProps> = ({
   onHoverRhymeKey,
   disabledRhymeKeys,
   onToggleRhymeKey,
+  onEditColor,
+  onQuickEditColor,
+  codeMode = false,
+  onToggleCodeMode,
+  codeLanguage = "javascript",
 }) => {
   const panelRef = useRef<HTMLDivElement>(null);
   const panelWidth = "min(440px, calc(100vw - 72px))";
@@ -73,11 +84,11 @@ const DesktopSyntaxPanel: React.FC<DesktopSyntaxPanelProps> = ({
         // Glass border effect
         border: `1px solid ${theme.text}15`,
         // Enhanced shadow with glass effect
-        boxShadow: `0 8px 32px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.08), inset 0 0 0 1px ${theme.text}08`,
+        boxShadow: `0 1px 3px rgba(0,0,0,0.06), inset 0 0 0 1px ${theme.text}08`,
         opacity: 1,
         width: panelWidth,
         minWidth: "320px",
-        maxHeight: "calc(100vh - 120px)",
+        maxHeight: "calc(100vh - 89px - 55px)",
         overflowX: "hidden",
         overflowY: "auto",
       }}
@@ -129,6 +140,11 @@ const DesktopSyntaxPanel: React.FC<DesktopSyntaxPanelProps> = ({
         onHoverRhymeKey={onHoverRhymeKey}
         disabledRhymeKeys={disabledRhymeKeys}
         onToggleRhymeKey={onToggleRhymeKey}
+        onEditColor={onEditColor}
+        onQuickEditColor={onQuickEditColor}
+        codeMode={codeMode}
+        onToggleCodeMode={onToggleCodeMode}
+        codeLanguage={codeLanguage}
       />
     </div>
   );

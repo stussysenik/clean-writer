@@ -100,6 +100,22 @@ export interface RisoTheme {
   rhymeColors?: string[]; // Per-theme OKLCH rhyme palette (8 colors)
 }
 
+/** All syntax highlight color keys from RisoTheme.highlight */
+export type SyntaxColorKey = keyof RisoTheme["highlight"];
+
+/** Type-safe target for color editing — identifies what color is being edited */
+export type ColorEditTarget =
+  | { type: "syntax"; key: SyntaxColorKey }
+  | { type: "rhyme"; index: number }
+  | { type: "editor"; key: "background" | "text" | "cursor" | "selection" };
+
+/** Validated hex color string */
+export type HexColor = `#${string}`;
+
+/** Runtime hex color validation (6-digit hex only) */
+export const isValidHex = (value: string): value is HexColor =>
+  /^#[0-9a-fA-F]{6}$/.test(value);
+
 export interface CustomTheme extends RisoTheme {
   isCustom: boolean;
   wordVisibility: HighlightConfig;
@@ -184,4 +200,13 @@ export interface ColorSystemConfig {
   mode: ColorSystemMode;
   harmonyType: ColorHarmonyType;
   baseHue: number; // 0-360
+}
+
+// Code mode types
+export type EditorMode = "syntax" | "song" | "code";
+
+export interface CodeModeState {
+  language: string; // detected or selected language (e.g. "javascript", "python")
+  lineCount: number;
+  charCount: number;
 }

@@ -453,30 +453,23 @@ const SortableThemeItem: React.FC<{
         <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
           <TouchButton
             onClick={() => onToggleThemeVisibility(t.id)}
-            className="flex items-center justify-center rounded-full transition-all"
+            className="flex items-center justify-center transition-all"
             style={{
-              width: "32px",
-              height: "32px",
-              backgroundColor: isHidden ? `${theme.text}08` : `${theme.accent}16`,
-              color: isHidden ? theme.text : theme.accent,
-              border: `1px solid ${isHidden ? `${theme.text}14` : `${theme.accent}28`}`,
+              width: "44px",
+              height: "44px",
             }}
-            aria-label={isHidden ? `Show ${name}` : `Hide ${name}`}
-            title={isHidden ? "Show theme in selector" : "Hide theme from selector"}
+            aria-label={isHidden ? `Show ${name} in palette` : `${name} visible in palette`}
+            title={isHidden ? "Show in palette" : "Visible in palette"}
           >
-            {isHidden ? (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-            ) : (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 3l18 18" />
-                <path d="M10.58 10.58A2 2 0 0 0 13.42 13.42" />
-                <path d="M9.36 5.37A10.94 10.94 0 0 1 12 5c6 0 10 7 10 7a17.46 17.46 0 0 1-5.06 5.06" />
-                <path d="M6.23 6.23A17.43 17.43 0 0 0 2 12s4 7 10 7a9.78 9.78 0 0 0 4.19-.93" />
-              </svg>
-            )}
+            <span
+              className="rounded-full transition-all"
+              style={{
+                width: "7px",
+                height: "7px",
+                backgroundColor: isHidden ? "transparent" : `${theme.text}50`,
+                border: isHidden ? `1.5px solid ${theme.text}20` : "1.5px solid transparent",
+              }}
+            />
           </TouchButton>
           <span
             className="w-5 h-5 rounded-full flex-shrink-0"
@@ -839,16 +832,20 @@ const ActiveThemeHeader: React.FC<{
             <div className="text-[9px] font-semibold uppercase tracking-[0.18em] opacity-35">
               Syntax Colors
             </div>
-            <div className="flex flex-wrap gap-1 mt-1">
+            <div className="flex flex-wrap gap-1.5 md:gap-1 mt-1">
               {WORD_TYPE_LABELS.map(({ key, short }) => (
                 <button
                   key={key}
                   type="button"
                   onClick={() => onJumpToWordColor?.(key)}
-                  className="block w-2.5 h-2.5 p-0 border-0 rounded-full appearance-none transition-transform hover:scale-125"
-                  style={{ backgroundColor: theme.highlight[key] }}
+                  className="block w-4 h-4 md:w-3 md:h-3 p-0 border-0 rounded-full appearance-none transition-transform hover:scale-125 active:scale-95"
+                  style={{
+                    backgroundColor: theme.highlight[key],
+                    touchAction: "manipulation",
+                  }}
                   title={`Jump to ${short} color`}
                   aria-label={`Jump to ${short} color`}
+                  data-color-key={key}
                 />
               ))}
             </div>
@@ -858,14 +855,17 @@ const ActiveThemeHeader: React.FC<{
               <div className="text-[9px] font-semibold uppercase tracking-[0.18em] opacity-35">
                 Song Colors
               </div>
-              <div className="flex flex-wrap gap-1 mt-1">
+              <div className="flex flex-wrap gap-1.5 md:gap-1 mt-1">
                 {rhymeColors.map((color, index) => (
                   <button
                     key={`${color}-${index}`}
                     type="button"
                     onClick={() => onJumpToRhymeColor?.(index)}
-                    className="block w-2.5 h-2.5 p-0 border-0 rounded-full appearance-none transition-transform hover:scale-125"
-                    style={{ backgroundColor: color }}
+                    className="block w-4 h-4 md:w-3 md:h-3 p-0 border-0 rounded-full appearance-none transition-transform hover:scale-125 active:scale-95"
+                    style={{
+                      backgroundColor: color,
+                      touchAction: "manipulation",
+                    }}
                     title={`Jump to ${RHYME_COLOR_LABELS[index] || `Color ${index + 1}`}`}
                     aria-label={`Jump to ${RHYME_COLOR_LABELS[index] || `Color ${index + 1}`}`}
                   />
@@ -977,12 +977,13 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
 
       {/* Panel */}
       <div
-        className="fixed right-0 top-0 bottom-0 w-full max-w-md z-[101] flex flex-col"
+        className="fixed w-full z-[101] flex flex-col right-0 top-[13px] bottom-[13px] max-w-full rounded-xl md:right-[21px] md:top-[21px] md:bottom-[21px] md:max-w-md md:rounded-2xl lg:right-[34px] lg:top-[34px] lg:bottom-[34px] lg:max-w-lg lg:rounded-2xl"
         data-testid="theme-customizer-panel"
         style={{
           backgroundColor: theme.background,
           color: theme.text,
-          boxShadow: "-4px 0 20px rgba(0,0,0,0.2)",
+          boxShadow: "none",
+          border: `1px solid ${theme.text}12`,
         }}
       >
         {/* Header */}
@@ -1057,7 +1058,6 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
               {onToggleThemeVisibility && (
                 <>
                   <SectionLabel title="Base Theme" theme={theme} />
-                  <ThemeActionLegend theme={theme} />
                   <ThemesTab
                     theme={theme}
                     hiddenThemeIds={hiddenThemeIds}
@@ -1421,15 +1421,15 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                       <button
                         key={font.id}
                         onClick={() => onFontChange(font.id)}
-                        className={`w-full text-left px-3 py-3 rounded-lg transition-all ${
+                        className={`w-full text-left px-3 py-2 md:py-3 rounded-lg transition-all ${
                           currentFontId === font.id
                             ? "ring-1 ring-current bg-current/5"
                             : "hover:bg-current/5"
                         }`}
                         style={{ fontFamily: font.family, minHeight: "44px" }}
                       >
-                        <span className="text-lg leading-tight">{font.name}</span>
-                        <span className="block text-sm opacity-40 mt-0.5">
+                        <span className="text-base md:text-lg leading-tight">{font.name}</span>
+                        <span className="block text-xs md:text-sm opacity-40 mt-0.5 truncate">
                           abcdefghij 0123456789
                         </span>
                       </button>
@@ -1451,13 +1451,28 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                 data-testid="utf8-display-toggle-wrapper"
                 style={{ minHeight: "44px" }}
               >
+                {/* Hidden native checkbox for a11y */}
                 <input
                   type="checkbox"
                   checked={utf8DisplayEnabled}
                   onChange={(e) => onToggleUtf8Display(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 rounded border-2 border-current/30 bg-transparent accent-current"
+                  className="sr-only"
                   data-testid="utf8-display-toggle"
                 />
+                {/* Custom green checkbox */}
+                <div
+                  className="mt-0.5 w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border-2 transition-all"
+                  style={{
+                    backgroundColor: utf8DisplayEnabled ? "#22c55e" : "transparent",
+                    borderColor: utf8DisplayEnabled ? "#22c55e" : `${theme.text}30`,
+                  }}
+                >
+                  {utf8DisplayEnabled && (
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
+                </div>
                 <div>
                   <p className="text-sm font-medium">UTF Emoji Display</p>
                   <p className="text-xs opacity-60 mt-0.5">

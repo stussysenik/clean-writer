@@ -76,6 +76,38 @@
   animation: tab-fade-in var(--duration-fast) var(--ease-default) both;
 }
 
+/* Frontier marker — green "available" badge */
+@keyframes frontier-in {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+.animate-frontier-in {
+  animation: frontier-in 250ms var(--ease-spring) both;
+}
+
+@keyframes frontier-dot-ring {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+  50% { box-shadow: 0 0 0 3px rgba(34, 197, 94, 0); }
+}
+.animate-frontier-dot {
+  animation: frontier-dot-ring 2s ease-in-out infinite;
+}
+
+/* QuickColorPicker popover entrance */
+@keyframes quick-picker-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.animate-quick-picker-in {
+  animation: quick-picker-in var(--duration-fast) var(--ease-spring) both;
+}
+
 /* Hide scrollbar but keep scroll functionality */
 .no-scrollbar {
   -ms-overflow-style: none;

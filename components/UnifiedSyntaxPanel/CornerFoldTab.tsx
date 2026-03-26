@@ -159,13 +159,13 @@ const CornerFoldTab: React.FC<CornerFoldTabProps> = ({
         className="absolute inset-0 transition-all duration-300"
         style={{
           backgroundColor: theme.background,
-          border: `1px solid ${theme.text}20`,
+          border: isOpen ? `1px solid ${theme.text}20` : "none",
           borderRight: isOpen ? "none" : undefined,
           borderRadius: isOpen ? "8px 0 0 8px" : "0",
           clipPath: isOpen
             ? "none"
             : "polygon(100% 0, 100% 100%, 0 100%, 40% 50%)",
-          boxShadow: "-4px 0 12px rgba(0,0,0,0.08)",
+          boxShadow: "none",
         }}
       />
 

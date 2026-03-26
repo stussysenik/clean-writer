@@ -1,0 +1,65 @@
+<h2>What should "unstylized" feel like?</h2>
+<p class="subtitle">The current editor has colored syntax highlights, bold weights, glow effects, and markdown formatting. How stripped-down should this mode go?</p>
+
+<div class="cards" style="margin-top: 24px;">
+
+  <!-- Option A: True Notepad -->
+  <div class="card" data-choice="true-notepad" onclick="toggleSelect(this)" style="min-height: 320px;">
+    <div class="card-image" style="padding: 20px; background: #fff; border-bottom: 1px solid #eee;">
+      <div style="font-family: 'Courier New', Courier, monospace; font-size: 13px; line-height: 1.6; color: #000; white-space: pre-wrap; text-align: left;">The morning light filtered through
+the curtains, casting long shadows
+across the wooden floor.
+
+<span style="text-decoration: line-through; opacity: 0.5;">She hesitated at the door.</span>
+
+She sat at her desk, pen in hand,
+staring at the blank page before
+her. A story waited to be told.</div>
+    </div>
+    <div class="card-body">
+      <h3>A — True Notepad</h3>
+      <p>Monospace font, no colors at all, plain white background regardless of theme. Strikethrough still renders. Pure .txt energy.</p>
+    </div>
+  </div>
+
+  <!-- Option B: Theme-aware plain -->
+  <div class="card" data-choice="theme-plain" onclick="toggleSelect(this)" style="min-height: 320px;">
+    <div class="card-image" style="padding: 20px; background: #f5f0e8; border-bottom: 1px solid #eee;">
+      <div style="font-family: Georgia, serif; font-size: 15px; line-height: 1.8; color: #2a2a2a; white-space: pre-wrap; text-align: left;">The morning light filtered through
+the curtains, casting long shadows
+across the wooden floor.
+
+<span style="text-decoration: line-through; text-decoration-color: #c44; opacity: 0.5;">She hesitated at the door.</span>
+
+She sat at her desk, pen in hand,
+staring at the blank page before
+her. A story waited to be told.</div>
+    </div>
+    <div class="card-body">
+      <h3>B — Theme-Aware Plain</h3>
+      <p>Keeps your current theme colors and font. Just strips syntax highlights, bold weights, glow effects, and markdown decorations. Text is all one color. Strikethrough uses theme color.</p>
+    </div>
+  </div>
+
+  <!-- Option C: Minimal with structure -->
+  <div class="card" data-choice="minimal-structure" onclick="toggleSelect(this)" style="min-height: 320px;">
+    <div class="card-image" style="padding: 20px; background: #f5f0e8; border-bottom: 1px solid #eee;">
+      <div style="font-family: Georgia, serif; font-size: 15px; line-height: 1.8; color: #2a2a2a; white-space: pre-wrap; text-align: left;"><span style="font-size: 20px; font-weight: 600;">Chapter One</span>
+
+The morning light filtered through
+the curtains, casting long shadows
+across the wooden floor.
+
+<span style="text-decoration: line-through; text-decoration-color: #c44; opacity: 0.5;">She hesitated at the door.</span>
+
+She sat at her desk, pen in hand,
+staring at the blank page before
+her. A story waited to be told.</div>
+    </div>
+    <div class="card-body">
+      <h3>C — Minimal With Structure</h3>
+      <p>Like B but keeps markdown headings and todo checkboxes visible. Strips syntax colors and glow but preserves document structure hints.</p>
+    </div>
+  </div>
+
+</div>

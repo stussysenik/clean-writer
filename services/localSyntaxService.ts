@@ -113,6 +113,53 @@ export function getWordTypeCounts(
  * Unlike getWordTypeCounts which counts unique types, this counts every
  * occurrence so that sum(type_counts) reflects actual word usage.
  */
+/**
+ * Extract non-heading, non-todo-prefix content for syntax analysis.
+ * Strips heading markers and todo checkbox prefixes so those words
+ * aren't double-counted.
+ */
+export function stripMarkdownStructure(content: string): {
+  strippedContent: string;
+  headingWordCount: number;
+  todoCount: number;
+  todoDoneCount: number;
+} {
+  const lines = content.split("\n");
+  const outputLines: string[] = [];
+  let headingWordCount = 0;
+  let todoCount = 0;
+  let todoDoneCount = 0;
+
+  for (const line of lines) {
+    // Heading lines: count words separately, exclude from syntax content
+    const headingMatch = line.match(/^#{1,4}\s(.+)$/);
+    if (headingMatch) {
+      const words = headingMatch[1].trim().split(/\s+/).filter(Boolean);
+      headingWordCount += words.length;
+      outputLines.push(""); // preserve line structure
+      continue;
+    }
+
+    // Todo lines: strip the checkbox prefix, keep the text for syntax
+    const todoMatch = line.match(/^- \[([ xX])\] ?(.*)$/);
+    if (todoMatch) {
+      todoCount++;
+      if (todoMatch[1].toLowerCase() === "x") todoDoneCount++;
+      outputLines.push(todoMatch[2]); // just the text content
+      continue;
+    }
+
+    outputLines.push(line);
+  }
+
+  return {
+    strippedContent: outputLines.join("\n"),
+    headingWordCount,
+    todoCount,
+    todoDoneCount,
+  };
+}
+
 export function getWordTypeOccurrences(
   content: string,
   syntaxSets: SyntaxSets,
@@ -134,13 +181,17 @@ export function getWordTypeOccurrences(
 
   if (!content.trim()) return counts;
 
+  // Strip markdown structure (headings, todo prefixes) before counting
+  const { strippedContent } = stripMarkdownStructure(content);
+  const textToAnalyze = strippedContent;
+
   // First pass: count URL/hashtag occurrences directly from content (they span multiple tokens)
-  counts.urls = countPatternMatches(content, URL_MATCH_REGEX);
-  counts.hashtags = countPatternMatches(content, HASHTAG_MATCH_REGEX);
+  counts.urls = countPatternMatches(textToAnalyze, URL_MATCH_REGEX);
+  counts.hashtags = countPatternMatches(textToAnalyze, HASHTAG_MATCH_REGEX);
 
   // Tokenize using whitespace split to keep URL-like tokens intact,
   // then normalize punctuation/case for stable matching.
-  const normalizedTokens = content
+  const normalizedTokens = textToAnalyze
     .trim()
     .split(/\s+/)
     .map((token) => normalizeTokenForSyntaxLookup(token))
