@@ -1,12 +1,15 @@
-import { useState, useCallback, useRef, RefObject } from "react";
+import { useState, useCallback, useRef, useEffect, RefObject } from "react";
 import { measureTextWidth } from "../utils/graphemeUtils";
+import { DEVICE_SPACING } from "../constants/spacing";
 
 interface UseDynamicPaddingOptions {
   textareaRef: RefObject<HTMLTextAreaElement>;
   enabled: boolean;
-  /** Minimum padding in px (default: 21) */
+  /** Mobile device — uses tighter spacing from golden ratio system */
+  isMobile?: boolean;
+  /** Override minimum padding in px (default: 21, mobile: 13) */
   minPadding?: number;
-  /** Maximum padding as fraction of container width (default: 0.30) */
+  /** Override max padding as fraction of container width (default: 0.30, mobile: 0.20) */
   maxPaddingRatio?: number;
 }
 
@@ -15,17 +18,30 @@ interface UseDynamicPaddingOptions {
  * text width so that short lines feel centered and long lines use
  * minimal padding.
  *
+ * On mobile devices, uses tighter spacing from the golden ratio system
+ * to maximize available writing width.
+ *
  * Returns padding values that should be applied as inline styles
  * to all Typewriter layers.
  */
 export function useDynamicPadding({
   textareaRef,
   enabled,
-  minPadding = 21,
-  maxPaddingRatio = 0.30,
+  isMobile = false,
+  minPadding: minPaddingOverride,
+  maxPaddingRatio: maxPaddingRatioOverride,
 }: UseDynamicPaddingOptions) {
+  const minPadding = minPaddingOverride ?? (isMobile ? DEVICE_SPACING.mobile.padding : DEVICE_SPACING.tablet.padding);
+  const maxPaddingRatio = maxPaddingRatioOverride ?? (isMobile ? 0.20 : 0.30);
+
   const [paddingLeft, setPaddingLeft] = useState(minPadding);
   const lastPaddingRef = useRef(minPadding);
+
+  // Reset padding when device tier changes (e.g. rotation, resize)
+  useEffect(() => {
+    setPaddingLeft(minPadding);
+    lastPaddingRef.current = minPadding;
+  }, [minPadding]);
 
   const recalculate = useCallback(() => {
     if (!enabled) return;

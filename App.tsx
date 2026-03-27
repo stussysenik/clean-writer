@@ -610,9 +610,10 @@ const App: React.FC = () => {
 
   // Warm background tint when editing on mobile (5% shift towards a warm tone)
   const mobileBackground = useMemo(() => {
+    if (unstylizedMode) return "#FFFFFF";
     if (!isMobile || mobileEditState !== "editing") return currentTheme.background;
     return oklchInterpolate(currentTheme.background, "#FFF0E0", 0.05);
-  }, [isMobile, mobileEditState, currentTheme.background]);
+  }, [isMobile, mobileEditState, currentTheme.background, unstylizedMode]);
 
   // First-time mobile welcome popup
   useEffect(() => {
@@ -1055,7 +1056,7 @@ const App: React.FC = () => {
         data-overlap-ignore
         className="absolute top-0 left-0 right-0 h-[144px] pointer-events-none z-[59]"
         style={{
-          background: `linear-gradient(to bottom, ${currentTheme.background} 0%, ${currentTheme.background}00 100%)`,
+          background: `linear-gradient(to bottom, ${unstylizedMode ? "#FFFFFF" : currentTheme.background} 0%, ${unstylizedMode ? "#FFFFFF" : currentTheme.background}00 100%)`,
         }}
       />
 
@@ -1183,21 +1184,24 @@ const App: React.FC = () => {
 
       {/* Top Bar with Theme Selector and Settings */}
       <div className="absolute top-0 left-0 right-0 flex justify-between items-center p-[13px] md:p-[21px] z-[60] pointer-events-none">
-        <div className="pointer-events-auto flex items-center min-h-[44px] min-w-0 flex-1 mr-2">
-          <ThemeSelector
-            currentTheme={currentTheme}
-            themeId={themeId}
-            onThemeChange={handleThemeChange}
-            hiddenThemeIds={hiddenThemeIds}
-            orderedThemes={orderedThemes}
-            hasOverridesForTheme={hasOverridesForTheme}
-          />
-        </div>
+        {!unstylizedMode && (
+          <div className="pointer-events-auto flex items-center min-h-[44px] min-w-0 flex-1 mr-2">
+            <ThemeSelector
+              currentTheme={currentTheme}
+              themeId={themeId}
+              onThemeChange={handleThemeChange}
+              hiddenThemeIds={hiddenThemeIds}
+              orderedThemes={orderedThemes}
+              hasOverridesForTheme={hasOverridesForTheme}
+            />
+          </div>
+        )}
+        {unstylizedMode && <div className="flex-1" />}
         {/* Hidden when customizer open — customizer has its own close (X) button */}
         {!isCustomizerOpen && (
           <div className="pointer-events-auto flex items-center gap-1.5 min-h-[44px]">
             {/* Font Size A-/A+ Controls — segmented pill */}
-            <div
+            {!unstylizedMode && <div
               className="flex items-center gap-0 rounded-lg overflow-hidden"
               style={{
                 backgroundColor: `${currentTheme.background}80`,
@@ -1241,14 +1245,14 @@ const App: React.FC = () => {
               >
                 A+
               </TouchButton>
-            </div>
+            </div>}
             <Tooltip content="Help & Shortcuts" position="bottom">
               <TouchButton
                 onClick={() => setIsHelpOpen(true)}
                 className="p-1.5 rounded-xl hover:bg-current/5 transition-all duration-200"
                 aria-label="Help and shortcuts"
                 style={{
-                  color: getIconColor(currentTheme),
+                  color: unstylizedMode ? "#333333" : getIconColor(currentTheme),
                 }}
               >
                 <svg
@@ -1274,7 +1278,7 @@ const App: React.FC = () => {
                 title="Customize Theme"
                 data-testid="open-theme-customizer"
                 style={{
-                  color: getIconColor(currentTheme),
+                  color: unstylizedMode ? "#333333" : getIconColor(currentTheme),
                 }}
               >
                 <IconSettings />
@@ -1335,8 +1339,8 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* Unified Syntax Panel */}
-      <UnifiedSyntaxPanel
+      {/* Unified Syntax Panel — hidden in plain text mode */}
+      {!unstylizedMode && <UnifiedSyntaxPanel
         content={content}
         theme={currentTheme}
         syntaxData={syntaxData}
@@ -1368,7 +1372,7 @@ const App: React.FC = () => {
           if (!codeMode) setSongMode(false); // exit song mode when entering code mode
         }}
         codeLanguage={codeLanguage}
-      />
+      />}
 
       {/* Floating Line Width Slider — centered in viewport */}
       {viewMode === "write" && SHOW_LINE_WIDTH_SLIDER && (

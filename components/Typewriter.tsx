@@ -233,6 +233,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
   const { paddingLeft, paddingRight, recalculatePadding } = useDynamicPadding({
     textareaRef: textareaRef as React.RefObject<HTMLTextAreaElement>,
     enabled: true,
+    isMobile,
   });
 
   // Track whether cursor is at the content frontier (end of text)
@@ -663,7 +664,6 @@ const Typewriter: React.FC<TypewriterProps> = ({
               ? {
                   color: "#000000",
                   fontWeight: "inherit",
-                  borderBottom: isMatch ? "1px solid #999" : "none",
                   transition: "color 0.3s ease",
                 }
               : {
@@ -1240,15 +1240,15 @@ const Typewriter: React.FC<TypewriterProps> = ({
               ? renderSongHighlights()
               : renderHighlights()}
         {/* Cursor dot — Garfield-colored dot at end of text when cursor is at frontier */}
-        {cursorAtFrontier && content.length > 0 && (
+        {cursorAtFrontier && content.length > 0 && !unstylizedMode && (
           <span
             style={{
               display: "inline-block",
               width: "6px",
               height: "6px",
               borderRadius: "50%",
-              backgroundColor: unstylizedMode ? "#000000" : lastWordColor,
-              boxShadow: unstylizedMode ? "none" : `0 0 6px 1px ${lastWordColor}55`,
+              backgroundColor: lastWordColor,
+              boxShadow: `0 0 6px 1px ${lastWordColor}55`,
               verticalAlign: "baseline",
               marginLeft: "2px",
               marginBottom: "2px",
@@ -1257,7 +1257,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
           />
         )}
         {/* Frontier marker — green "available" badge when cursor is mid-text */}
-        {!cursorAtFrontier && content.length > 0 && (
+        {!cursorAtFrontier && content.length > 0 && !unstylizedMode && (
           <span
             className="animate-frontier-in"
             style={{
@@ -1303,10 +1303,14 @@ const Typewriter: React.FC<TypewriterProps> = ({
         <div
           className="absolute inset-0 pt-[55px] pb-[50vh] md:pt-[55px] lg:pt-[55px] whitespace-pre-wrap break-words pointer-events-none z-[3] overflow-hidden"
           style={{
-            fontFamily,
+            fontFamily: unstylizedMode
+              ? "'Courier New', Courier, monospace"
+              : codeMode
+                ? 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace'
+                : fontFamily,
             fontSize,
             lineHeight: effectiveLineHeight,
-            letterSpacing: effectiveLetterSpacing,
+            letterSpacing: unstylizedMode ? "0px" : effectiveLetterSpacing,
             color: "transparent",
             paddingLeft: `${paddingLeft}px`,
             paddingRight: `${paddingRight}px`,
@@ -1337,10 +1341,14 @@ const Typewriter: React.FC<TypewriterProps> = ({
           data-testid="persisted-selection-overlay"
           className="absolute inset-0 pt-[55px] pb-[50vh] md:pt-[55px] lg:pt-[55px] whitespace-pre-wrap break-words pointer-events-none z-[5] overflow-hidden"
           style={{
-            fontFamily,
+            fontFamily: unstylizedMode
+              ? "'Courier New', Courier, monospace"
+              : codeMode
+                ? 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace'
+                : fontFamily,
             fontSize,
             lineHeight: effectiveLineHeight,
-            letterSpacing: effectiveLetterSpacing,
+            letterSpacing: unstylizedMode ? "0px" : effectiveLetterSpacing,
             color: "transparent",
             paddingLeft: `${paddingLeft}px`,
             paddingRight: `${paddingRight}px`,
@@ -1350,9 +1358,9 @@ const Typewriter: React.FC<TypewriterProps> = ({
           <span>{content.slice(0, normalizedPersistedSelection.start)}</span>
           <span
             style={{
-              backgroundColor: theme.selection,
+              backgroundColor: unstylizedMode ? "rgba(0, 0, 0, 0.15)" : theme.selection,
               borderRadius: "4px",
-              boxShadow: `0 0 0 1px ${theme.accent}40`,
+              boxShadow: unstylizedMode ? "none" : `0 0 0 1px ${theme.accent}40`,
             }}
           >
             {content.slice(

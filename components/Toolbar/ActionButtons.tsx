@@ -127,7 +127,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   return (
     <div
       className="flex flex-wrap gap-1 md:gap-2 items-center"
-      style={{ color: iconColor }}
+      style={{ color: unstylizedMode ? "#333333" : iconColor }}
     >
       {/* View modes group */}
       <ActionButton
