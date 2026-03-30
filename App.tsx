@@ -425,6 +425,7 @@ const App: React.FC = () => {
 
   // ─── Platform: Selection counting, Sidebar, Document Management ───
   const [selectionCharCount, setSelectionCharCount] = useState(0);
+  const [selectionWordCount, setSelectionWordCount] = useState(0);
   const [showCharCounts, setShowCharCounts] = useState(() => {
     try { return localStorage.getItem("clean_writer_char_counts") === "true"; } catch { return false; }
   });
@@ -539,9 +540,12 @@ const App: React.FC = () => {
       const s = textarea.selectionStart ?? 0;
       const e = textarea.selectionEnd ?? 0;
       if (s !== e) {
-        setSelectionCharCount(countChars(textarea.value.slice(Math.min(s, e), Math.max(s, e))));
+        const sel = textarea.value.slice(Math.min(s, e), Math.max(s, e));
+        setSelectionCharCount(countChars(sel));
+        setSelectionWordCount(countWords(sel));
       } else {
         setSelectionCharCount(0);
+        setSelectionWordCount(0);
       }
     };
     textarea.addEventListener("keyup", update);
@@ -1516,6 +1520,7 @@ const App: React.FC = () => {
         unstylizedMode={unstylizedMode}
         onToggleUnstylized={toggleUnstylizedMode}
         selectionCharCount={selectionCharCount}
+        selectionWordCount={selectionWordCount}
         showCharCounts={showCharCounts}
         onToggleCharCounts={() => setShowCharCounts(prev => !prev)}
       />

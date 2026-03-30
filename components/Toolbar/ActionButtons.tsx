@@ -32,6 +32,7 @@ interface ActionButtonsProps {
   unstylizedMode: boolean;
   onToggleUnstylized: () => void;
   selectionCharCount?: number;
+  selectionWordCount?: number;
   showCharCounts?: boolean;
   onToggleCharCounts?: () => void;
 }
@@ -119,6 +120,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   unstylizedMode,
   onToggleUnstylized,
   selectionCharCount = 0,
+  selectionWordCount = 0,
   showCharCounts = false,
   onToggleCharCounts,
 }) => {
@@ -206,7 +208,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
           onClick={onToggleCharCounts}
           active={showCharCounts}
           icon={<span style={{ fontSize: 16, fontWeight: 700, fontFamily: "ui-monospace, monospace" }}>#</span>}
-          label={selectionCharCount > 0 ? `${selectionCharCount}c` : "Chars"}
+          label={selectionCharCount > 0 ? `${selectionWordCount}w ${selectionCharCount}c` : "Chars"}
           tooltip={showCharCounts ? "Hide character counts" : "Show character counts per paragraph"}
           ariaLabel="Toggle character counts"
           className={showCharCounts ? "!opacity-100" : ""}

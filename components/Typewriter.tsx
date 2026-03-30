@@ -18,6 +18,7 @@ import {
 import { replaceEmojisWithUTF } from "../utils/emojiUtils";
 import { isDarkBackground } from "../utils/colorContrast";
 import { countChars } from "../services/textStatsService";
+import { countWords } from "../services/localSyntaxService";
 import { useShikiHighlighter } from "../hooks/useShikiHighlighter";
 
 interface TypewriterProps {
@@ -1026,7 +1027,8 @@ const Typewriter: React.FC<TypewriterProps> = ({
         // Empty
         if (!part.trim()) return <span key={`empty-${i}`}>{part}</span>;
 
-        const charCount = countChars(part);
+        const cc = countChars(part);
+        const wc = countWords(part);
         return (
           <span key={`para-${i}`}>
             {renderContentWithMarkdown(part)}
@@ -1044,7 +1046,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
                 WebkitUserSelect: "none",
               }}
             >
-              {charCount}c
+              {wc}w {cc}c
             </span>
           </span>
         );
