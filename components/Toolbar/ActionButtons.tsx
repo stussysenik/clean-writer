@@ -31,6 +31,9 @@ interface ActionButtonsProps {
   onCycleFocusMode: () => void;
   unstylizedMode: boolean;
   onToggleUnstylized: () => void;
+  selectionCharCount?: number;
+  showCharCounts?: boolean;
+  onToggleCharCounts?: () => void;
 }
 
 interface ActionButtonProps {
@@ -115,6 +118,9 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   onCycleFocusMode,
   unstylizedMode,
   onToggleUnstylized,
+  selectionCharCount = 0,
+  showCharCounts = false,
+  onToggleCharCounts,
 }) => {
   const iconColor = getIconColor(theme);
   const { isMobile } = useResponsiveBreakpoint();
@@ -193,6 +199,20 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         className={focusMode !== "none" ? "!opacity-100" : ""}
         style={focusMode !== "none" ? { color: theme.accent } : undefined}
       />
+
+      {/* Char counts toggle */}
+      {onToggleCharCounts && (
+        <ActionButton
+          onClick={onToggleCharCounts}
+          active={showCharCounts}
+          icon={<span style={{ fontSize: 16, fontWeight: 700, fontFamily: "ui-monospace, monospace" }}>#</span>}
+          label={selectionCharCount > 0 ? `${selectionCharCount}c` : "Chars"}
+          tooltip={showCharCounts ? "Hide character counts" : "Show character counts per paragraph"}
+          ariaLabel="Toggle character counts"
+          className={showCharCounts ? "!opacity-100" : ""}
+          style={showCharCounts || selectionCharCount > 0 ? { color: theme.accent } : undefined}
+        />
+      )}
 
       {/* File ops group */}
       <ActionButton

@@ -51,6 +51,7 @@ interface TypewriterProps {
   codeMode?: boolean;
   codeLanguage?: string;
   unstylizedMode?: boolean;
+  showCharCounts?: boolean;
 }
 
 // Known non-text keys to reject (control, navigation, function keys).
@@ -141,6 +142,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
   codeMode = false,
   codeLanguage = "javascript",
   unstylizedMode = false,
+  showCharCounts = false,
 }) => {
   const effectiveLineHeight = songMode && showSyllableAnnotations ? "2.4" : String(lineHeightProp);
   const effectiveLetterSpacing = letterSpacingProp ? `${letterSpacingProp}em` : undefined;
@@ -1010,13 +1012,53 @@ const Typewriter: React.FC<TypewriterProps> = ({
     );
   }, [content, codeLanguage, codeHighlightCache, renderCodeTokens, theme.background]);
 
+  // Render content with inline char count badges after each paragraph
+  const renderWithCharCounts = useCallback(
+    (text: string) => {
+      if (!showCharCounts || !text) return renderContentWithMarkdown(text);
+
+      // Split into paragraphs (double newline)
+      const parts = text.split(/(\n\n+)/);
+      return parts.map((part, i) => {
+        // Paragraph separator — render as-is
+        if (/^\n\n+$/.test(part)) return <span key={`sep-${i}`}>{part}</span>;
+        // Empty
+        if (!part.trim()) return <span key={`empty-${i}`}>{part}</span>;
+
+        const charCount = part.length;
+        return (
+          <span key={`para-${i}`}>
+            {renderContentWithMarkdown(part)}
+            <span
+              style={{
+                display: "inline",
+                fontSize: "9px",
+                fontFamily: "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace",
+                color: `${theme.text}40`,
+                marginLeft: "6px",
+                verticalAlign: "baseline",
+                letterSpacing: "0.5px",
+                fontWeight: 500,
+                userSelect: "none",
+                WebkitUserSelect: "none",
+              }}
+            >
+              {charCount}c
+            </span>
+          </span>
+        );
+      });
+    },
+    [showCharCounts, renderContentWithMarkdown, theme.text],
+  );
+
   // Wrapper that applies focus mode dimming by splitting content into 3 parts
   const renderHighlights = useCallback(() => {
     if (!content) return null;
 
     // No focus mode — render with markdown-aware pipeline
     if (!hasFocusNav || !focusRange) {
-      return renderContentWithMarkdown(content);
+      return renderWithCharCounts(content);
     }
 
     // Adjust split points to avoid breaking inside ~~...~~ blocks
@@ -1088,6 +1130,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
     focusRange,
     isMobile,
     renderContentWithMarkdown,
+    renderWithCharCounts,
     theme.accent,
   ]);
 

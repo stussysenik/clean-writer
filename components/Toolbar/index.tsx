@@ -18,6 +18,9 @@ interface ToolbarProps {
   onCycleFocusMode: () => void;
   unstylizedMode: boolean;
   onToggleUnstylized: () => void;
+  selectionCharCount?: number;
+  showCharCounts?: boolean;
+  onToggleCharCounts?: () => void;
 }
 
 const Toolbar: React.FC<ToolbarProps> = ({
@@ -36,6 +39,9 @@ const Toolbar: React.FC<ToolbarProps> = ({
   onCycleFocusMode,
   unstylizedMode,
   onToggleUnstylized,
+  selectionCharCount = 0,
+  showCharCounts = false,
+  onToggleCharCounts,
 }) => {
   return (
     <footer
@@ -63,6 +69,9 @@ const Toolbar: React.FC<ToolbarProps> = ({
           onCycleFocusMode={onCycleFocusMode}
           unstylizedMode={unstylizedMode}
           onToggleUnstylized={onToggleUnstylized}
+          selectionCharCount={selectionCharCount}
+          showCharCounts={showCharCounts}
+          onToggleCharCounts={onToggleCharCounts}
         />
       </div>
     </footer>

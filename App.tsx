@@ -426,6 +426,9 @@ const App: React.FC = () => {
 
   // ─── Platform: Selection counting, Sidebar, Document Management ───
   const [selectionCharCount, setSelectionCharCount] = useState(0);
+  const [showCharCounts, setShowCharCounts] = useState(() => {
+    try { return localStorage.getItem("clean_writer_char_counts") === "true"; } catch { return false; }
+  });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
 
@@ -767,6 +770,11 @@ const App: React.FC = () => {
       console.warn("Could not save unstylized mode");
     }
   }, [unstylizedMode]);
+
+  // Persist showCharCounts
+  useEffect(() => {
+    try { localStorage.setItem("clean_writer_char_counts", String(showCharCounts)); } catch {}
+  }, [showCharCounts]);
 
   // Persist soloMode
   useEffect(() => {
@@ -1413,6 +1421,7 @@ const App: React.FC = () => {
             codeMode={codeMode}
             codeLanguage={codeLanguage}
             unstylizedMode={unstylizedMode}
+            showCharCounts={showCharCounts}
           />
         ) : (
           <div
@@ -1497,31 +1506,6 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Selection character counter */}
-      {selectionCharCount > 0 && (
-        <div
-          style={{
-            position: "fixed",
-            bottom: 70,
-            left: "50%",
-            transform: "translateX(-50%)",
-            backgroundColor: currentTheme.accent,
-            color: currentTheme.background,
-            padding: "4px 12px",
-            borderRadius: 20,
-            fontSize: 12,
-            fontFamily: "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace",
-            fontWeight: 600,
-            zIndex: 50,
-            pointerEvents: "none",
-            opacity: 0.9,
-            boxShadow: `0 2px 8px ${currentTheme.accent}40`,
-          }}
-        >
-          {selectionCharCount} chars selected
-        </div>
-      )}
-
       {/* Bottom Toolbar */}
       <Toolbar
         theme={currentTheme}
@@ -1539,6 +1523,9 @@ const App: React.FC = () => {
         onCycleFocusMode={cycleFocusMode}
         unstylizedMode={unstylizedMode}
         onToggleUnstylized={toggleUnstylizedMode}
+        selectionCharCount={selectionCharCount}
+        showCharCounts={showCharCounts}
+        onToggleCharCounts={() => setShowCharCounts(prev => !prev)}
       />
 
       {/* Mobile Welcome Popup */}
