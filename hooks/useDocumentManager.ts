@@ -77,9 +77,11 @@ export function useDocumentManager(): UseDocumentManagerReturn {
     };
 
     if (!supabase) {
-      const updated = [...projects, project];
-      saveLocal(PROJECTS_KEY, updated);
-      setProjects(updated);
+      setProjects(prev => {
+        const updated = [...prev, project];
+        saveLocal(PROJECTS_KEY, updated);
+        return updated;
+      });
       return project;
     }
 
@@ -96,13 +98,15 @@ export function useDocumentManager(): UseDocumentManagerReturn {
 
     if (data) {
       const mapped = snakeToCamelProject(data);
-      const updated = [...projects, mapped];
-      setProjects(updated);
-      saveLocal(PROJECTS_KEY, updated);
+      setProjects(prev => {
+        const updated = [...prev, mapped];
+        saveLocal(PROJECTS_KEY, updated);
+        return updated;
+      });
       return mapped;
     }
     return null;
-  }, [projects]);
+  }, []);
 
   const createDocument = useCallback(async (projectId: string, title: string, docType: DocType): Promise<Document | null> => {
     const doc: Document = {
@@ -120,9 +124,7 @@ export function useDocumentManager(): UseDocumentManagerReturn {
     };
 
     if (!supabase) {
-      const updated = [...documents, doc];
-      saveLocal(DOCUMENTS_KEY, updated);
-      setDocuments(updated);
+      setDocuments(prev => { const u = [...prev, doc]; saveLocal(DOCUMENTS_KEY, u); return u; });
       return doc;
     }
 
@@ -141,18 +143,18 @@ export function useDocumentManager(): UseDocumentManagerReturn {
 
     if (data) {
       const mapped = snakeToCamelDoc(data);
-      const updated = [...documents, mapped];
-      setDocuments(updated);
-      saveLocal(DOCUMENTS_KEY, updated);
+      setDocuments(prev => { const u = [...prev, mapped]; saveLocal(DOCUMENTS_KEY, u); return u; });
       return mapped;
     }
     return null;
-  }, [documents]);
+  }, []);
 
   const updateDocument = useCallback(async (id: string, updates: Partial<Document>) => {
-    const updated = documents.map(d => d.id === id ? { ...d, ...updates, updatedAt: now() } : d);
-    setDocuments(updated);
-    saveLocal(DOCUMENTS_KEY, updated);
+    setDocuments(prev => {
+      const u = prev.map(d => d.id === id ? { ...d, ...updates, updatedAt: now() } : d);
+      saveLocal(DOCUMENTS_KEY, u);
+      return u;
+    });
 
     if (!supabase) return;
     const snakeUpdates: Record<string, unknown> = { updated_at: now() };
@@ -163,16 +165,14 @@ export function useDocumentManager(): UseDocumentManagerReturn {
     if (updates.position !== undefined) snakeUpdates.position = updates.position;
 
     await supabase.from("documents").update(snakeUpdates).eq("id", id);
-  }, [documents]);
+  }, []);
 
   const deleteDocument = useCallback(async (id: string) => {
-    const updated = documents.filter(d => d.id !== id);
-    setDocuments(updated);
-    saveLocal(DOCUMENTS_KEY, updated);
+    setDocuments(prev => { const u = prev.filter(d => d.id !== id); saveLocal(DOCUMENTS_KEY, u); return u; });
 
     if (!supabase) return;
     await supabase.from("documents").delete().eq("id", id);
-  }, [documents]);
+  }, []);
 
   const listDocuments = useCallback(async (projectId?: string) => {
     if (!supabase) {
@@ -209,9 +209,7 @@ export function useDocumentManager(): UseDocumentManagerReturn {
     };
 
     if (!supabase) {
-      const updated = [...journalEntries, entry];
-      saveLocal(JOURNAL_KEY, updated);
-      setJournalEntries(updated);
+      setJournalEntries(prev => { const u = [...prev, entry]; saveLocal(JOURNAL_KEY, u); return u; });
       return entry;
     }
 
@@ -227,18 +225,18 @@ export function useDocumentManager(): UseDocumentManagerReturn {
 
     if (data) {
       const mapped = snakeToCamelJournal(data);
-      const updated = [...journalEntries, mapped];
-      setJournalEntries(updated);
-      saveLocal(JOURNAL_KEY, updated);
+      setJournalEntries(prev => { const u = [...prev, mapped]; saveLocal(JOURNAL_KEY, u); return u; });
       return mapped;
     }
     return null;
-  }, [journalEntries]);
+  }, []);
 
   const updateJournalEntry = useCallback(async (id: string, updates: Partial<JournalEntry>) => {
-    const updated = journalEntries.map(e => e.id === id ? { ...e, ...updates, updatedAt: now() } : e);
-    setJournalEntries(updated);
-    saveLocal(JOURNAL_KEY, updated);
+    setJournalEntries(prev => {
+      const u = prev.map(e => e.id === id ? { ...e, ...updates, updatedAt: now() } : e);
+      saveLocal(JOURNAL_KEY, u);
+      return u;
+    });
 
     if (!supabase) return;
     const snakeUpdates: Record<string, unknown> = { updated_at: now() };
@@ -249,7 +247,7 @@ export function useDocumentManager(): UseDocumentManagerReturn {
     if (updates.writingDurationSeconds !== undefined) snakeUpdates.writing_duration_seconds = updates.writingDurationSeconds;
 
     await supabase.from("journal_entries").update(snakeUpdates).eq("id", id);
-  }, [journalEntries]);
+  }, []);
 
   const listJournalEntries = useCallback(async () => {
     if (!supabase) {

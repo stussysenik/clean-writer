@@ -4,28 +4,10 @@ import {
   getSentenceBoundaries,
   getParagraphBoundaries,
 } from "../utils/textSegmentation";
+import { graphemeLength } from "../utils/graphemeUtils";
 
-/**
- * Count grapheme clusters in a string.
- * Uses Intl.Segmenter for accurate grapheme counting (handles emoji, CJK,
- * combining diacritics), falls back to .length for older environments.
- */
-export function countChars(text: string): number {
-  if (!text) return 0;
-  if (typeof Intl !== "undefined" && "Segmenter" in Intl) {
-    try {
-      const segmenter = new Intl.Segmenter("en", { granularity: "grapheme" });
-      let count = 0;
-      for (const _ of segmenter.segment(text)) {
-        count++;
-      }
-      return count;
-    } catch {
-      // Fall through to .length
-    }
-  }
-  return text.length;
-}
+/** Count characters (grapheme clusters) — delegates to existing graphemeUtils */
+export const countChars = (text: string): number => text ? graphemeLength(text) : 0;
 
 /**
  * CJK character detection regex (same ranges as countWords in localSyntaxService).
