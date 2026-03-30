@@ -3,7 +3,6 @@ import { countWords } from "./localSyntaxService";
 import {
   getSentenceBoundaries,
   getParagraphBoundaries,
-  getWordBoundaries,
 } from "../utils/textSegmentation";
 
 /**

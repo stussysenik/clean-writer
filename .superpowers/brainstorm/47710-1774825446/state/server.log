@@ -1,0 +1,5 @@
+{"type":"server-started","port":63303,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:63303","screen_dir":"/Users/s3nik/Desktop/clean-writer/.superpowers/brainstorm/47710-1774825446/content","state_dir":"/Users/s3nik/Desktop/clean-writer/.superpowers/brainstorm/47710-1774825446/state"}
+{"type":"screen-added","file":"/Users/s3nik/Desktop/clean-writer/.superpowers/brainstorm/47710-1774825446/content/counting-approaches.html"}
+{"type":"screen-added","file":"/Users/s3nik/Desktop/clean-writer/.superpowers/brainstorm/47710-1774825446/content/architecture-overview.html"}
+{"type":"screen-added","file":"/Users/s3nik/Desktop/clean-writer/.superpowers/brainstorm/47710-1774825446/content/waiting.html"}
+{"type":"server-stopped","reason":"idle timeout"}

@@ -1,0 +1,88 @@
+<h2>Full Architecture: Clean Writer Platform</h2>
+<p class="subtitle">Four parallel workstreams converging into one feature branch</p>
+
+<div class="mockup">
+  <div class="mockup-header">System Architecture</div>
+  <div class="mockup-body" style="font-family: monospace; font-size: 13px; line-height: 1.8; padding: 20px;">
+    <div style="text-align: center; margin-bottom: 20px;">
+      <strong style="font-size: 15px;">Clean Writer Platform Architecture</strong>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+      <!-- Left column: Client -->
+      <div style="border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 16px;">
+        <div style="text-align: center; font-weight: bold; margin-bottom: 12px; color: #7dd3fc;">CLIENT (React + Vite)</div>
+
+        <div style="background: rgba(255,255,255,0.04); border-radius: 6px; padding: 10px; margin-bottom: 8px;">
+          <strong>📝 Editor Layer</strong> (existing)
+          <div style="font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px;">Typewriter · Syntax · Phoneme · Focus</div>
+        </div>
+
+        <div style="background: rgba(125,211,252,0.08); border-radius: 6px; padding: 10px; margin-bottom: 8px; border: 1px solid rgba(125,211,252,0.2);">
+          <strong style="color: #7dd3fc;">📊 Stats Strip + Panel</strong> (new)
+          <div style="font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px;">Char/Word/Sentence counts · Reading time · Live tracking</div>
+        </div>
+
+        <div style="background: rgba(125,211,252,0.08); border-radius: 6px; padding: 10px; margin-bottom: 8px; border: 1px solid rgba(125,211,252,0.2);">
+          <strong style="color: #7dd3fc;">🌐 CJK/i18n Layer</strong> (new)
+          <div style="font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px;">Intl.Segmenter · CJK fonts · Phrase grouping toggle</div>
+        </div>
+
+        <div style="background: rgba(125,211,252,0.08); border-radius: 6px; padding: 10px; border: 1px solid rgba(125,211,252,0.2);">
+          <strong style="color: #7dd3fc;">📚 Document Manager</strong> (new)
+          <div style="font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px;">Projects · Chapters · Journal entries · Navigation</div>
+        </div>
+      </div>
+
+      <!-- Right column: Backend -->
+      <div style="border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 16px;">
+        <div style="text-align: center; font-weight: bold; margin-bottom: 12px; color: #86efac;">BACKEND (Supabase)</div>
+
+        <div style="background: rgba(134,239,172,0.08); border-radius: 6px; padding: 10px; margin-bottom: 8px; border: 1px solid rgba(134,239,172,0.2);">
+          <strong style="color: #86efac;">🔐 Auth</strong>
+          <div style="font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px;">Email/password · OAuth · Anonymous sessions</div>
+        </div>
+
+        <div style="background: rgba(134,239,172,0.08); border-radius: 6px; padding: 10px; margin-bottom: 8px; border: 1px solid rgba(134,239,172,0.2);">
+          <strong style="color: #86efac;">🗄️ Database (Postgres)</strong>
+          <div style="font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px;">
+            <div>users · projects · documents</div>
+            <div>chapters · journal_entries</div>
+            <div>writing_sessions · preferences</div>
+          </div>
+        </div>
+
+        <div style="background: rgba(134,239,172,0.08); border-radius: 6px; padding: 10px; border: 1px solid rgba(134,239,172,0.2);">
+          <strong style="color: #86efac;">⚡ Real-time</strong>
+          <div style="font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px;">Auto-save · Cross-device sync · Presence</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 16px; font-size: 12px; color: rgba(255,255,255,0.4);">
+      ↕ Supabase JS Client · Real-time subscriptions · Row Level Security
+    </div>
+  </div>
+</div>
+
+<div style="margin-top: 24px;">
+  <h3>Parallel Workstreams</h3>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;">
+    <div style="background: rgba(125,211,252,0.06); border: 1px solid rgba(125,211,252,0.15); border-radius: 8px; padding: 14px;">
+      <div style="font-weight: bold; color: #7dd3fc; margin-bottom: 6px;">Agent 1: Stats Engine</div>
+      <div style="font-size: 12px; color: rgba(255,255,255,0.6);">Text stats service · Stats strip component · Panel stats section · Selection counting · Reading time calc</div>
+    </div>
+    <div style="background: rgba(253,186,116,0.06); border: 1px solid rgba(253,186,116,0.15); border-radius: 8px; padding: 14px;">
+      <div style="font-weight: bold; color: #fdba74; margin-bottom: 6px;">Agent 2: CJK/i18n</div>
+      <div style="font-size: 12px; color: rgba(255,255,255,0.6);">CJK fonts · Intl.Segmenter word mode · Phrase grouping toggle · Font config update</div>
+    </div>
+    <div style="background: rgba(134,239,172,0.06); border: 1px solid rgba(134,239,172,0.15); border-radius: 8px; padding: 14px;">
+      <div style="font-weight: bold; color: #86efac; margin-bottom: 6px;">Agent 3: Supabase</div>
+      <div style="font-size: 12px; color: rgba(255,255,255,0.6);">Supabase setup · Schema/migrations · Auth flow · Client integration · Auto-save hook</div>
+    </div>
+    <div style="background: rgba(196,181,253,0.06); border: 1px solid rgba(196,181,253,0.15); border-radius: 8px; padding: 14px;">
+      <div style="font-weight: bold; color: #c4b5fd; margin-bottom: 6px;">Agent 4: Documents</div>
+      <div style="font-size: 12px; color: rgba(255,255,255,0.6);">Project/chapter/journal data model · Document manager UI · Navigation sidebar · Journal entry system</div>
+    </div>
+  </div>
+</div>

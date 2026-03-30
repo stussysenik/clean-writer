@@ -17,6 +17,7 @@ import {
 } from "../utils/syntaxPatterns";
 import { replaceEmojisWithUTF } from "../utils/emojiUtils";
 import { isDarkBackground } from "../utils/colorContrast";
+import { countChars } from "../services/textStatsService";
 import { useShikiHighlighter } from "../hooks/useShikiHighlighter";
 
 interface TypewriterProps {
@@ -1025,7 +1026,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
         // Empty
         if (!part.trim()) return <span key={`empty-${i}`}>{part}</span>;
 
-        const charCount = part.length;
+        const charCount = countChars(part);
         return (
           <span key={`para-${i}`}>
             {renderContentWithMarkdown(part)}

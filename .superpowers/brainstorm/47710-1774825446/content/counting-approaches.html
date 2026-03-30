@@ -1,0 +1,54 @@
+<h2>Char-Level Counting: Where Should Stats Live?</h2>
+<p class="subtitle">Three approaches for surfacing live text metrics while writing</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Status Strip (Recommended)</h3>
+      <p>A slim, always-visible bar between the textarea and bottom toolbar. Shows: <strong>current sentence chars</strong> · <strong>paragraph chars/words</strong> · <strong>total chars/words/sentences</strong> · <strong>reading time</strong>. Compact single line. Click any segment to expand details. Selection count replaces sentence count when text is selected.</p>
+      <div style="margin-top: 12px; padding: 12px; background: rgba(255,255,255,0.06); border-radius: 8px; font-family: monospace; font-size: 13px; color: rgba(255,255,255,0.7);">
+        <span style="color: rgba(255,255,255,0.4)">S:</span> 42c 8w &nbsp;&nbsp;
+        <span style="color: rgba(255,255,255,0.4)">¶:</span> 187c 31w 4s &nbsp;&nbsp;
+        <span style="color: rgba(255,255,255,0.4)">∑:</span> 1,247c 203w 18s · 1m read
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Panel Integration</h3>
+      <p>Add a "Text Stats" section to the existing right-side syntax panel. Shows the same metrics but in a vertical card layout. Always visible on desktop, accessible via the harmonica gesture on mobile. Less intrusive but requires opening the panel.</p>
+      <div style="margin-top: 12px; padding: 12px; background: rgba(255,255,255,0.06); border-radius: 8px; font-size: 13px; color: rgba(255,255,255,0.7);">
+        <div style="margin-bottom: 6px"><strong>Current Sentence</strong></div>
+        <div style="display: flex; gap: 16px; margin-bottom: 10px;">
+          <span>42 chars</span> <span>8 words</span>
+        </div>
+        <div style="margin-bottom: 6px"><strong>Current Paragraph</strong></div>
+        <div style="display: flex; gap: 16px; margin-bottom: 10px;">
+          <span>187 chars</span> <span>31 words</span> <span>4 sentences</span>
+        </div>
+        <div style="margin-bottom: 6px"><strong>Document</strong></div>
+        <div style="display: flex; gap: 16px;">
+          <span>1,247 chars</span> <span>203 words</span> <span>18 sentences</span> <span>1m read</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Hybrid: Strip + Panel</h3>
+      <p>Compact strip shows sentence + total counts (always visible). Detailed breakdown lives in the panel. Best of both worlds but more UI surface area. The strip is the "glanceable" layer, the panel is the "deep dive" layer.</p>
+      <div style="margin-top: 12px; padding: 12px; background: rgba(255,255,255,0.06); border-radius: 8px; font-family: monospace; font-size: 13px; color: rgba(255,255,255,0.7);">
+        <div style="margin-bottom: 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.3);">Always-visible strip</div>
+        <span style="color: rgba(255,255,255,0.4)">S:</span> 42c &nbsp;
+        <span style="color: rgba(255,255,255,0.4)">∑:</span> 1,247c 203w · 1m
+        <div style="margin-top: 10px; margin-bottom: 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.3);">In panel (expanded)</div>
+        Full stats with paragraph breakdown, averages, etc.
+      </div>
+    </div>
+  </div>
+</div>

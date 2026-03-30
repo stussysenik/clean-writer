@@ -66,7 +66,6 @@ import { useAutoSave } from "./hooks/useAutoSave";
 import { useDocumentManager } from "./hooks/useDocumentManager";
 import { useWritingSession } from "./hooks/useWritingSession";
 import { countChars } from "./services/textStatsService";
-import type { CountingConfig } from "./types";
 
 const UTF8_DISPLAY_STORAGE_KEY = "clean_writer_utf8_display_enabled";
 const SHOW_LINE_WIDTH_SLIDER = false;
@@ -705,14 +704,7 @@ const App: React.FC = () => {
     }
   }, [currentTheme]);
 
-  // Persist content to local storage
-  useEffect(() => {
-    try {
-      localStorage.setItem("riso_flow_content", content);
-    } catch (e) {
-      console.warn("Could not save to local storage");
-    }
-  }, [content]);
+  // Content persistence handled by useAutoSave hook
 
   // Persist maxWidth
   useEffect(() => {

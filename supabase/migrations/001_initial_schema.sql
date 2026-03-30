@@ -70,8 +70,8 @@ create table public.documents (
   user_id     uuid not null references auth.users on delete cascade,
   title       text not null,
   content     text not null default '',
-  doc_type    text not null default 'freewrite'
-                check (doc_type in ('freewrite', 'essay', 'poem', 'song', 'note')),
+  doc_type    text not null default 'standalone'
+                check (doc_type in ('chapter', 'standalone', 'scratchpad')),
   position    integer not null default 0,
   word_count  integer not null default 0,
   char_count  integer not null default 0,
@@ -136,7 +136,7 @@ create table public.writing_sessions (
   words_written     integer not null default 0,
   chars_written     integer not null default 0,
   session_type      text not null default 'freewrite'
-                      check (session_type in ('freewrite', 'journal', 'document')),
+                      check (session_type in ('chapter', 'journal', 'freewrite')),
   created_at        timestamptz not null default now()
 );
 

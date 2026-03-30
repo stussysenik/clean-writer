@@ -1,0 +1,81 @@
+<h2>Character-Level Visualization: Approaches</h2>
+<p class="subtitle">How characters light up based on phonemic &amp; rhythmic properties — like syntax highlighting but per-letter</p>
+
+<div class="section">
+  <h3>Live Preview: What It Looks Like</h3>
+  <p class="subtitle">The word "strength" with phonemic toggles active</p>
+  <div class="mockup">
+    <div class="mockup-header">Phonemic Mode — All Toggles Active</div>
+    <div class="mockup-body" style="font-family: monospace; font-size: 28px; line-height: 2; letter-spacing: 2px; padding: 24px;">
+      <span style="color: oklch(0.70 0.14 180); font-weight: 600;">s</span><span style="color: oklch(0.68 0.15 260); font-weight: 600;">t</span><span style="color: oklch(0.71 0.16 310); font-weight: 600;">r</span><span style="color: oklch(0.72 0.18 30); font-weight: 600;">e</span><span style="color: oklch(0.73 0.12 90); font-weight: 600;">n</span><span style="color: oklch(0.68 0.15 260); font-weight: 600;">g</span><span style="color: oklch(0.68 0.15 260); font-weight: 600;">t</span><span style="color: oklch(0.70 0.14 180); font-weight: 600;">h</span>
+      <br>
+      <span style="font-size: 11px; color: #888; letter-spacing: 6px; padding-left: 2px;">F &nbsp;P &nbsp;L &nbsp;V &nbsp;N &nbsp;P &nbsp;P &nbsp;F</span>
+      <br><br>
+      <!-- Full line example -->
+      <div style="font-size: 22px; line-height: 1.8; letter-spacing: 1px;">
+        <span style="color: oklch(0.68 0.15 260); font-weight: 600;">T</span><span style="color: oklch(0.70 0.14 180); font-weight: 600;">h</span><span style="color: oklch(0.72 0.18 30); font-weight: 600;">e</span><span style="color: #666;"> </span><span style="color: oklch(0.69 0.13 50); font-weight: 600;">w</span><span style="color: oklch(0.72 0.18 30); font-weight: 600;">i</span><span style="color: oklch(0.73 0.12 90); font-weight: 600;">n</span><span style="color: oklch(0.68 0.15 260); font-weight: 600;">d</span><span style="color: #666;"> </span><span style="color: oklch(0.70 0.14 180); font-weight: 600;">s</span><span style="color: oklch(0.72 0.18 30); font-weight: 600;">i</span><span style="color: oklch(0.73 0.12 90); font-weight: 600;">n</span><span style="color: oklch(0.68 0.15 260); font-weight: 600;">g</span><span style="color: oklch(0.70 0.14 180); font-weight: 600;">s</span><span style="color: #666;"> </span><span style="color: oklch(0.72 0.18 30); font-weight: 600;">a</span><span style="color: #666;"> </span><span style="color: oklch(0.70 0.14 180); font-weight: 600;">s</span><span style="color: oklch(0.72 0.18 30); font-weight: 600;">o</span><span style="color: oklch(0.73 0.12 90); font-weight: 600;">n</span><span style="color: oklch(0.68 0.15 260); font-weight: 600;">g</span><span style="color: #666;"> </span><span style="color: oklch(0.72 0.18 30); font-weight: 600;">o</span><span style="color: oklch(0.70 0.14 180); font-weight: 600;">f</span><span style="color: #666;"> </span><span style="color: oklch(0.71 0.16 310); font-weight: 600;">r</span><span style="color: oklch(0.72 0.18 30); font-weight: 600;">ai</span><span style="color: oklch(0.73 0.12 90); font-weight: 600;">n</span>
+      </div>
+      <div style="font-size: 10px; color: #999; margin-top: 4px; font-family: sans-serif;">
+        "The wind sings a song of rain" — each character colored by phoneme family
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Color Legend</h3>
+  <div style="display: flex; flex-wrap: wrap; gap: 16px; padding: 12px 0;">
+    <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 14px; border-radius: 50%; background: oklch(0.72 0.18 30); display: inline-block;"></span><span style="font-size: 13px;">Vowels (V)</span></div>
+    <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 14px; border-radius: 50%; background: oklch(0.68 0.15 260); display: inline-block;"></span><span style="font-size: 13px;">Plosives (P)</span></div>
+    <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 14px; border-radius: 50%; background: oklch(0.70 0.14 180); display: inline-block;"></span><span style="font-size: 13px;">Fricatives (F)</span></div>
+    <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 14px; border-radius: 50%; background: oklch(0.73 0.12 90); display: inline-block;"></span><span style="font-size: 13px;">Nasals (N)</span></div>
+    <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 14px; border-radius: 50%; background: oklch(0.71 0.16 310); display: inline-block;"></span><span style="font-size: 13px;">Liquids (L)</span></div>
+    <div style="display: flex; align-items: center; gap: 6px;"><span style="width: 14px; height: 14px; border-radius: 50%; background: oklch(0.69 0.13 50); display: inline-block;"></span><span style="font-size: 13px;">Glides (G)</span></div>
+  </div>
+</div>
+
+<h3 style="margin-top: 32px;">Pick an Approach</h3>
+<p class="subtitle">Data structure + rendering strategy for O(1) character lookups</p>
+
+<div class="options">
+  <div class="option" data-choice="hybrid" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Hybrid Bitmask + Run-Length Spans (Recommended)</h3>
+      <p><strong>Data:</strong> Uint16Array with 16-bit flags per character — single bitwise AND for O(1) lookup. Sparse annotation index for syllable boundaries &amp; stress spans.</p>
+      <p><strong>Render:</strong> Group consecutive same-class characters into run-length spans (~1.5x current DOM count). CSS class toggling via data-attribute — no React re-render on toggle.</p>
+      <p><strong>Memory:</strong> ~248 KB for 5000 words. Zero-copy ArrayBuffer transfer from worker.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>True O(1): single bitwise AND per char</li><li>Zero-copy worker transfer</li><li>CSS toggle = no React re-render</li><li>Follows existing SyntaxSets pattern</li><li>Incremental: phonemic first, rhythmic later</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Bitmask harder to debug than objects</li><li>Run-length encoding adds code complexity</li><li>Digraph detection (sh, th, ng) needs care</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="word-map" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Word Map + Character Offset Table</h3>
+      <p><strong>Data:</strong> Per-word phoneme entries with character classification arrays. Uint32Array index maps char positions to word entries.</p>
+      <p><strong>Render:</strong> Same run-length spans. Word-level cache reuses phoneme lookups across edits (Zipf's law: ~3000 unique words cover 95% of tokens).</p>
+      <p><strong>Memory:</strong> ~820 KB for 5000 words. Structured clone transfer (no zero-copy).</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Rich queryable structure</li><li>Excellent word-level caching</li><li>Easy to debug (readable objects)</li><li>Mirrors existing SongAnalysis pattern</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>13x more memory than bitmask</li><li>No zero-copy transfer</li><li>More GC pressure from object allocations</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="canvas" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Canvas Underline Overlay</h3>
+      <p><strong>Data:</strong> Same bitmask array. <strong>Render:</strong> Zero additional DOM nodes — paint colored underlines on a Canvas behind the text. GPU-accelerated.</p>
+      <p><strong>Memory:</strong> Minimal (~60 KB). But requires character position measurement on every content/font/resize change.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Zero DOM nodes added</li><li>Could coexist with syntax mode</li><li>GPU-accelerated painting</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Character position measurement is fragile</li><li>Breaks with ligatures, CJK, emoji</li><li>No hover interactions per-character</li><li>Fundamentally different rendering paradigm</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>

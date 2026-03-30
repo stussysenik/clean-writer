@@ -89,8 +89,14 @@ export function useWritingSession(): UseWritingSessionReturn {
 
   const recordActivity = useCallback((currentWordCount: number) => {
     if (!isActive) {
+      // Auto-start session on first activity
       initialWordCountRef.current = currentWordCount;
       lastWordCountRef.current = currentWordCount;
+      sessionTypeRef.current = "freewrite";
+      sessionIdRef.current = crypto.randomUUID();
+      setIsActive(true);
+      setSessionStart(Date.now());
+      setWordsWritten(0);
       return;
     }
 
