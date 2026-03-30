@@ -61,6 +61,12 @@ import { initOverlapDebug } from "./utils/overlapDebug";
 import useResponsiveBreakpoint from "./hooks/useResponsiveBreakpoint";
 import { useMobileEditState } from "./hooks/useMobileEditState";
 import { oklchInterpolate } from "./utils/oklch";
+import DocumentSidebar from "./components/DocumentSidebar";
+import { useAutoSave } from "./hooks/useAutoSave";
+import { useDocumentManager } from "./hooks/useDocumentManager";
+import { useWritingSession } from "./hooks/useWritingSession";
+import { countChars } from "./services/textStatsService";
+import type { CountingConfig } from "./types";
 
 const UTF8_DISPLAY_STORAGE_KEY = "clean_writer_utf8_display_enabled";
 const SHOW_LINE_WIDTH_SLIDER = false;
@@ -418,6 +424,19 @@ const App: React.FC = () => {
     keyof HighlightConfig | null
   >(null);
 
+  // ─── Platform: Selection counting, Sidebar, Document Management ───
+  const [selectionCharCount, setSelectionCharCount] = useState(0);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
+
+  const { lastSavedAt, save: autoSave } = useAutoSave();
+  const {
+    projects, documents, journalEntries,
+    createProject, createDocument, createJournalEntry,
+    deleteDocument,
+  } = useDocumentManager();
+  const { recordActivity } = useWritingSession();
+
   // Saved custom themes hook
   const {
     savedThemes: savedCustomThemes,
@@ -510,6 +529,31 @@ const App: React.FC = () => {
   const { saveSelection, getSavedSelection, restoreSelection, savedSelection, clearSelection } =
     useSelectionPersistence(textareaRef);
 
+  // Selection char counter — tracks selected text length
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const update = () => {
+      const s = textarea.selectionStart ?? 0;
+      const e = textarea.selectionEnd ?? 0;
+      if (s !== e) {
+        setSelectionCharCount(countChars(textarea.value.slice(Math.min(s, e), Math.max(s, e))));
+      } else {
+        setSelectionCharCount(0);
+      }
+    };
+    textarea.addEventListener("keyup", update);
+    textarea.addEventListener("mouseup", update);
+    textarea.addEventListener("touchend", update);
+    document.addEventListener("selectionchange", update);
+    return () => {
+      textarea.removeEventListener("keyup", update);
+      textarea.removeEventListener("mouseup", update);
+      textarea.removeEventListener("touchend", update);
+      document.removeEventListener("selectionchange", update);
+    };
+  }, []);
+
   // Toast state for last-theme warning
   const [showLastThemeToast, setShowLastThemeToast] = useState(false);
   // Toast state for export success
@@ -531,6 +575,12 @@ const App: React.FC = () => {
     [currentFont.family],
   );
   const wordCount = countWords(content);
+
+  // Auto-save + writing session tracking
+  useEffect(() => {
+    autoSave(content, activeDocumentId ?? undefined);
+    recordActivity(wordCount);
+  }, [content, activeDocumentId, autoSave, recordActivity, wordCount]);
 
   // Compute effective highlight config when solo mode is active
   const effectiveHighlightConfig = useMemo((): HighlightConfig => {
@@ -1020,6 +1070,18 @@ const App: React.FC = () => {
     isMobile,
   });
 
+  // Sidebar toggle: Mod+Shift+B
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "B") {
+        e.preventDefault();
+        setIsSidebarOpen(prev => !prev);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
   // Capture-phase listener for arrow keys in focus mode (must fire before textarea)
   useEffect(() => {
     if (focusMode === "none") return;
@@ -1042,6 +1104,29 @@ const App: React.FC = () => {
         fontFamily: displayFontFamily,
       }}
     >
+      {/* Document Sidebar */}
+      <DocumentSidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        projects={projects}
+        documents={documents}
+        journalEntries={journalEntries}
+        activeDocumentId={activeDocumentId}
+        onSelectDocument={(id) => {
+          setActiveDocumentId(id);
+          const doc = documents.find(d => d.id === id);
+          if (doc) setContent(doc.content);
+          setIsSidebarOpen(false);
+        }}
+        onCreateProject={(title) => createProject(title)}
+        onCreateDocument={(projectId, title) => createDocument(projectId, title, "standalone")}
+        onCreateJournalEntry={() => createJournalEntry()}
+        onDeleteDocument={(id) => deleteDocument(id)}
+        textColor={currentTheme.text}
+        bgColor={currentTheme.background}
+        accentColor={currentTheme.accent}
+      />
+
       {/* Background Texture */}
       <div
         data-overlap-ignore
@@ -1409,6 +1494,31 @@ const App: React.FC = () => {
               {maxWidth}px
             </span>
           </div>
+        </div>
+      )}
+
+      {/* Selection character counter */}
+      {selectionCharCount > 0 && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 70,
+            left: "50%",
+            transform: "translateX(-50%)",
+            backgroundColor: currentTheme.accent,
+            color: currentTheme.background,
+            padding: "4px 12px",
+            borderRadius: 20,
+            fontSize: 12,
+            fontFamily: "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace",
+            fontWeight: 600,
+            zIndex: 50,
+            pointerEvents: "none",
+            opacity: 0.9,
+            boxShadow: `0 2px 8px ${currentTheme.accent}40`,
+          }}
+        >
+          {selectionCharCount} chars selected
         </div>
       )}
 

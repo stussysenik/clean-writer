@@ -1,5 +1,5 @@
 import nlp from "compromise";
-import { SyntaxAnalysis, SyntaxSets } from "../types";
+import { SyntaxAnalysis, SyntaxSets, LanguageMode } from "../types";
 import {
   HASHTAG_MATCH_REGEX,
   URL_MATCH_REGEX,
@@ -20,15 +20,23 @@ import {
  * - For CJK characters: counts each character as a word (since CJK doesn't use spaces)
  * - For emoji: counts each emoji as a word
  */
-export function countWords(content: string): number {
+export function countWords(content: string, languageMode?: LanguageMode): number {
   if (!content.trim()) return 0;
 
-  // Try to use Intl.Segmenter for proper word segmentation (modern browsers)
+  // Phrase-grouping mode: use locale-aware Intl.Segmenter for CJK word boundaries
+  if (languageMode === "phrase-grouping" && typeof Intl !== "undefined" && "Segmenter" in Intl) {
+    try {
+      const segmenter = new Intl.Segmenter("zh-Hant", { granularity: "word" });
+      const segments = Array.from(segmenter.segment(content.trim()));
+      return segments.filter((segment) => segment.isWordLike).length;
+    } catch { /* fall through */ }
+  }
+
+  // Default per-char mode: use Intl.Segmenter with default locale
   if (typeof Intl !== "undefined" && "Segmenter" in Intl) {
     try {
       const segmenter = new Intl.Segmenter(undefined, { granularity: "word" });
       const segments = Array.from(segmenter.segment(content.trim()));
-      // Count only segments that are actual words (not whitespace/punctuation)
       return segments.filter((segment) => segment.isWordLike).length;
     } catch {
       // Fall back to manual counting if Segmenter fails

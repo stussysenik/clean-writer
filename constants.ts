@@ -19,50 +19,50 @@ export const FONT_OPTIONS = [
   {
     id: "courier-prime",
     name: "Courier Prime",
-    family: '"Courier Prime", monospace',
+    family: '"Courier Prime", "Noto Sans TC", "Noto Sans SC", monospace',
     category: "Mono" as FontCategory,
   },
   {
     id: "space-mono",
     name: "Space Mono",
-    family: '"Space Mono", monospace',
+    family: '"Space Mono", "Noto Sans TC", "Noto Sans SC", monospace',
     category: "Mono" as FontCategory,
   },
   {
     id: "jetbrains",
     name: "JetBrains Mono",
-    family: '"JetBrains Mono", monospace',
+    family: '"JetBrains Mono", "Noto Sans TC", "Noto Sans SC", monospace',
     category: "Mono" as FontCategory,
   },
   {
     id: "fira-code",
     name: "Fira Code",
-    family: '"Fira Code", monospace',
+    family: '"Fira Code", "Noto Sans TC", "Noto Sans SC", monospace',
     category: "Mono" as FontCategory,
   },
   {
     id: "ibm-plex-mono",
     name: "IBM Plex Mono",
-    family: '"IBM Plex Mono", monospace',
+    family: '"IBM Plex Mono", "Noto Sans TC", "Noto Sans SC", monospace',
     category: "Mono" as FontCategory,
   },
   // Sans-serif
   {
     id: "inter",
     name: "Inter",
-    family: '"Inter", sans-serif',
+    family: '"Inter", "Noto Sans TC", "Noto Sans SC", sans-serif',
     category: "Sans-serif" as FontCategory,
   },
   {
     id: "dm-sans",
     name: "DM Sans",
-    family: '"DM Sans", sans-serif',
+    family: '"DM Sans", "Noto Sans TC", "Noto Sans SC", sans-serif',
     category: "Sans-serif" as FontCategory,
   },
   {
     id: "plus-jakarta",
     name: "Plus Jakarta Sans",
-    family: '"Plus Jakarta Sans", sans-serif',
+    family: '"Plus Jakarta Sans", "Noto Sans TC", "Noto Sans SC", sans-serif',
     category: "Sans-serif" as FontCategory,
   },
   {
@@ -74,7 +74,7 @@ export const FONT_OPTIONS = [
   {
     id: "rubik",
     name: "Rubik",
-    family: '"Rubik", sans-serif',
+    family: '"Rubik", "Noto Sans TC", "Noto Sans SC", sans-serif',
     category: "Sans-serif" as FontCategory,
   },
   {
@@ -87,32 +87,32 @@ export const FONT_OPTIONS = [
   {
     id: "lora",
     name: "Lora",
-    family: '"Lora", serif',
+    family: '"Lora", "Noto Sans TC", "Noto Sans SC", serif',
     category: "Serif" as FontCategory,
   },
   {
     id: "merriweather",
     name: "Merriweather",
-    family: '"Merriweather", serif',
+    family: '"Merriweather", "Noto Sans TC", "Noto Sans SC", serif',
     category: "Serif" as FontCategory,
   },
   {
     id: "playfair",
     name: "Playfair Display",
-    family: '"Playfair Display", serif',
+    family: '"Playfair Display", "Noto Sans TC", "Noto Sans SC", serif',
     category: "Serif" as FontCategory,
   },
   {
     id: "eb-garamond",
     name: "EB Garamond",
-    family: '"EB Garamond", serif',
+    family: '"EB Garamond", "Noto Sans TC", "Noto Sans SC", serif',
     category: "Serif" as FontCategory,
   },
   // Handwriting
   {
     id: "caveat",
     name: "Caveat",
-    family: '"Caveat", cursive',
+    family: '"Caveat", "Noto Sans TC", "Noto Sans SC", cursive',
     category: "Handwriting" as FontCategory,
   },
 ] as const;

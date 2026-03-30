@@ -210,3 +210,91 @@ export interface CodeModeState {
   lineCount: number;
   charCount: number;
 }
+
+// ─── Platform Types: Counting, CJK, Documents, Persistence ───
+
+export interface TextStats {
+  chars: number;
+  words: number;
+  sentences: number;
+  paragraphs: number;
+  readingTimeMs: number;
+}
+
+export interface CursorStats {
+  sentence: TextStats;
+  paragraph: TextStats;
+  document: TextStats;
+  selection?: TextStats;
+  lastEditedAt: number;
+}
+
+export interface CountingConfig {
+  showSentence: boolean;
+  showParagraph: boolean;
+  showTotal: boolean;
+}
+
+export type LanguageMode = "per-char" | "phrase-grouping";
+export type DocType = "chapter" | "standalone" | "scratchpad";
+export type SessionType = "chapter" | "journal" | "freewrite";
+
+export interface Project {
+  id: string;
+  userId: string;
+  title: string;
+  description?: string;
+  position: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Document {
+  id: string;
+  projectId?: string;
+  userId: string;
+  title: string;
+  content: string;
+  docType: DocType;
+  position: number;
+  wordCount: number;
+  charCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface JournalEntry {
+  id: string;
+  userId: string;
+  entryDate: string;
+  content: string;
+  mood?: string;
+  wordCount: number;
+  charCount: number;
+  writingDurationSeconds: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WritingSession {
+  id: string;
+  userId: string;
+  documentId?: string;
+  journalEntryId?: string;
+  startedAt: string;
+  endedAt?: string;
+  wordsWritten: number;
+  charsWritten: number;
+  sessionType: SessionType;
+}
+
+export interface UserPreferences {
+  id: string;
+  userId: string;
+  themeId?: string;
+  fontId?: string;
+  fontSizeOffset: number;
+  countingConfig: CountingConfig;
+  languageMode: LanguageMode;
+  updatedAt: string;
+}
