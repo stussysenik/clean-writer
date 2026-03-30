@@ -69,7 +69,7 @@ const DesktopSyntaxPanel: React.FC<DesktopSyntaxPanelProps> = ({
   codeLanguage = "javascript",
 }) => {
   const panelRef = useRef<HTMLDivElement>(null);
-  const panelWidth = "min(440px, calc(100vw - 72px))";
+  const panelWidth = "min(340px, calc(100vw - 72px))";
 
   return (
     <div
