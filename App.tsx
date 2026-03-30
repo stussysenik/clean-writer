@@ -1381,7 +1381,7 @@ const App: React.FC = () => {
       <main
         className="flex-1 w-full h-full relative z-10 pt-[70px] md:pt-[80px] lg:pt-[80px] transition-all duration-300 ease-in-out"
         style={{
-          paddingRight: isDesktop && content.length > 0 ? 360 : undefined,
+          paddingRight: isDesktop && content.length > 0 ? "min(360px, 30vw)" : undefined,
         }}
       >
         {viewMode === "write" ? (
