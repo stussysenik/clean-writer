@@ -2,6 +2,9 @@
 
 # Clean Writer
 
+![Demo](demo.gif)
+
+
 ### Distraction-free writing with real-time syntax highlighting
 
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react)
