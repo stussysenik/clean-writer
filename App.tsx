@@ -41,7 +41,6 @@ import UnifiedSyntaxPanel from "./components/UnifiedSyntaxPanel";
 import Toast from "./components/Toast";
 import TouchButton from "./components/TouchButton";
 import Tooltip from "./components/Tooltip";
-import HelpModal from "./components/HelpModal";
 import MobileWelcome from "./components/MobileWelcome";
 
 import Kbd from "./components/Kbd";
@@ -61,7 +60,9 @@ import { initOverlapDebug } from "./utils/overlapDebug";
 import useResponsiveBreakpoint from "./hooks/useResponsiveBreakpoint";
 import { useMobileEditState } from "./hooks/useMobileEditState";
 import { oklchInterpolate } from "./utils/oklch";
-import DocumentSidebar from "./components/DocumentSidebar";
+import DocumentSidebar, {
+  DOCUMENT_SIDEBAR_WIDTH,
+} from "./components/DocumentSidebar";
 import { useAutoSave } from "./hooks/useAutoSave";
 import { useDocumentManager } from "./hooks/useDocumentManager";
 import { useWritingSession } from "./hooks/useWritingSession";
@@ -264,6 +265,7 @@ const App: React.FC = () => {
 
   // Color edit handlers — bridge PanelBody → ThemeCustomizer
   const handleEditColor = useCallback((target: ColorEditTarget) => {
+    setIsSidebarOpen(false);
     setIsCustomizerOpen(true);
     setCustomizerInitialTab("themes");
     // Scroll to the target color after the panel opens
@@ -321,7 +323,9 @@ const App: React.FC = () => {
     target: ColorEditTarget;
     anchorEl: HTMLElement;
   } | null>(null);
-  const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [sidebarUtilitySection, setSidebarUtilitySection] = useState<
+    "guide" | "feedback" | null
+  >(null);
   const [showMobileWelcome, setShowMobileWelcome] = useState(false);
   const [utf8DisplayEnabled, setUtf8DisplayEnabled] = useState<boolean>(() => {
     try {
@@ -431,6 +435,14 @@ const App: React.FC = () => {
   });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
+  const openSidebarUtilitySection = useCallback(
+    (section: "guide" | "feedback") => {
+      setIsCustomizerOpen(false);
+      setSidebarUtilitySection(section);
+      setIsSidebarOpen(true);
+    },
+    [],
+  );
 
   const { lastSavedAt, save: autoSave } = useAutoSave();
   const {
@@ -581,6 +593,7 @@ const App: React.FC = () => {
     [currentFont.family],
   );
   const wordCount = countWords(content);
+  const totalCharCount = countChars(content);
 
   // Auto-save + writing session tracking
   useEffect(() => {
@@ -660,6 +673,8 @@ const App: React.FC = () => {
 
   // Responsive breakpoint for desktop panel padding & shortcut overlay
   const { isDesktop, isMobile } = useResponsiveBreakpoint();
+  const desktopSidebarOffset =
+    isDesktop && isSidebarOpen ? DOCUMENT_SIDEBAR_WIDTH : 0;
 
   // Mobile edit/view state for visual distinction
   const mobileEditState = useMobileEditState(textareaRef, isMobile);
@@ -1111,7 +1126,10 @@ const App: React.FC = () => {
       {/* Document Sidebar */}
       <DocumentSidebar
         isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
+        onClose={() => {
+          setIsSidebarOpen(false);
+          setSidebarUtilitySection(null);
+        }}
         projects={projects}
         documents={documents}
         journalEntries={journalEntries}
@@ -1129,6 +1147,11 @@ const App: React.FC = () => {
         textColor={currentTheme.text}
         bgColor={currentTheme.background}
         accentColor={currentTheme.accent}
+        themeId={themeId}
+        wordCount={wordCount}
+        charCount={totalCharCount}
+        requestedUtilitySection={sidebarUtilitySection}
+        onUtilitySectionHandled={() => setSidebarUtilitySection(null)}
       />
 
       {/* Background Texture */}
@@ -1172,12 +1195,6 @@ const App: React.FC = () => {
           </>
         }
         confirmLabel="LOAD SAMPLE"
-      />
-
-      <HelpModal
-        isOpen={isHelpOpen}
-        onClose={() => setIsHelpOpen(false)}
-        theme={currentTheme}
       />
 
         <ThemeCustomizer
@@ -1272,7 +1289,10 @@ const App: React.FC = () => {
       />
 
       {/* Top Bar with Theme Selector and Settings */}
-      <div className="absolute top-0 left-0 right-0 flex justify-between items-center p-[13px] md:p-[21px] z-[60] pointer-events-none">
+      <div
+        className="absolute top-0 right-0 flex justify-between items-center p-[13px] md:p-[21px] z-[60] pointer-events-none transition-[left] duration-300 ease-in-out"
+        style={{ left: desktopSidebarOffset }}
+      >
         {!unstylizedMode && (
           <div className="pointer-events-auto flex items-center min-h-[44px] min-w-0 flex-1 mr-2">
             <ThemeSelector
@@ -1337,7 +1357,7 @@ const App: React.FC = () => {
             </div>}
             <Tooltip content="Help & Shortcuts" position="bottom">
               <TouchButton
-                onClick={() => setIsHelpOpen(true)}
+                onClick={() => openSidebarUtilitySection("guide")}
                 className="p-1.5 rounded-xl hover:bg-current/5 transition-all duration-200"
                 aria-label="Help and shortcuts"
                 style={{
@@ -1362,7 +1382,11 @@ const App: React.FC = () => {
             </Tooltip>
             <Tooltip content={`Build ${BUILD_NUMBER} · ${BUILD_HASH}`} position="bottom">
               <TouchButton
-                onClick={() => setIsCustomizerOpen(true)}
+                onClick={() => {
+                  setSidebarUtilitySection(null);
+                  setIsSidebarOpen(false);
+                  setIsCustomizerOpen(true);
+                }}
                 className="p-1.5 rounded-xl hover:bg-current/5 transition-all duration-200"
                 title="Customize Theme"
                 data-testid="open-theme-customizer"
@@ -1381,6 +1405,7 @@ const App: React.FC = () => {
       <main
         className="flex-1 w-full h-full relative z-10 pt-[70px] md:pt-[80px] lg:pt-[80px] transition-all duration-300 ease-in-out"
         style={{
+          paddingLeft: desktopSidebarOffset || undefined,
           paddingRight: isDesktop && content.length > 0 ? "min(360px, 30vw)" : undefined,
         }}
       >

@@ -6,6 +6,31 @@ Changelog and development progress for Clean Typewriter Experience t.
 
 ## Latest Release
 
+### v3.1.0 - Sidebar Guide Rail and Feedback Inbox
+
+**Release Date:** April 3, 2026
+
+Replaced the centered help modal with a non-overlapping guide section in the left rail, added a feedback inbox that saves locally and optionally syncs to Supabase, and made the desktop workspace reserve real width for the sidebar so the editor no longer sits underneath it.
+
+**What shipped:**
+- Desktop shell now shifts the top bar and writing surface right when the sidebar is open
+- Help button routes into the sidebar guide instead of opening a centered modal
+- New guide card groups core shortcuts into compact sections inside the rail
+- New feedback card captures wishes, friction, bugs, and delight notes with recent-note history
+- Feedback saves offline-first to localStorage and mirrors to `feedback_notes` when Supabase is configured
+- Added a dedicated Supabase migration for public feedback intake
+
+**Key files modified:**
+- `App.tsx`
+- `components/DocumentSidebar/index.tsx`
+- `components/DocumentSidebar/GuideSection.tsx`
+- `components/DocumentSidebar/FeedbackSection.tsx`
+- `hooks/useFeedbackInbox.ts`
+- `supabase/migrations/002_feedback_notes.sql`
+- `tests/cypress/specs/help-modal.cy.ts`
+- `tests/cypress/specs/accessibility.cy.ts`
+- `tests/cypress/specs/responsive-layout.cy.ts`
+
 ### v3.0.0 - Markdown Features, Code Mode, Comprehensive Test Suite
 
 **Release Date:** March 26, 2026

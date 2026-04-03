@@ -27,6 +27,14 @@ describe("Responsive Layout", () => {
         expect(padLeft).to.be.at.least(21);
       });
     });
+
+    it("reserves desktop space when the sidebar opens", () => {
+      cy.get('[aria-label="Help and shortcuts"]').click();
+      cy.get("main").should(($main) => {
+        const styles = window.getComputedStyle($main[0]);
+        expect(styles.paddingLeft).to.equal("280px");
+      });
+    });
   });
 
   describe("Mobile (375x667)", () => {
