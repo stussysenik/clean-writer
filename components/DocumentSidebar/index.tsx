@@ -13,6 +13,7 @@ import WritingLog from "./WritingLog";
 import GuideSection from "./GuideSection";
 import FeedbackSection from "./FeedbackSection";
 import CreationForm, { CreationMode } from "./CreationForm";
+import CalendarSection from "./CalendarSection";
 
 export const DOCUMENT_SIDEBAR_WIDTH = 280;
 type UtilitySection = "guide" | "feedback" | null;
@@ -32,6 +33,9 @@ interface DocumentSidebarProps {
     docType: DocType,
   ) => Promise<unknown> | unknown;
   onCreateJournalEntry: () => void;
+  onCreateJournalEntryForDate: (
+    date: string,
+  ) => Promise<JournalEntry | null> | JournalEntry | null;
   onDeleteDocument: (id: string) => void;
   textColor: string;
   bgColor: string;
@@ -55,6 +59,7 @@ const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
   onCreateProject,
   onCreateDocument,
   onCreateJournalEntry,
+  onCreateJournalEntryForDate,
   onDeleteDocument,
   textColor,
   bgColor,
@@ -278,6 +283,17 @@ const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
           onSelectEntry={onSelectDocument}
           onCreateEntry={onCreateJournalEntry}
           activeDocumentId={activeDocumentId}
+          textColor={textColor}
+          accentColor={accentColor}
+        />
+
+        {renderDivider()}
+
+        <CalendarSection
+          entries={journalEntries}
+          activeDocumentId={activeDocumentId}
+          onSelectEntry={onSelectDocument}
+          onCreateEntryForDate={onCreateJournalEntryForDate}
           textColor={textColor}
           accentColor={accentColor}
         />

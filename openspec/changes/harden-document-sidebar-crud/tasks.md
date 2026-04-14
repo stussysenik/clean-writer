@@ -26,16 +26,16 @@ Apply order: 1 → 2 → 3 → 4. Each capability lands as its own commit. Verif
 
 ## 3. Cap-3 · document-calendar-view
 
-- [ ] 3.1 Create `components/DocumentSidebar/CalendarSection.tsx`. Local state: `viewMonth: Date` (initialized from `localStorage.getItem("clean_writer_calendar_view_month")` or current month). Render a 7-column header (Mo Tu We Th Fr Sa Su) and a 6-row body of cells.
-- [ ] 3.2 Build the 42-cell grid: pad with previous-month tail and next-month head so the grid is always rectangular. Mark in-month vs out-of-month visually.
-- [ ] 3.3 Compute per-cell entry presence by indexing `journalEntries` by `entryDate` (YYYY-MM-DD). Mark today's cell with a ring; mark cells with entries with a dot or accent fill; mark the active entry's cell with a strong accent.
-- [ ] 3.4 Wire click handlers: existing entry → `onSelectEntry(entry.id)`; empty past/today cell → `onCreateJournalEntry(date)` then immediately `onSelectEntry(newEntry.id)`; future cells are `aria-disabled` and ignore clicks.
-- [ ] 3.5 Add prev/next month arrows and a "Today" jump button. Persist `viewMonth` to `localStorage` on every change.
-- [ ] 3.6 Render `CalendarSection` inside `DocumentSidebar/index.tsx` between `JournalSection` and `WritingLog`.
-- [ ] 3.7 Extend `useDocumentManager.createJournalEntry` callsite in `App.tsx` to support an optional date arg (the function already accepts one — verify wiring in the new sidebar prop).
-- [ ] 3.8 Verify with `npx tsc --noEmit`. Verify with `npm run build`.
-- [ ] 3.9 Manual smoke: open sidebar, navigate to previous month, click an empty past cell, confirm entry created, navigate forward, confirm "Today" works, reload, confirm view month preserved.
-- [ ] 3.10 Commit: `feat(sidebar): add month-grid calendar view for journal entries`.
+- [x] 3.1 Create `components/DocumentSidebar/CalendarSection.tsx`. Local state: `viewMonth: Date` (initialized from `localStorage.getItem("clean_writer_calendar_view_month")` or current month). Render a 7-column header (Mo Tu We Th Fr Sa Su) and a 6-row body of cells.
+- [x] 3.2 Build the 42-cell grid: pad with previous-month tail and next-month head so the grid is always rectangular. Mark in-month vs out-of-month visually.
+- [x] 3.3 Compute per-cell entry presence by indexing `journalEntries` by `entryDate` (YYYY-MM-DD). Mark today's cell with a ring; mark cells with entries with a dot or accent fill; mark the active entry's cell with a strong accent.
+- [x] 3.4 Wire click handlers: existing entry → `onSelectEntry(entry.id)`; empty past/today cell → `onCreateJournalEntry(date)` then immediately `onSelectEntry(newEntry.id)`; future cells are `aria-disabled` and ignore clicks.
+- [x] 3.5 Add prev/next month arrows and a "Today" jump button. Persist `viewMonth` to `localStorage` on every change.
+- [x] 3.6 Render `CalendarSection` inside `DocumentSidebar/index.tsx` between `JournalSection` and `WritingLog`.
+- [x] 3.7 Extend `useDocumentManager.createJournalEntry` callsite in `App.tsx` to support an optional date arg (the function already accepts one — verify wiring in the new sidebar prop).
+- [x] 3.8 Verify with `npx tsc --noEmit`. Verify with `npm run build`.
+- [x] 3.9 Manual smoke: open sidebar, navigate to previous month, click an empty past cell, confirm entry created, navigate forward, confirm "Today" works, reload, confirm view month preserved.
+- [x] 3.10 Commit: `feat(sidebar): add month-grid calendar view for journal entries`.
 
 ## 4. Cap-4 · document-crud-tests
 

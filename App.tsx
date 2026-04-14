@@ -1191,6 +1191,7 @@ const App: React.FC = () => {
           createDocument(projectId ?? "", title, docType)
         }
         onCreateJournalEntry={() => createJournalEntry()}
+        onCreateJournalEntryForDate={(date) => createJournalEntry(date)}
         onDeleteDocument={(id) => {
           // Delete-active cleanup: if we're deleting the active document, pick a sensible fallback
           // before the row disappears so the editor never displays stale content.
