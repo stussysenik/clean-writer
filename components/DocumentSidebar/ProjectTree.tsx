@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Project, Document } from "../../types";
 
 interface ProjectTreeProps {
@@ -38,10 +38,24 @@ const ProjectTree: React.FC<ProjectTreeProps> = ({
   textColor,
   accentColor,
 }) => {
-  // Track which projects are expanded (all expanded by default)
+  // Track which projects are expanded (all expanded by default).
+  // New projects added after mount also auto-expand so freshly-created docs are immediately visible.
   const [expandedIds, setExpandedIds] = useState<Set<string>>(
     () => new Set(projects.map((p) => p.id)),
   );
+  useEffect(() => {
+    setExpandedIds((prev) => {
+      let changed = false;
+      const next = new Set(prev);
+      for (const p of projects) {
+        if (!next.has(p.id)) {
+          next.add(p.id);
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [projects]);
   // Track hovered document for showing delete button
   const [hoveredDocId, setHoveredDocId] = useState<string | null>(null);
 

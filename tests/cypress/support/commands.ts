@@ -57,6 +57,46 @@ Cypress.Commands.add("noConsoleErrors", () => {
   });
 });
 
+// Sidebar / CRUD helpers for document-sidebar specs.
+Cypress.Commands.add("openDocumentSidebar", () => {
+  cy.get('[data-testid="sidebar-bookmark-trigger"]').then(($el) => {
+    if ($el.length) {
+      cy.wrap($el).click();
+    }
+  });
+  cy.get('[data-testid="document-sidebar"]').should("exist");
+});
+
+Cypress.Commands.add("createProjectViaForm", (title: string) => {
+  cy.get('[data-testid="quick-new-project"]').click();
+  cy.get('[data-testid="creation-form-project"]')
+    .find('input[aria-label="Title"]')
+    .clear()
+    .type(`${title}{enter}`);
+  cy.get('[data-testid="creation-form-project"]').should("not.exist");
+});
+
+Cypress.Commands.add(
+  "createDocumentViaForm",
+  (title: string, docType?: "chapter" | "standalone" | "scratchpad", projectTitle?: string) => {
+    cy.get('[data-testid="quick-new-document"]').click();
+    cy.get('[data-testid="creation-form-document"]').as("docForm");
+
+    if (docType) {
+      cy.get("@docForm").find('select[aria-label="Document type"]').select(docType);
+    }
+    if (projectTitle) {
+      cy.get("@docForm").find('select[aria-label="Parent project"]').select(projectTitle);
+    }
+
+    cy.get("@docForm")
+      .find('input[aria-label="Title"]')
+      .clear()
+      .type(`${title}{enter}`);
+    cy.get('[data-testid="creation-form-document"]').should("not.exist");
+  },
+);
+
 // Type declarations
 declare global {
   namespace Cypress {
@@ -67,6 +107,13 @@ declare global {
       clearEditor(): Chainable<void>;
       switchMode(mode: "syntax" | "song" | "code"): Chainable<void>;
       noConsoleErrors(): Chainable<void>;
+      openDocumentSidebar(): Chainable<void>;
+      createProjectViaForm(title: string): Chainable<void>;
+      createDocumentViaForm(
+        title: string,
+        docType?: "chapter" | "standalone" | "scratchpad",
+        projectTitle?: string,
+      ): Chainable<void>;
     }
   }
 }

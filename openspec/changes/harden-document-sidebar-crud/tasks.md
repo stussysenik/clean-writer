@@ -39,19 +39,19 @@ Apply order: 1 → 2 → 3 → 4. Each capability lands as its own commit. Verif
 
 ## 4. Cap-4 · document-crud-tests
 
-- [ ] 4.1 Create `tests/cypress/specs/document-sidebar-crud.cy.ts` with skeleton `describe` and `it.skip()` blocks for all five test groups (rapid creation, switch persistence, delete-active, calendar interaction, reload persistence).
-- [ ] 4.2 Add helper Cypress commands in `tests/cypress/support/commands.ts`: `cy.openDocumentSidebar()`, `cy.createProjectViaForm(title)`, `cy.createDocumentViaForm(title, type, projectTitle)`. Type their declarations in `cypress/support/index.d.ts` (or inline).
-- [ ] 4.3 Implement and enable the rapid creation tests. Run them: `npm test -- --spec tests/cypress/specs/document-sidebar-crud.cy.ts`.
-- [ ] 4.4 Implement and enable the switch persistence test.
-- [ ] 4.5 Implement and enable the delete-active test.
-- [ ] 4.6 Implement and enable the calendar interaction test.
-- [ ] 4.7 Implement and enable the reload persistence test.
-- [ ] 4.8 Run the full spec end-to-end and confirm green.
-- [ ] 4.9 Commit: `test(sidebar): add document CRUD regression spec`.
+- [x] 4.1 Create `tests/cypress/specs/document-sidebar-crud.cy.ts` with skeleton `describe` and `it.skip()` blocks for all five test groups (rapid creation, switch persistence, delete-active, calendar interaction, reload persistence).
+- [x] 4.2 Add helper Cypress commands in `tests/cypress/support/commands.ts`: `cy.openDocumentSidebar()`, `cy.createProjectViaForm(title)`, `cy.createDocumentViaForm(title, type, projectTitle)`. Type their declarations in `cypress/support/index.d.ts` (or inline).
+- [x] 4.3 Implement and enable the rapid creation tests. Run them: `npm test -- --spec tests/cypress/specs/document-sidebar-crud.cy.ts`.
+- [x] 4.4 Implement and enable the switch persistence test.
+- [x] 4.5 Implement and enable the delete-active test.
+- [x] 4.6 Implement and enable the calendar interaction test.
+- [x] 4.7 Implement and enable the reload persistence test.
+- [x] 4.8 Run the full spec end-to-end and confirm green.
+- [x] 4.9 Commit: `test(sidebar): add document CRUD regression spec`.
 
 ## 5. Final verification
 
-- [ ] 5.1 `npx tsc --noEmit` — zero new errors versus pre-change baseline.
-- [ ] 5.2 `npm run build` — clean production build.
-- [ ] 5.3 `npm test -- --spec tests/cypress/specs/document-sidebar-crud.cy.ts` — green.
-- [ ] 5.4 `git push origin main` once everything above is green.
+- [x] 5.1 `npx tsc --noEmit` — zero new errors versus pre-change baseline.
+- [x] 5.2 `npm run build` — clean production build.
+- [x] 5.3 `npm test -- --spec tests/cypress/specs/document-sidebar-crud.cy.ts` — green.
+- [x] 5.4 `git push origin main` once everything above is green.
