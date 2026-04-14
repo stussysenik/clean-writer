@@ -84,6 +84,8 @@ interface ThemeCustomizerProps {
   onToggleThemeVisibility?: (id: string) => void;
   utf8DisplayEnabled: boolean;
   onToggleUtf8Display: (enabled: boolean) => void;
+  emojiShortcodesEnabled: boolean;
+  onToggleEmojiShortcodes: (enabled: boolean) => void;
   themeOrder?: string[];
   onReorderThemes?: (fromIndex: number, toIndex: number) => void;
   rhymeColors?: string[];
@@ -1126,6 +1128,8 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
   onToggleThemeVisibility,
   utf8DisplayEnabled,
   onToggleUtf8Display,
+  emojiShortcodesEnabled,
+  onToggleEmojiShortcodes,
   themeOrder,
   onReorderThemes,
   rhymeColors,
@@ -1737,10 +1741,15 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
 
           {/* Display Tab */}
           {activeTab === "display" && (
-            <section className="py-4">
-              <h3 className="text-xs font-medium uppercase tracking-widest mb-3 opacity-50">
-                Display Options
-              </h3>
+            <section className="py-4 space-y-3">
+              <div>
+                <h3 className="text-xs font-medium uppercase tracking-widest mb-1 opacity-50">
+                  Emoji Display
+                </h3>
+                <p className="text-[11px] opacity-50 mb-2">
+                  Choose at most one — these are mutually exclusive.
+                </p>
+              </div>
               <label
                 className="flex items-start gap-3 rounded-xl p-3 border border-current/10 bg-current/5 cursor-pointer"
                 data-testid="utf8-display-toggle-wrapper"
@@ -1769,9 +1778,42 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                   )}
                 </div>
                 <div>
-                  <p className="text-sm font-medium">UTF Emoji Display</p>
+                  <p className="text-sm font-medium">UTF Code Display</p>
                   <p className="text-xs opacity-60 mt-0.5">
-                    On: show `U+...` code points. Off: show native emoji glyphs.
+                    Show `U+1F600` in place of `😀` in the backdrop.
+                  </p>
+                </div>
+              </label>
+
+              <label
+                className="flex items-start gap-3 rounded-xl p-3 border border-current/10 bg-current/5 cursor-pointer"
+                data-testid="emoji-shortcodes-toggle-wrapper"
+                style={{ minHeight: "44px" }}
+              >
+                <input
+                  type="checkbox"
+                  checked={emojiShortcodesEnabled}
+                  onChange={(e) => onToggleEmojiShortcodes(e.target.checked)}
+                  className="sr-only"
+                  data-testid="emoji-shortcodes-toggle"
+                />
+                <div
+                  className="mt-0.5 w-5 h-5 rounded flex-shrink-0 flex items-center justify-center border-2 transition-all"
+                  style={{
+                    backgroundColor: emojiShortcodesEnabled ? "#22c55e" : "transparent",
+                    borderColor: emojiShortcodesEnabled ? "#22c55e" : `${theme.text}30`,
+                  }}
+                >
+                  {emojiShortcodesEnabled && (
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Shortcode Display</p>
+                  <p className="text-xs opacity-60 mt-0.5">
+                    Show `😀` in place of `:smile:` in the backdrop. Your text stays the same.
                   </p>
                 </div>
               </label>

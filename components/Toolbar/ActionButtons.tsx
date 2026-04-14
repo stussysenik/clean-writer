@@ -33,6 +33,8 @@ interface ActionButtonsProps {
   onToggleUnstylized: () => void;
   selectionCharCount?: number;
   selectionWordCount?: number;
+  totalCharCount?: number;
+  totalWordCount?: number;
   showCharCounts?: boolean;
   onToggleCharCounts?: () => void;
 }
@@ -121,9 +123,22 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   onToggleUnstylized,
   selectionCharCount = 0,
   selectionWordCount = 0,
+  totalCharCount = 0,
+  totalWordCount = 0,
   showCharCounts = false,
   onToggleCharCounts,
 }) => {
+  // Quick-tool tooltip: surface total document counts on hover so the writer
+  // doesn't have to open the sidebar to see them. With an active selection,
+  // show both the selection counts and the document totals on the same line
+  // (Tooltip is single-line, so we use a dot separator).
+  const totalsLine = `${totalWordCount} words · ${totalCharCount} characters`;
+  const baseCharsAction = showCharCounts
+    ? "Hide character counts"
+    : "Show character counts per paragraph";
+  const charsTooltip = selectionCharCount > 0
+    ? `Selection: ${selectionWordCount}w · ${selectionCharCount}c — Total: ${totalsLine} — ${baseCharsAction}`
+    : `${totalsLine} — ${baseCharsAction}`;
   const iconColor = getIconColor(theme);
   const { isMobile } = useResponsiveBreakpoint();
   const mod = useMemo(() => {
@@ -209,7 +224,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
           active={showCharCounts}
           icon={<span style={{ fontSize: 16, fontWeight: 700, fontFamily: "ui-monospace, monospace" }}>#</span>}
           label={selectionCharCount > 0 ? `${selectionWordCount}w ${selectionCharCount}c` : "Chars"}
-          tooltip={showCharCounts ? "Hide character counts" : "Show character counts per paragraph"}
+          tooltip={charsTooltip}
           ariaLabel="Toggle character counts"
           className={showCharCounts ? "!opacity-100" : ""}
           style={showCharCounts || selectionCharCount > 0 ? { color: theme.accent } : undefined}

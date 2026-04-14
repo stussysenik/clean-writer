@@ -16,6 +16,7 @@ import {
   normalizeTokenForSyntaxLookup,
 } from "../utils/syntaxPatterns";
 import { replaceEmojisWithUTF } from "../utils/emojiUtils";
+import { replaceShortcodesWithEmoji } from "../utils/emojiShortcodes";
 import { isDarkBackground } from "../utils/colorContrast";
 import { countChars } from "../services/textStatsService";
 import { countWords } from "../services/localSyntaxService";
@@ -31,6 +32,7 @@ interface TypewriterProps {
   maxWidth: number;
   fontFamily: string;
   showUtfEmojiCodes?: boolean;
+  showEmojiShortcodes?: boolean;
   textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
   hoveredCategory?: keyof HighlightConfig | null;
   persistedSelection?: { start: number; end: number } | null;
@@ -122,6 +124,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
   maxWidth,
   fontFamily,
   showUtfEmojiCodes = false,
+  showEmojiShortcodes = false,
   textareaRef: externalTextareaRef,
   hoveredCategory = null,
   persistedSelection = null,
@@ -449,7 +452,10 @@ const Typewriter: React.FC<TypewriterProps> = ({
   }, []);
 
   const normalizedPersistedSelection = useMemo(() => {
-    if (!persistedSelection || showUtfEmojiCodes) return null;
+    // Width-changing display transforms (UTF codes, emoji shortcodes) make the
+    // backdrop diverge from textarea char widths, so the persisted overlay
+    // would mis-align. Fall back to no overlay until the user disables them.
+    if (!persistedSelection || showUtfEmojiCodes || showEmojiShortcodes) return null;
 
     const start = Math.max(
       0,
@@ -460,7 +466,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
     if (start >= end) return null;
 
     return { start, end };
-  }, [persistedSelection, content, showUtfEmojiCodes]);
+  }, [persistedSelection, content, showUtfEmojiCodes, showEmojiShortcodes]);
 
   const showPersistedSelectionOverlay =
     !!normalizedPersistedSelection && !isTextareaFocused;
@@ -512,7 +518,9 @@ const Typewriter: React.FC<TypewriterProps> = ({
       if (chunk.startsWith("~~") && chunk.endsWith("~~") && chunk.length >= 4) {
         const renderedStrikeChunk = showUtfEmojiCodes
           ? replaceEmojisWithUTF(chunk)
-          : chunk;
+          : showEmojiShortcodes
+            ? replaceShortcodesWithEmoji(chunk)
+            : chunk;
         return (
           <span
             key={`st-${chunkIndex}`}
@@ -533,7 +541,9 @@ const Typewriter: React.FC<TypewriterProps> = ({
       // First split on URLs to preserve them as whole tokens, then tokenize the rest
       const renderedChunk = showUtfEmojiCodes
         ? replaceEmojisWithUTF(chunk)
-        : chunk;
+        : showEmojiShortcodes
+          ? replaceShortcodesWithEmoji(chunk)
+          : chunk;
       const urlSplitPattern =
         /((?:https?:\/\/)\S+|(?:www\.)\S+|(?:[a-zA-Z0-9-]+\.)+(?:com|org|net|io|dev|co|app|ai|edu|gov|me|info|biz)(?:\/\S*)?)/g;
       const urlTestPattern =
@@ -698,6 +708,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
     highlightConfig,
     hoveredCategory,
     showUtfEmojiCodes,
+    showEmojiShortcodes,
     unstylizedMode,
   ]);
 
@@ -1148,6 +1159,178 @@ const Typewriter: React.FC<TypewriterProps> = ({
     return map;
   }, [songData, rhymeColors]);
 
+  // Persisted selection overlay body — branches on codeMode / songMode so the
+  // selection background lines up with the backdrop in every mode. Default
+  // (writing) mode keeps the original three-span output as a non-regression
+  // guard. See openspec/changes/add-editor-polish-trio/design.md D4.
+  const selectionOverlayBody = useMemo(() => {
+    if (!normalizedPersistedSelection) return null;
+    const sel = normalizedPersistedSelection;
+
+    const selectionBgStyle: React.CSSProperties = {
+      backgroundColor: unstylizedMode ? "rgba(0, 0, 0, 0.15)" : theme.selection,
+      borderRadius: "4px",
+      boxShadow: unstylizedMode ? "none" : `0 0 0 1px ${theme.accent}40`,
+    };
+
+    // Code mode: prepend a 2.5em line-number gutter spacer per line (matching
+    // renderCodeMode), then paint the selection background on the in-selection
+    // slice of each line.
+    if (codeMode) {
+      const lines = content.split("\n");
+      const out: React.ReactNode[] = [];
+      let lineStart = 0;
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const lineEnd = lineStart + line.length;
+        const localSelStart = Math.max(0, sel.start - lineStart);
+        const localSelEnd = Math.min(line.length, sel.end - lineStart);
+        const hasSel = localSelStart < localSelEnd;
+        out.push(
+          <React.Fragment key={`csel-${i}`}>
+            <span
+              style={{
+                display: "inline-block",
+                width: "2.5em",
+                marginRight: "1em",
+                userSelect: "none",
+              }}
+              aria-hidden="true"
+            >
+              {"\u00a0"}
+            </span>
+            {hasSel ? (
+              <>
+                <span>{line.slice(0, localSelStart)}</span>
+                <span style={selectionBgStyle}>
+                  {line.slice(localSelStart, localSelEnd)}
+                </span>
+                <span>{line.slice(localSelEnd)}</span>
+              </>
+            ) : (
+              <span>{line}</span>
+            )}
+            {i < lines.length - 1 ? "\n" : ""}
+          </React.Fragment>,
+        );
+        lineStart = lineEnd + 1; // account for the "\n"
+      }
+      return out;
+    }
+
+    // Song mode: tokenize per line using the same whitespace split as
+    // renderSongHighlights, mirror the rhyme shell padding/radius/weight on
+    // rhyme-colored tokens so the selection background lines up with the
+    // backdrop shells. Per design R2 we accept boundary clipping for an MVP.
+    if (songMode && songData) {
+      const lines = content.split("\n");
+      const out: React.ReactNode[] = [];
+      let lineStart = 0;
+      for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+        const lineText = lines[lineIdx];
+        const songLine = songData.lines[lineIdx];
+        const parts = lineText.split(/(\s+)/);
+        let wordIdx = 0;
+        let tokenOff = lineStart;
+
+        const lineParts = parts.map((part, partIdx) => {
+          const partStart = tokenOff;
+          const partEnd = partStart + part.length;
+          tokenOff = partEnd;
+
+          const isWhitespace = /^\s+$/.test(part);
+          const songWord =
+            !isWhitespace && songLine ? songLine.words[wordIdx] : null;
+          if (!isWhitespace) wordIdx++;
+
+          const rhymeColor = songWord
+            ? rhymeColorMap.get(songWord.rhymeKey)
+            : undefined;
+          const isRhymeShell =
+            !!rhymeColor &&
+            !(songWord && disabledRhymeKeys?.has(songWord.rhymeKey));
+
+          const shellStyle: React.CSSProperties = isRhymeShell
+            ? {
+                padding: "1px 6px",
+                borderRadius: "4px",
+                fontWeight: 700,
+                boxDecorationBreak: "clone",
+                WebkitBoxDecorationBreak: "clone",
+              }
+            : {};
+
+          const partSelStart = Math.max(partStart, sel.start);
+          const partSelEnd = Math.min(partEnd, sel.end);
+          const hasSel = partSelStart < partSelEnd;
+
+          if (!hasSel) {
+            return (
+              <span key={`song-sel-${lineIdx}-${partIdx}`} style={shellStyle}>
+                {part}
+              </span>
+            );
+          }
+
+          if (isRhymeShell) {
+            return (
+              <span
+                key={`song-sel-${lineIdx}-${partIdx}`}
+                style={{ ...shellStyle, ...selectionBgStyle }}
+              >
+                {part}
+              </span>
+            );
+          }
+
+          const localSelStart = partSelStart - partStart;
+          const localSelEnd = partSelEnd - partStart;
+          return (
+            <React.Fragment key={`song-sel-${lineIdx}-${partIdx}`}>
+              <span>{part.slice(0, localSelStart)}</span>
+              <span style={selectionBgStyle}>
+                {part.slice(localSelStart, localSelEnd)}
+              </span>
+              <span>{part.slice(localSelEnd)}</span>
+            </React.Fragment>
+          );
+        });
+
+        out.push(
+          <React.Fragment key={`song-sel-line-${lineIdx}`}>
+            {lineParts}
+            {lineIdx < lines.length - 1 ? "\n" : ""}
+          </React.Fragment>,
+        );
+
+        lineStart += lineText.length + 1;
+      }
+      return out;
+    }
+
+    // Default (writing) mode — unchanged three-span output.
+    return (
+      <>
+        <span>{content.slice(0, sel.start)}</span>
+        <span style={selectionBgStyle}>
+          {content.slice(sel.start, sel.end)}
+        </span>
+        <span>{content.slice(sel.end)}</span>
+      </>
+    );
+  }, [
+    normalizedPersistedSelection,
+    content,
+    codeMode,
+    songMode,
+    songData,
+    rhymeColorMap,
+    disabledRhymeKeys,
+    theme.selection,
+    theme.accent,
+    unstylizedMode,
+  ]);
+
   const renderSongHighlights = useCallback(() => {
     if (!content || !songData) return null;
 
@@ -1384,20 +1567,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
             transition: "padding-left 200ms ease, padding-right 200ms ease",
           }}
         >
-          <span>{content.slice(0, normalizedPersistedSelection.start)}</span>
-          <span
-            style={{
-              backgroundColor: unstylizedMode ? "rgba(0, 0, 0, 0.15)" : theme.selection,
-              borderRadius: "4px",
-              boxShadow: unstylizedMode ? "none" : `0 0 0 1px ${theme.accent}40`,
-            }}
-          >
-            {content.slice(
-              normalizedPersistedSelection.start,
-              normalizedPersistedSelection.end,
-            )}
-          </span>
-          <span>{content.slice(normalizedPersistedSelection.end)}</span>
+          {selectionOverlayBody}
         </div>
       )}
 

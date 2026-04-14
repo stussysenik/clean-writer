@@ -20,6 +20,8 @@ interface ToolbarProps {
   onToggleUnstylized: () => void;
   selectionCharCount?: number;
   selectionWordCount?: number;
+  totalCharCount?: number;
+  totalWordCount?: number;
   showCharCounts?: boolean;
   onToggleCharCounts?: () => void;
 }
@@ -42,6 +44,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
   onToggleUnstylized,
   selectionCharCount = 0,
   selectionWordCount = 0,
+  totalCharCount = 0,
+  totalWordCount = 0,
   showCharCounts = false,
   onToggleCharCounts,
 }) => {
@@ -74,6 +78,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
             onToggleUnstylized={onToggleUnstylized}
             selectionCharCount={selectionCharCount}
             selectionWordCount={selectionWordCount}
+            totalCharCount={totalCharCount}
+            totalWordCount={totalWordCount}
             showCharCounts={showCharCounts}
             onToggleCharCounts={onToggleCharCounts}
           />

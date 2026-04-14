@@ -69,6 +69,7 @@ import { useWritingSession } from "./hooks/useWritingSession";
 import { countChars } from "./services/textStatsService";
 
 const UTF8_DISPLAY_STORAGE_KEY = "clean_writer_utf8_display_enabled";
+const EMOJI_SHORTCODES_STORAGE_KEY = "clean_writer_emoji_shortcodes_enabled";
 const SHOW_LINE_WIDTH_SLIDER = false;
 
 const FRESH_LOAD_TEXT = `"It is the time you have wasted for your rose that makes your rose so important."
@@ -334,6 +335,25 @@ const App: React.FC = () => {
       return false;
     }
   });
+  const [emojiShortcodesEnabled, setEmojiShortcodesEnabled] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(EMOJI_SHORTCODES_STORAGE_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  // Mutual exclusivity: enabling one display transform turns the other off,
+  // because combining `:smile: → 😀 → U+1F600` produces nonsensical output
+  // (see openspec/changes/add-editor-polish-trio/design.md D3).
+  const handleToggleUtf8Display = useCallback((enabled: boolean) => {
+    setUtf8DisplayEnabled(enabled);
+    if (enabled) setEmojiShortcodesEnabled(false);
+  }, []);
+  const handleToggleEmojiShortcodes = useCallback((enabled: boolean) => {
+    setEmojiShortcodesEnabled(enabled);
+    if (enabled) setUtf8DisplayEnabled(false);
+  }, []);
 
   // Dedicated song view state
   const [songMode, setSongMode] = useState(false);
@@ -808,6 +828,18 @@ const App: React.FC = () => {
     }
   }, [utf8DisplayEnabled]);
 
+  // Persist emoji shortcode display preference
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        EMOJI_SHORTCODES_STORAGE_KEY,
+        String(emojiShortcodesEnabled),
+      );
+    } catch (e) {
+      console.warn("Could not save emoji shortcode display setting");
+    }
+  }, [emojiShortcodesEnabled]);
+
   // Persist syllable annotations preference
   useEffect(() => {
     try {
@@ -1264,7 +1296,9 @@ const App: React.FC = () => {
         hiddenThemeIds={hiddenThemeIds}
         onToggleThemeVisibility={toggleThemeVisibility}
         utf8DisplayEnabled={utf8DisplayEnabled}
-        onToggleUtf8Display={setUtf8DisplayEnabled}
+        onToggleUtf8Display={handleToggleUtf8Display}
+        emojiShortcodesEnabled={emojiShortcodesEnabled}
+        onToggleEmojiShortcodes={handleToggleEmojiShortcodes}
         themeOrder={themeOrder}
         onReorderThemes={reorderThemes}
         rhymeColors={effectiveRhymeColors}
@@ -1473,6 +1507,7 @@ const App: React.FC = () => {
             maxWidth={maxWidth}
             fontFamily={displayFontFamily}
             showUtfEmojiCodes={utf8DisplayEnabled}
+            showEmojiShortcodes={emojiShortcodesEnabled}
             textareaRef={textareaRef}
             hoveredCategory={hoveredCategory}
             persistedSelection={savedSelection}
@@ -1599,6 +1634,8 @@ const App: React.FC = () => {
         onToggleUnstylized={toggleUnstylizedMode}
         selectionCharCount={selectionCharCount}
         selectionWordCount={selectionWordCount}
+        totalCharCount={totalCharCount}
+        totalWordCount={wordCount}
         showCharCounts={showCharCounts}
         onToggleCharCounts={() => setShowCharCounts(prev => !prev)}
       />
