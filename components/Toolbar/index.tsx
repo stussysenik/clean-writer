@@ -54,27 +54,36 @@ const Toolbar: React.FC<ToolbarProps> = ({
         opacity: dimmed ? 0.5 : 1,
       }}
     >
-      {/* Action Buttons */}
-      <div className="pointer-events-auto">
-        <ActionButtons
-          theme={theme}
-          viewMode={viewMode}
-          hasStrikethroughs={hasStrikethroughs}
-          focusMode={focusMode}
-          onToggleView={onToggleView}
-          onStrikethrough={onStrikethrough}
-          onStrikethroughPointerDown={onStrikethroughPointerDown}
-          onCleanStrikethroughs={onCleanStrikethroughs}
-          onExport={onExport}
-          onClear={onClear}
-          onSampleText={onSampleText}
-          onCycleFocusMode={onCycleFocusMode}
-          unstylizedMode={unstylizedMode}
-          onToggleUnstylized={onToggleUnstylized}
-          selectionCharCount={selectionCharCount}
-          selectionWordCount={selectionWordCount}
-          showCharCounts={showCharCounts}
-          onToggleCharCounts={onToggleCharCounts}
+      {/* Action Buttons — horizontal scroll strip like ThemeSelector */}
+      <div className="pointer-events-auto relative overflow-hidden">
+        <div className="overflow-x-auto no-scrollbar" style={{ WebkitOverflowScrolling: "touch" }}>
+          <ActionButtons
+            theme={theme}
+            viewMode={viewMode}
+            hasStrikethroughs={hasStrikethroughs}
+            focusMode={focusMode}
+            onToggleView={onToggleView}
+            onStrikethrough={onStrikethrough}
+            onStrikethroughPointerDown={onStrikethroughPointerDown}
+            onCleanStrikethroughs={onCleanStrikethroughs}
+            onExport={onExport}
+            onClear={onClear}
+            onSampleText={onSampleText}
+            onCycleFocusMode={onCycleFocusMode}
+            unstylizedMode={unstylizedMode}
+            onToggleUnstylized={onToggleUnstylized}
+            selectionCharCount={selectionCharCount}
+            selectionWordCount={selectionWordCount}
+            showCharCounts={showCharCounts}
+            onToggleCharCounts={onToggleCharCounts}
+          />
+        </div>
+        {/* Right fade to signal more tools are scrollable */}
+        <div
+          className="absolute inset-y-0 right-0 w-10 pointer-events-none"
+          style={{
+            background: `linear-gradient(to right, transparent, ${theme.background})`,
+          }}
         />
       </div>
     </footer>

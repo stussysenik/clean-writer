@@ -37,15 +37,13 @@ describe("Accessibility", () => {
     cy.get('[data-testid="todo-checkbox-0"]').should("have.attr", "aria-checked");
   });
 
-  it("help modal closes with close button", () => {
+  it("guide rail closes with the sidebar close button", () => {
     cy.get('[aria-label="Help and shortcuts"]').click();
     cy.wait(500);
-    // Modal should be visible
-    cy.getByTestId("help-modal").should("exist");
-    // Click the close button (title="Close") inside the modal
-    cy.getByTestId("help-modal").find('[title="Close"]').click();
+    cy.getByTestId("document-sidebar").should("exist");
+    cy.get('[aria-label="Close sidebar"]').click();
     cy.wait(500);
-    cy.getByTestId("help-modal").should("not.exist");
+    cy.getByTestId("document-sidebar").should("not.be.visible");
   });
 
   it("headings have data-testid for identification", () => {

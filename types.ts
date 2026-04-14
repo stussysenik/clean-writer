@@ -97,6 +97,7 @@ export interface RisoTheme {
   cursor: string; // Blinking cursor color
   strikethrough: string; // Strikethrough text decoration
   selection: string; // Text selection background (rgba)
+  bookmark?: string; // Sidebar bookmark ribbon color (falls back to accent)
   rhymeColors?: string[]; // Per-theme OKLCH rhyme palette (8 colors)
 }
 
@@ -238,6 +239,8 @@ export interface CountingConfig {
 export type LanguageMode = "per-char" | "phrase-grouping";
 export type DocType = "chapter" | "standalone" | "scratchpad";
 export type SessionType = "chapter" | "journal" | "freewrite";
+export type FeedbackKind = "wish" | "friction" | "bug" | "delight";
+export type FeedbackSyncStatus = "local" | "pending" | "synced" | "failed";
 
 export interface Project {
   id: string;
@@ -297,4 +300,25 @@ export interface UserPreferences {
   countingConfig: CountingConfig;
   languageMode: LanguageMode;
   updatedAt: string;
+}
+
+export interface FeedbackContext {
+  documentId?: string | null;
+  themeId?: string;
+  wordCount: number;
+  charCount: number;
+  viewportWidth?: number;
+  viewportHeight?: number;
+}
+
+export interface FeedbackNote {
+  id: string;
+  kind: FeedbackKind;
+  note: string;
+  contactEmail?: string;
+  wantsReply: boolean;
+  source: "sidebar";
+  syncStatus: FeedbackSyncStatus;
+  context: FeedbackContext;
+  createdAt: string;
 }

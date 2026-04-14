@@ -11,6 +11,7 @@ import {
   IconArticle,
   IconInterjection,
 } from "./Icons";
+import ToggleButton from "../ToggleButton";
 import TouchButton from "../TouchButton";
 import Tooltip from "../Tooltip";
 
@@ -154,43 +155,21 @@ const SyntaxToggles: React.FC<SyntaxTogglesProps> = ({
     return (
       <Tooltip
         key={key}
-        content={`${label}${soloMode ? "" : " (Double click for solo view!)"}`}
+        content={`${label}${soloMode ? "" : " — double-click for solo"}`}
         shortcut={String(number)}
       >
-        <TouchButton
-          onClick={() => onToggle(key)}
+        <ToggleButton
+          pressed={isActive}
+          onToggle={() => onToggle(key)}
           onDoubleClick={() => handleDoubleClick(key)}
           onContextMenu={(e) => handleContextMenu(e, key)}
-          className={`relative p-2 rounded hover:bg-white/50 transition-all min-w-[36px] min-h-[36px] md:min-w-[32px] md:min-h-[32px] flex items-center justify-center ${
-            isActive && !isDimmedBySolo ? "opacity-100" : "opacity-40 grayscale"
-          } ${isSoloed ? "ring-2 ring-offset-1" : ""}`}
-          style={
-            {
-              "--tw-ring-color": isSoloed
-                ? theme.highlight[colorKey]
-                : undefined,
-              "--tw-ring-offset-color": theme.background,
-            } as React.CSSProperties
-          }
-          title={`${label} (${number})`}
-        >
-          <span
-            style={{
-              color: theme.highlight[colorKey],
-            }}
-          >
-            <Icon />
-          </span>
-          <span
-            className="absolute -top-1 -right-1 w-4 h-4 text-[10px] font-bold rounded-full flex items-center justify-center"
-            style={{
-              backgroundColor: theme.highlight[colorKey],
-              color: theme.background,
-            }}
-          >
-            {number}
-          </span>
-        </TouchButton>
+          label={label}
+          icon={<Icon />}
+          accentColor={theme.highlight[colorKey]}
+          shortcut={number}
+          soloed={isSoloed}
+          dimmed={isDimmedBySolo}
+        />
       </Tooltip>
     );
   };

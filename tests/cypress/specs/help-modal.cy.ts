@@ -1,34 +1,31 @@
 /// <reference types="cypress" />
 
-describe("Help Modal", () => {
+describe("Guide Rail", () => {
   beforeEach(() => {
     cy.visit("/");
     cy.get("textarea").should("exist");
   });
 
-  it("uses the available desktop width and lays shortcuts out comfortably", () => {
+  it("opens help inside the sidebar rail and keeps workspace padding on desktop", () => {
     cy.viewport(1280, 800);
 
     cy.get('[aria-label="Help and shortcuts"]').click();
-    cy.getByTestId("help-modal").should("be.visible");
-    cy.getByTestId("help-modal")
-      .invoke("outerWidth")
-      .should("be.greaterThan", 900);
-
-    cy.getByTestId("help-modal").within(() => {
-      cy.contains("Editing").should("exist");
-      cy.contains("View").should("exist");
-      cy.contains("Focus Mode").should("exist");
-      cy.contains("Mobile").should("exist");
-      cy.contains("Tap a theme chip to switch").should("exist");
+    cy.getByTestId("document-sidebar").should(($sidebar) => {
+      const rect = $sidebar[0].getBoundingClientRect();
+      expect(rect.left).to.equal(0);
+      expect(rect.width).to.equal(280);
     });
 
-    cy.contains("Editing").then(($editing) => {
-      cy.contains("View").then(($view) => {
-        const editingLeft = $editing[0].getBoundingClientRect().left;
-        const viewLeft = $view[0].getBoundingClientRect().left;
-        expect(viewLeft).to.be.greaterThan(editingLeft + 180);
-      });
+    cy.getByTestId("sidebar-guide-section").within(() => {
+      cy.contains("Core rhythm").should("exist");
+      cy.contains("Editing").should("exist");
+      cy.contains("Focus mode").should("exist");
+      cy.contains("Toggle preview").should("exist");
+    });
+
+    cy.get("main").should(($main) => {
+      const styles = window.getComputedStyle($main[0]);
+      expect(styles.paddingLeft).to.equal("280px");
     });
   });
 });

@@ -77,14 +77,12 @@ const DesktopSyntaxPanel: React.FC<DesktopSyntaxPanelProps> = ({
       data-testid="desktop-syntax-panel"
       className="fixed right-[21px] bottom-[21px] lg:right-[34px] lg:bottom-[34px] z-50 rounded-2xl overflow-hidden no-scrollbar"
       style={{
-        // Glassmorphism: semi-transparent background with blur
-        backgroundColor: `${theme.background}E6`, // ~90% opacity
-        backdropFilter: "blur(10px)",
-        WebkitBackdropFilter: "blur(10px)",
-        // Glass border effect
-        border: `1px solid ${theme.text}15`,
-        // Enhanced shadow with glass effect
-        boxShadow: `0 1px 3px rgba(0,0,0,0.06), inset 0 0 0 1px ${theme.text}08`,
+        // Solid theme background — design context: no glassmorphism. The panel sits
+        // beside the writing column (App reserves right padding when content exists),
+        // so it never needs to read through the surface behind it.
+        backgroundColor: theme.background,
+        border: `1px solid ${theme.text}14`,
+        boxShadow: `0 1px 2px ${theme.text}0a, 0 8px 24px ${theme.text}0c`,
         opacity: 1,
         width: panelWidth,
         minWidth: "320px",

@@ -89,12 +89,27 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
   }, [themeId]);
 
   return (
-    <div className="overflow-hidden">
+    <div
+      style={{
+        overflow: "hidden",
+        /* Soft fade at left/right edges instead of hard clip — accounts for
+           selected swatch scale (1.15×) + 2px outline + 2px outlineOffset */
+        maskImage:
+          "linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent)",
+        WebkitMaskImage:
+          "linear-gradient(to right, transparent, black 20px, black calc(100% - 20px), transparent)",
+      }}
+    >
       {/* Horizontal scroll strip — single row on all breakpoints */}
       <div
         ref={scrollRef}
-        className="flex flex-nowrap gap-2.5 md:gap-3 items-center overflow-x-auto no-scrollbar py-3 px-2.5 md:py-[7px] md:px-[7px]"
-        style={{ WebkitOverflowScrolling: "touch" }}
+        className="flex flex-nowrap gap-3 items-center overflow-x-auto no-scrollbar"
+        style={{
+          WebkitOverflowScrolling: "touch",
+          /* py-3 (12px) gives comfortable room for 1.15× scale + outline overflow;
+             px-5 (20px) matches the mask fade width so first/last swatch fades gracefully */
+          padding: "12px 20px",
+        }}
       >
         {visibleThemes.map((t) => (
           <SwatchCircle

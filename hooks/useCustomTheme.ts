@@ -11,6 +11,7 @@ interface ThemeOverrides {
     text: string;
     cursor: string;
     selection: string;
+    bookmark: string;
     highlight: Partial<RisoTheme["highlight"]>;
   }>;
   rhymeColorOverrides?: Record<number, string>;
@@ -116,12 +117,16 @@ export function useCustomTheme(baseThemeId: string, savedCustomThemes?: SavedCus
         text: currentOverrides.overrides.text || baseTheme.text,
         cursor: currentOverrides.overrides.cursor || baseTheme.cursor,
         selection: currentOverrides.overrides.selection || baseTheme.selection,
+        bookmark:
+          currentOverrides.overrides.bookmark ||
+          baseTheme.bookmark ||
+          baseTheme.accent,
         highlight: {
           ...baseTheme.highlight,
           ...currentOverrides.overrides.highlight,
         },
       }
-    : baseTheme;
+    : { ...baseTheme, bookmark: baseTheme.bookmark || baseTheme.accent };
 
   const wordVisibility = state.wordVisibility;
 
@@ -142,6 +147,7 @@ export function useCustomTheme(baseThemeId: string, savedCustomThemes?: SavedCus
         | "text"
         | "cursor"
         | "selection"
+        | "bookmark"
         | keyof RisoTheme["highlight"],
       color: string,
     ) => {
@@ -216,6 +222,7 @@ export function useCustomTheme(baseThemeId: string, savedCustomThemes?: SavedCus
         | "text"
         | "cursor"
         | "selection"
+        | "bookmark"
         | keyof RisoTheme["highlight"],
     ) => {
       setState((prev) => {
@@ -255,7 +262,7 @@ export function useCustomTheme(baseThemeId: string, savedCustomThemes?: SavedCus
 
         // Remove base color override
         const newOverrides = { ...existing.overrides };
-        delete newOverrides[path as "background" | "text" | "cursor" | "selection"];
+        delete newOverrides[path as "background" | "text" | "cursor" | "selection" | "bookmark"];
 
         // If no overrides remain, remove theme entry
         const hasHighlightOverrides =
@@ -290,6 +297,7 @@ export function useCustomTheme(baseThemeId: string, savedCustomThemes?: SavedCus
         | "text"
         | "cursor"
         | "selection"
+        | "bookmark"
         | keyof RisoTheme["highlight"],
     ): boolean => {
       const entry = state.overrideMap[baseThemeId];
@@ -302,7 +310,9 @@ export function useCustomTheme(baseThemeId: string, savedCustomThemes?: SavedCus
       }
 
       return (
-        entry.overrides?.[path as "background" | "text" | "cursor" | "selection"] !== undefined
+        entry.overrides?.[
+          path as "background" | "text" | "cursor" | "selection" | "bookmark"
+        ] !== undefined
       );
     },
     [state, baseThemeId],
