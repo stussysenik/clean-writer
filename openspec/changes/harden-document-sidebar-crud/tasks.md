@@ -16,13 +16,13 @@ Apply order: 1 → 2 → 3 → 4. Each capability lands as its own commit. Verif
 
 ## 2. Cap-2 · document-creation-form
 
-- [ ] 2.1 Create `components/DocumentSidebar/CreationForm.tsx`. Two modes: `project` (single title field) and `document` (title + doc-type select + project select). Submit handler is async; pending state disables submit; failure surfaces inline error.
-- [ ] 2.2 Replace the bare "New Project" and "New Doc" pills in `DocumentSidebar/index.tsx` with collapsible buttons that toggle the corresponding CreationForm variant. Keep "New Entry", "Guide", "Leave Note" untouched.
-- [ ] 2.3 Implement keyboard handling: Enter submits, Escape collapses + clears, autofocus on the title input when the form opens.
-- [ ] 2.4 Style the submit button as an accent-coloured Carbon-style pill using existing Tailwind tokens (no new dependency). Hover lift + active depress.
-- [ ] 2.5 Verify with `npx tsc --noEmit`. Verify with `npm run build`.
-- [ ] 2.6 Manual smoke: open form, create project, open form, create document with all fields, attempt double-submit, verify no duplicates.
-- [ ] 2.7 Commit: `feat(sidebar): add inline creation forms for projects and documents`.
+- [x] 2.1 Create `components/DocumentSidebar/CreationForm.tsx`. Two modes: `project` (single title field) and `document` (title + doc-type select + project select). Submit handler is async; pending state disables submit; failure surfaces inline error.
+- [x] 2.2 Replace the bare "New Project" and "New Doc" pills in `DocumentSidebar/index.tsx` with collapsible buttons that toggle the corresponding CreationForm variant. Keep "New Entry", "Guide", "Leave Note" untouched.
+- [x] 2.3 Implement keyboard handling: Enter submits, Escape collapses + clears, autofocus on the title input when the form opens.
+- [x] 2.4 Style the submit button as an accent-coloured Carbon-style pill using existing Tailwind tokens (no new dependency). Hover lift + active depress.
+- [x] 2.5 Verify with `npx tsc --noEmit`. Verify with `npm run build`.
+- [x] 2.6 Manual smoke: open form, create project, open form, create document with all fields, attempt double-submit, verify no duplicates.
+- [x] 2.7 Commit: `feat(sidebar): add inline creation forms for projects and documents`.
 
 ## 3. Cap-3 · document-calendar-view
 

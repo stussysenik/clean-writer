@@ -4,6 +4,7 @@ import {
   Document,
   JournalEntry,
   WritingSession,
+  DocType,
 } from "../../types";
 import { useResponsiveBreakpoint } from "../../hooks/useResponsiveBreakpoint";
 import ProjectTree from "./ProjectTree";
@@ -11,6 +12,7 @@ import JournalSection from "./JournalSection";
 import WritingLog from "./WritingLog";
 import GuideSection from "./GuideSection";
 import FeedbackSection from "./FeedbackSection";
+import CreationForm, { CreationMode } from "./CreationForm";
 
 export const DOCUMENT_SIDEBAR_WIDTH = 280;
 type UtilitySection = "guide" | "feedback" | null;
@@ -23,8 +25,12 @@ interface DocumentSidebarProps {
   journalEntries: JournalEntry[];
   activeDocumentId: string | null;
   onSelectDocument: (id: string) => void;
-  onCreateProject: (title: string) => void;
-  onCreateDocument: (projectId: string, title: string) => void;
+  onCreateProject: (title: string) => Promise<Project | null> | Project | null;
+  onCreateDocument: (
+    projectId: string | undefined,
+    title: string,
+    docType: DocType,
+  ) => Promise<unknown> | unknown;
   onCreateJournalEntry: () => void;
   onDeleteDocument: (id: string) => void;
   textColor: string;
@@ -65,6 +71,7 @@ const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
   const guideSectionRef = useRef<HTMLDivElement>(null);
   const feedbackSectionRef = useRef<HTMLDivElement>(null);
   const [expandedUtility, setExpandedUtility] = useState<UtilitySection>(null);
+  const [creationMode, setCreationMode] = useState<CreationMode | null>(null);
 
   useEffect(() => {
     if (!isMobile || !isOpen) return;
@@ -114,15 +121,13 @@ const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
     });
   }, [isMobile, isOpen, onUtilitySectionHandled, requestedUtilitySection]);
 
-  const handleCreateProject = useCallback(() => {
-    const title = `Project ${projects.length + 1}`;
-    onCreateProject(title);
-  }, [onCreateProject, projects.length]);
+  const toggleCreationForm = useCallback((mode: CreationMode) => {
+    setCreationMode((prev) => (prev === mode ? null : mode));
+  }, []);
 
-  const handleCreateDocument = useCallback(() => {
-    const projectId = projects.length > 0 ? projects[0].id : "";
-    onCreateDocument(projectId, "Untitled");
-  }, [onCreateDocument, projects]);
+  const closeCreationForm = useCallback(() => {
+    setCreationMode(null);
+  }, []);
 
   const toggleUtilitySection = useCallback(
     (section: Exclude<UtilitySection, null>) => {
@@ -132,28 +137,67 @@ const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
   );
 
   const quickActions = (
-    <div className="flex flex-wrap items-center gap-2 px-3 pt-3 pb-2">
-      {[
-        { label: "New Project", onClick: handleCreateProject },
-        { label: "New Doc", onClick: handleCreateDocument },
-        { label: "New Entry", onClick: onCreateJournalEntry },
-        { label: "Guide", onClick: () => toggleUtilitySection("guide") },
-        { label: "Leave Note", onClick: () => toggleUtilitySection("feedback") },
-      ].map(({ label, onClick }) => (
-        <button
-          key={label}
-          onClick={onClick}
-          className="px-3 py-1.5 rounded-full text-[11px] font-medium transition-all duration-150 hover:brightness-110"
-          style={{
-            backgroundColor: `${accentColor}1A`,
-            color: accentColor,
-            border: `1px solid ${accentColor}30`,
-          }}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
+    <>
+      <div className="flex flex-wrap items-center gap-2 px-3 pt-3 pb-2">
+        {[
+          {
+            label: "New Project",
+            onClick: () => toggleCreationForm("project"),
+            active: creationMode === "project",
+            testid: "quick-new-project",
+          },
+          {
+            label: "New Doc",
+            onClick: () => toggleCreationForm("document"),
+            active: creationMode === "document",
+            testid: "quick-new-document",
+          },
+          {
+            label: "New Entry",
+            onClick: onCreateJournalEntry,
+            active: false,
+            testid: "quick-new-entry",
+          },
+          {
+            label: "Guide",
+            onClick: () => toggleUtilitySection("guide"),
+            active: false,
+            testid: "quick-guide",
+          },
+          {
+            label: "Leave Note",
+            onClick: () => toggleUtilitySection("feedback"),
+            active: false,
+            testid: "quick-leave-note",
+          },
+        ].map(({ label, onClick, active, testid }) => (
+          <button
+            key={label}
+            onClick={onClick}
+            data-testid={testid}
+            aria-pressed={active}
+            className="px-3 py-1.5 rounded-full text-[11px] font-medium transition-all duration-150 hover:brightness-110"
+            style={{
+              backgroundColor: active ? `${accentColor}33` : `${accentColor}1A`,
+              color: accentColor,
+              border: `1px solid ${active ? `${accentColor}60` : `${accentColor}30`}`,
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      <CreationForm
+        mode={creationMode ?? "project"}
+        isOpen={creationMode !== null}
+        projects={projects}
+        textColor={textColor}
+        accentColor={accentColor}
+        onCancel={closeCreationForm}
+        onSubmitProject={onCreateProject}
+        onSubmitDocument={onCreateDocument}
+      />
+    </>
   );
 
   const closeButton = (
@@ -221,7 +265,7 @@ const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
           documents={documents}
           activeDocumentId={activeDocumentId}
           onSelectDocument={onSelectDocument}
-          onCreateDocument={onCreateDocument}
+          onCreateDocument={(projectId, title) => onCreateDocument(projectId, title, "standalone")}
           onDeleteDocument={onDeleteDocument}
           textColor={textColor}
           accentColor={accentColor}

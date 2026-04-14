@@ -1186,8 +1186,10 @@ const App: React.FC = () => {
           setContent(doc?.content ?? "");
           setIsSidebarOpen(false);
         }}
-        onCreateProject={(title) => createProject(title)}
-        onCreateDocument={(projectId, title) => createDocument(projectId, title, "standalone")}
+        onCreateProject={createProject}
+        onCreateDocument={(projectId, title, docType) =>
+          createDocument(projectId ?? "", title, docType)
+        }
         onCreateJournalEntry={() => createJournalEntry()}
         onDeleteDocument={(id) => {
           // Delete-active cleanup: if we're deleting the active document, pick a sensible fallback
