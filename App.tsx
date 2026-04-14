@@ -1154,6 +1154,59 @@ const App: React.FC = () => {
         onUtilitySectionHandled={() => setSidebarUtilitySection(null)}
       />
 
+      {/* Sidebar bookmark trigger — a horizontal page-bookmark sticking out the left edge,
+          positioned BELOW the top-fade zone so it never collides with the ThemeSelector at
+          top-left of the toolbar. The V-notch points right (toward the writing surface),
+          signaling "pull me to open". Hidden when sidebar is open or in unstylized mode. */}
+      {!isSidebarOpen && !unstylizedMode && (
+        <button
+          type="button"
+          onClick={() => setIsSidebarOpen(true)}
+          data-testid="sidebar-bookmark-trigger"
+          aria-label="Open documents sidebar (Cmd+Shift+B)"
+          aria-keyshortcuts="Meta+Shift+B Control+Shift+B"
+          title="Documents · ⌘⇧B"
+          className="fixed left-0 z-[58] focus:outline-none"
+          style={{
+            top: "clamp(160px, 24vh, 220px)",
+            width: "20px",
+            height: "58px",
+            padding: 0,
+            margin: 0,
+            border: "none",
+            backgroundColor: currentTheme.bookmark || currentTheme.accent,
+            clipPath: "polygon(0 0, 100% 0, calc(100% - 7px) 50%, 100% 100%, 0 100%)",
+            boxShadow: `2px 2px 10px ${currentTheme.text}1f`,
+            cursor: "pointer",
+            transition: "transform 220ms cubic-bezier(0.22, 1, 0.36, 1), filter 200ms ease-out, opacity 200ms ease-out",
+            transformOrigin: "left center",
+            opacity: 0.88,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "translateX(3px)";
+            e.currentTarget.style.opacity = "1";
+            e.currentTarget.style.filter = "brightness(1.06)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translateX(0)";
+            e.currentTarget.style.opacity = "0.88";
+            e.currentTarget.style.filter = "none";
+          }}
+          onFocus={(e) => {
+            e.currentTarget.style.transform = "translateX(3px)";
+            e.currentTarget.style.opacity = "1";
+            e.currentTarget.style.boxShadow = `2px 2px 10px ${currentTheme.text}1f, 0 0 0 2px ${currentTheme.background}, 0 0 0 4px ${currentTheme.bookmark || currentTheme.accent}`;
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.transform = "translateX(0)";
+            e.currentTarget.style.opacity = "0.88";
+            e.currentTarget.style.boxShadow = `2px 2px 10px ${currentTheme.text}1f`;
+          }}
+        >
+          <span className="sr-only">Open documents sidebar — keyboard shortcut Command Shift B</span>
+        </button>
+      )}
+
       {/* Background Texture */}
       <div
         data-overlap-ignore

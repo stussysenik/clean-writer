@@ -636,15 +636,8 @@ const PanelBody: React.FC<PanelBodyProps> = ({
                 )}
               </div>
             )}
-            {onClose && (
-              <TouchButton
-                onClick={onClose}
-                style={{ minWidth: 44, minHeight: 44 }}
-                className="flex items-center justify-center -mt-1 -mr-1"
-              >
-                <span style={{ color: theme.text, opacity: 0.4, fontSize: 20, fontWeight: 300 }}>×</span>
-              </TouchButton>
-            )}
+            {/* Close affordance is the right-edge chevron tab (CornerFoldTab). No duplicate
+                X button here — the tab provides the only close, drag-to-close also works. */}
           </div>
         </div>
       </div>
@@ -823,10 +816,112 @@ const PanelBody: React.FC<PanelBodyProps> = ({
             </div>
           </div>
 
-          {/* RHYMES section — collapsible */}
+          {/* LINES section — collapsible (rendered first in song mode so the syllable
+              cadence sits visually closer to the writing surface) */}
+          {songData.lines.filter((l) => l.totalSyllables > 0).length > 0 && (() => {
+            const syllableCounts = songData.lines
+              .filter((l) => l.totalSyllables > 0)
+              .map((l) => l.totalSyllables);
+            const maxSyl = Math.max(...syllableCounts, 1);
+            const minSyl = Math.min(...syllableCounts, 0);
+            return (
+              <>
+                <TouchButton
+                  onClick={() => setIsLinesCollapsed(prev => !prev)}
+                  aria-expanded={!isLinesCollapsed}
+                  aria-controls="song-lines-panel"
+                  aria-label={isLinesCollapsed ? "Expand lines section" : "Collapse lines section"}
+                  className="min-w-[44px] min-h-[44px] w-full text-[10px] uppercase tracking-widest mb-3 flex items-center justify-center gap-2 cursor-pointer hover:opacity-80 transition-all touch-manipulation"
+                  style={{ color: theme.text, opacity: 0.5 }}
+                >
+                  <span
+                    className="flex-1 h-px"
+                    style={{ backgroundColor: `${theme.text}20` }}
+                  />
+                  <span className="flex items-center gap-2">
+                    <span
+                      className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] transition-all duration-200"
+                      style={{
+                        backgroundColor: isLinesCollapsed ? `${theme.accent}25` : `${theme.accent}40`,
+                        color: theme.accent,
+                        transform: isLinesCollapsed ? "rotate(-90deg)" : "rotate(0deg)",
+                        boxShadow: isLinesCollapsed ? "none" : `0 0 8px ${theme.accent}30`,
+                      }}
+                    >
+                      ▼
+                    </span>
+                    <span>Lines</span>
+                  </span>
+                  <span
+                    className="flex-1 h-px"
+                    style={{ backgroundColor: `${theme.text}20` }}
+                  />
+                </TouchButton>
+
+                <div
+                  id="song-lines-panel"
+                  className="overflow-hidden transition-all duration-300 ease-out"
+                  style={{
+                    maxHeight: isLinesCollapsed ? "0px" : "300px",
+                    opacity: isLinesCollapsed ? 0 : 1,
+                  }}
+                >
+                  <div className="relative">
+                    <div
+                      className="overflow-y-auto space-y-1"
+                      style={{ maxHeight: "200px" }}
+                    >
+                      {songData.lines.map((line, i) => {
+                        if (line.totalSyllables === 0) return null;
+                        const density = maxSyl > minSyl
+                          ? (line.totalSyllables - minSyl) / (maxSyl - minSyl)
+                          : 0.5;
+                        const countOpacity = 0.35 + density * 0.55;
+                        return (
+                          <div
+                            key={i}
+                            className="flex items-center justify-between text-xs min-h-[24px]"
+                            style={{ color: theme.text }}
+                          >
+                            <span className="truncate flex-1 mr-3" style={{ opacity: 0.45 }}>
+                              {line.text.trim()}
+                            </span>
+                            <span
+                              className="tabular-nums font-medium text-right min-w-[24px]"
+                              style={{
+                                color: density > 0.7 ? theme.accent : theme.text,
+                                opacity: countOpacity,
+                                fontVariantNumeric: "tabular-nums",
+                              }}
+                            >
+                              {line.totalSyllables}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {/* Bottom fade mask when content overflows */}
+                    {songData.lines.filter((l) => l.totalSyllables > 0).length > 12 && (
+                      <div
+                        className="absolute bottom-0 left-0 right-0 h-6 pointer-events-none"
+                        style={{
+                          background: `linear-gradient(transparent, ${theme.background}E6)`,
+                        }}
+                      />
+                    )}
+                  </div>
+                </div>
+              </>
+            );
+          })()}
+
+          {/* RHYMES section — collapsible (now rendered after LINES) */}
           <TouchButton
             onClick={() => setIsRhymesCollapsed(prev => !prev)}
-            className="w-full text-[10px] uppercase tracking-widest mb-3 flex items-center gap-2 cursor-pointer hover:opacity-80 transition-all"
+            aria-expanded={!isRhymesCollapsed}
+            aria-controls="song-rhymes-panel"
+            aria-label={isRhymesCollapsed ? "Expand rhymes section" : "Collapse rhymes section"}
+            className="min-w-[44px] min-h-[44px] w-full text-[10px] uppercase tracking-widest mt-3 mb-3 flex items-center justify-center gap-2 cursor-pointer hover:opacity-80 transition-all touch-manipulation"
             style={{ color: theme.text, opacity: 0.5 }}
           >
             <span
@@ -963,99 +1058,6 @@ const PanelBody: React.FC<PanelBodyProps> = ({
             )}
           </div>
 
-          {/* LINES section — collapsible */}
-              {songData.lines.filter((l) => l.totalSyllables > 0).length > 0 && (() => {
-                const syllableCounts = songData.lines
-                  .filter((l) => l.totalSyllables > 0)
-                  .map((l) => l.totalSyllables);
-                const maxSyl = Math.max(...syllableCounts, 1);
-                const minSyl = Math.min(...syllableCounts, 0);
-                return (
-                  <>
-                    <TouchButton
-                      onClick={() => setIsLinesCollapsed(prev => !prev)}
-                      className="w-full text-[10px] uppercase tracking-widest mt-3 mb-3 flex items-center gap-2 cursor-pointer hover:opacity-80 transition-all"
-                      style={{ color: theme.text, opacity: 0.5 }}
-                    >
-                      <span
-                        className="flex-1 h-px"
-                        style={{ backgroundColor: `${theme.text}20` }}
-                      />
-                      <span className="flex items-center gap-2">
-                        <span
-                          className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] transition-all duration-200"
-                          style={{
-                            backgroundColor: isLinesCollapsed ? `${theme.accent}25` : `${theme.accent}40`,
-                            color: theme.accent,
-                            transform: isLinesCollapsed ? "rotate(-90deg)" : "rotate(0deg)",
-                            boxShadow: isLinesCollapsed ? "none" : `0 0 8px ${theme.accent}30`,
-                          }}
-                        >
-                          ▼
-                        </span>
-                        <span>Lines</span>
-                      </span>
-                      <span
-                        className="flex-1 h-px"
-                        style={{ backgroundColor: `${theme.text}20` }}
-                      />
-                    </TouchButton>
-
-                    <div
-                      className="overflow-hidden transition-all duration-300 ease-out"
-                      style={{
-                        maxHeight: isLinesCollapsed ? "0px" : "300px",
-                        opacity: isLinesCollapsed ? 0 : 1,
-                      }}
-                    >
-                      <div className="relative">
-                        <div
-                          className="overflow-y-auto space-y-1"
-                          style={{ maxHeight: "200px" }}
-                        >
-                          {songData.lines.map((line, i) => {
-                            if (line.totalSyllables === 0) return null;
-                            const density = maxSyl > minSyl
-                              ? (line.totalSyllables - minSyl) / (maxSyl - minSyl)
-                              : 0.5;
-                            const countOpacity = 0.35 + density * 0.55;
-                            return (
-                              <div
-                                key={i}
-                                className="flex items-center justify-between text-xs min-h-[24px]"
-                                style={{ color: theme.text }}
-                              >
-                                <span className="truncate flex-1 mr-3" style={{ opacity: 0.45 }}>
-                                  {line.text.trim()}
-                                </span>
-                                <span
-                                  className="tabular-nums font-medium text-right min-w-[24px]"
-                                  style={{
-                                    color: density > 0.7 ? theme.accent : theme.text,
-                                    opacity: countOpacity,
-                                    fontVariantNumeric: "tabular-nums",
-                                  }}
-                                >
-                                  {line.totalSyllables}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        {/* Bottom fade mask when content overflows */}
-                        {songData.lines.filter((l) => l.totalSyllables > 0).length > 12 && (
-                          <div
-                            className="absolute bottom-0 left-0 right-0 h-6 pointer-events-none"
-                            style={{
-                              background: `linear-gradient(transparent, ${theme.background}E6)`,
-                            }}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  </>
-                );
-              })()}
             </>
           )}
         </div>
@@ -1064,44 +1066,26 @@ const PanelBody: React.FC<PanelBodyProps> = ({
       {/* Syntax View */}
       {!songMode && !codeMode && (
       <div className="px-[21px] pb-[13px]">
-          {/* Collapsible header with toggle */}
+          {/* Hairline divider — separates the word-count header from the breakdown rows.
+              The rows speak for themselves; no "Breakdown" label is needed. Click the
+              divider to toggle collapsed state for users who want to hide it. */}
           <button
+            type="button"
             onClick={toggleBreakdown}
-            className="w-full text-[10px] uppercase tracking-widest mb-[13px] flex items-center gap-2 cursor-pointer hover:opacity-80 transition-all focus:outline-none"
-            style={{ color: theme.text, opacity: 0.5 }}
+            aria-label={isBreakdownCollapsed ? "Show breakdown" : "Hide breakdown"}
+            aria-expanded={!isBreakdownCollapsed}
+            className="w-full mb-[13px] py-2 cursor-pointer focus:outline-none group"
           >
             <span
-              className="flex-1 h-px"
-              style={{ backgroundColor: `${theme.text}20` }}
-            />
-            <span className="flex items-center gap-2">
-              {/* Colored indicator pill */}
-              <span
-                className="w-5 h-5 rounded-full flex items-center justify-center text-[9px] transition-all duration-200"
-                style={{
-                  backgroundColor: isBreakdownCollapsed
-                    ? `${theme.accent}25`
-                    : `${theme.accent}40`,
-                  color: theme.accent,
-                  transform: isBreakdownCollapsed
-                    ? "rotate(-90deg)"
-                    : "rotate(0deg)",
-                  boxShadow: isBreakdownCollapsed
-                    ? "none"
-                    : `0 0 8px ${theme.accent}30`,
-                }}
-              >
-                ▼
-              </span>
-              <span>Breakdown</span>
-            </span>
-            <span
-              className="flex-1 h-px"
-              style={{ backgroundColor: `${theme.text}20` }}
+              className="block h-px transition-opacity duration-200 group-hover:opacity-80"
+              style={{
+                backgroundColor: `${theme.text}1a`,
+                opacity: isBreakdownCollapsed ? 0.4 : 0.6,
+              }}
             />
           </button>
 
-          {/* Collapsible content with max-height animation */}
+          {/* Breakdown rows — always rendered, collapse hides via max-height */}
           <div
             className="overflow-hidden transition-all duration-300 ease-out"
             style={{
@@ -1137,7 +1121,7 @@ const PanelBody: React.FC<PanelBodyProps> = ({
                   <div
                     key={item.key}
                     data-testid={`syntax-breakdown-row-${item.key}`}
-                    className={`absolute left-0 right-0 grid grid-cols-[14px_64px_12px_minmax(0,1fr)_44px] items-center gap-x-3 px-3 rounded-lg select-none ${
+                    className={`absolute left-0 right-0 grid grid-cols-[14px_56px_8px_minmax(0,1fr)_44px] items-center gap-x-2 px-3 rounded-lg select-none ${
                       isBeingDragged
                         ? "z-50 cursor-grabbing"
                         : "z-10 cursor-grab"
@@ -1244,7 +1228,8 @@ const PanelBody: React.FC<PanelBodyProps> = ({
                     <span className="opacity-22 text-sm font-medium justify-self-center">×</span>
                     <span
                       data-testid={`syntax-breakdown-label-${item.key}`}
-                      className="min-w-0 truncate text-[1.08rem] leading-none font-medium tracking-[-0.02em]"
+                      className="min-w-0 truncate text-[0.95rem] leading-none font-medium tracking-[-0.015em]"
+                      title={item.label}
                     >
                       {item.label}
                     </span>

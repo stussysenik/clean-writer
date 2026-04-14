@@ -155,6 +155,96 @@ const WORD_TYPE_LABELS: {
 
 const MIN_CONTRAST_RATIO = 3;
 
+/** Short display label for every syntax token type */
+const DOT_LABELS: Record<keyof RisoTheme["highlight"], string> = {
+  noun:         "N",
+  verb:         "V",
+  adjective:    "Adj",
+  adverb:       "Adv",
+  pronoun:      "Pro",
+  preposition:  "Pre",
+  conjunction:  "Cnj",
+  article:      "Art",
+  interjection: "Int",
+  url:          "URL",
+  number:       "Num",
+  hashtag:      "#",
+};
+
+/** 4-column ordered layout for the header editor */
+const SYNTAX_GRID_ROWS: (keyof RisoTheme["highlight"])[][] = [
+  ["noun",         "verb",   "adjective", "adverb"     ],
+  ["pronoun",      "preposition", "conjunction", "article"],
+  ["interjection", "url",    "number",    "hashtag"    ],
+];
+
+/**
+ * Syntax colour grid for the active-theme header.
+ * Horizontal dot + full word, 4×3 layout. Each cell is a 36px+ touch target.
+ */
+const SyntaxColorEditGrid: React.FC<{
+  highlight: RisoTheme["highlight"];
+  shadow: string;
+  activeKey?: keyof RisoTheme["highlight"] | null;
+  onDotClick?: (key: keyof RisoTheme["highlight"]) => void;
+  textColor: string;
+}> = ({ highlight, shadow, activeKey, onDotClick, textColor }) => (
+  <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", rowGap: "4px", columnGap: "2px" }}>
+    {SYNTAX_GRID_ROWS.flat().map((key) => {
+      const isActive = activeKey === key;
+      const fullLabel = WORD_TYPE_LABELS.find(w => w.key === key)?.label ?? key;
+      return (
+        <button
+          key={key}
+          type="button"
+          onClick={() => onDotClick?.(key)}
+          className="flex items-center justify-start p-0 border-0 appearance-none rounded transition-all hover:opacity-90 active:scale-95"
+          style={{
+            gap: "6px",
+            background: isActive ? `${textColor}08` : "transparent",
+            touchAction: "manipulation",
+            minHeight: "28px",
+            paddingLeft: "6px",
+            paddingRight: "4px",
+          }}
+          title={fullLabel}
+          aria-label={`${fullLabel}: ${highlight[key]}`}
+          aria-pressed={isActive}
+        >
+          <span
+            style={{
+              width: "12px",
+              height: "12px",
+              borderRadius: "50%",
+              backgroundColor: highlight[key],
+              flexShrink: 0,
+              transition: "transform 150ms, box-shadow 150ms",
+              transform: isActive ? "scale(1.15)" : "scale(1)",
+              boxShadow: isActive
+                ? `0 0 0 1.5px ${highlight[key]}55, 0 0 0 3px ${highlight[key]}`
+                : shadow,
+            }}
+          />
+          <span
+            style={{
+              fontSize: "11px",
+              lineHeight: 1,
+              opacity: isActive ? 1 : 0.62,
+              fontWeight: isActive ? 600 : 400,
+              whiteSpace: "nowrap",
+              letterSpacing: "-0.005em",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {fullLabel}
+          </span>
+        </button>
+      );
+    })}
+  </div>
+);
+
 type TabId = "themes" | "typography" | "display";
 
 const TABS: { id: TabId; label: string }[] = [
@@ -189,46 +279,60 @@ const CompactColorRow: React.FC<{
   const lowContrast = ratio !== null && ratio < MIN_CONTRAST_RATIO;
 
   return (
-    <div className="flex items-center gap-2" style={{ minHeight: "44px" }}>
-      <span className="text-xs uppercase tracking-wide opacity-70 w-[72px] flex-shrink-0 truncate">
-        {label}
-      </span>
-      <input
-        type="color"
-        value={color}
-        onChange={(e) => onSetColor(path, e.target.value)}
-        className="cursor-pointer rounded border-0 p-0 bg-transparent flex-shrink-0"
-        style={{
-          minWidth: "44px",
-          minHeight: "44px",
-          width: "44px",
-          height: "44px",
-        }}
-      />
+    <div
+      className="group flex items-center gap-3"
+      style={{ minHeight: "44px", paddingBlock: "2px" }}
+    >
+      <label
+        className="flex flex-1 items-center gap-3 cursor-pointer min-w-0"
+        style={{ minHeight: "44px", touchAction: "manipulation" }}
+      >
+        <span
+          className="flex-1 truncate"
+          style={{
+            fontSize: "13px",
+            fontWeight: 400,
+            letterSpacing: "-0.005em",
+            opacity: isCustomized ? 0.92 : 0.66,
+          }}
+        >
+          {label}
+        </span>
+        <input
+          type="color"
+          value={color}
+          onChange={(e) => onSetColor(path, e.target.value)}
+          className="cursor-pointer border-0 p-0 bg-transparent flex-shrink-0"
+          style={{
+            width: "26px",
+            height: "26px",
+            borderRadius: "999px",
+          }}
+          aria-label={`Pick ${label.toLowerCase()} color`}
+        />
+      </label>
       <HexInput value={color} onChange={(c) => onSetColor(path, c)} />
       {lowContrast && (
         <span
-          className="px-1 py-0.5 text-[9px] font-medium rounded whitespace-nowrap flex-shrink-0"
-          style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}
+          className="text-[9px] font-medium whitespace-nowrap flex-shrink-0"
+          style={{ color: "#B45309", opacity: 0.85 }}
           title={`Contrast ${formatContrastRatio(ratio!)} below ${MIN_CONTRAST_RATIO}:1`}
         >
-          !
+          low
         </span>
       )}
       {onResetColor && (
         <TouchButton
           onClick={() => onResetColor(path)}
           disabled={!isCustomized}
-          className={`p-2 rounded transition-all flex-shrink-0 ${
-            isCustomized
-              ? "opacity-60 hover:opacity-100"
-              : "opacity-20 cursor-not-allowed"
-          }`}
-          title={
-            isCustomized
-              ? `Reset ${label.toLowerCase()}`
-              : `${label} is using preset value`
-          }
+          className="p-1 transition-opacity flex-shrink-0"
+          style={{
+            opacity: isCustomized ? 0.55 : 0,
+            cursor: isCustomized ? "pointer" : "default",
+            pointerEvents: isCustomized ? "auto" : "none",
+          }}
+          title={isCustomized ? `Reset ${label.toLowerCase()}` : ""}
+          aria-label={isCustomized ? `Reset ${label.toLowerCase()}` : `${label} is using preset value`}
         >
           <IconReset size={12} />
         </TouchButton>
@@ -237,17 +341,25 @@ const CompactColorRow: React.FC<{
   );
 };
 
-/** Thin section label (flat, always-visible) */
+/** Thin section label — sentence case, hairline rule, generous space above */
 const SectionLabel: React.FC<{
   title: string;
   trailing?: React.ReactNode;
   theme: RisoTheme;
 }> = ({ title, trailing, theme }) => (
   <div
-    className="flex items-center gap-2 pt-4 pb-2 border-b"
-    style={{ borderColor: `${theme.text}10` }}
+    className="flex items-end gap-3 pt-8 pb-2"
+    style={{ borderBottom: `1px solid ${theme.text}10` }}
   >
-    <h3 className="text-[10px] font-semibold uppercase tracking-[0.15em] opacity-40 flex-1">
+    <h3
+      className="flex-1"
+      style={{
+        fontSize: "12px",
+        fontWeight: 400,
+        letterSpacing: "-0.005em",
+        opacity: 0.42,
+      }}
+    >
       {title}
     </h3>
     {trailing}
@@ -370,7 +482,8 @@ const SortableThemeItem: React.FC<{
   onSelectForEditing?: (themeId: string) => void;
   isCustom?: boolean;
   onDelete?: (id: string) => void;
-}> = ({ t, isHidden, hasEdits, onToggleThemeVisibility, theme, canDrag, displayName, onRename, onSelectForEditing, isCustom, onDelete }) => {
+  isActive?: boolean;
+}> = ({ t, isHidden, hasEdits, onToggleThemeVisibility, theme, canDrag, displayName, onRename, onSelectForEditing, isCustom, onDelete, isActive }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -420,66 +533,96 @@ const SortableThemeItem: React.FC<{
 
   return (
     <div ref={setNodeRef} style={style} className="select-none">
+      {/* One-column row — entire row is the drag zone. Click still selects (PointerSensor
+          uses distance: 8 activation, so a click without movement never triggers drag).
+          Inner controls (visibility, edit, delete) stop propagation on pointerdown so they
+          never accidentally start a drag. */}
       <div
-        className="flex items-center gap-2 p-3 rounded-lg hover:bg-current/5 transition-colors cursor-pointer"
-        style={{ minHeight: "44px" }}
+        className={`flex items-center gap-2 px-2 rounded-md transition-colors ${canDrag ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"}`}
         onClick={handleRowClick}
+        style={{
+          backgroundColor: isActive ? `${theme.accent}10` : "transparent",
+          minHeight: "36px",
+          touchAction: canDrag ? "none" : undefined,
+        }}
+        onMouseEnter={(e) => {
+          if (!isActive) e.currentTarget.style.backgroundColor = `${theme.text}06`;
+        }}
+        onMouseLeave={(e) => {
+          if (!isActive) e.currentTarget.style.backgroundColor = "transparent";
+        }}
+        {...(canDrag ? attributes : {})}
+        {...(canDrag ? listeners : {})}
       >
-        {canDrag && (
-          <div
-            className="flex items-center justify-center flex-shrink-0 cursor-grab active:cursor-grabbing"
-            data-testid="drag-handle"
-            style={{ width: "44px", height: "44px", touchAction: "none" }}
-            {...attributes}
-            {...listeners}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <svg
-              width="10"
-              height="14"
-              viewBox="0 0 10 14"
-              className="transition-opacity"
-              style={{ opacity: 0.4, color: theme.text }}
-            >
-              <circle cx="3" cy="2" r="1.2" fill="currentColor"/>
-              <circle cx="7" cy="2" r="1.2" fill="currentColor"/>
-              <circle cx="3" cy="7" r="1.2" fill="currentColor"/>
-              <circle cx="7" cy="7" r="1.2" fill="currentColor"/>
-              <circle cx="3" cy="12" r="1.2" fill="currentColor"/>
-              <circle cx="7" cy="12" r="1.2" fill="currentColor"/>
+        {/* Col 1: drag handle dots — purely visual now, the whole row is the drag zone */}
+        <div
+          className="flex-shrink-0 flex items-center justify-center"
+          style={{ width: "14px" }}
+          data-testid="drag-handle"
+          aria-hidden="true"
+        >
+          {canDrag && (
+            <svg width="6" height="10" viewBox="0 0 6 10" style={{ opacity: 0.22, color: theme.text }}>
+              <circle cx="1.5" cy="1.5" r="1" fill="currentColor"/>
+              <circle cx="4.5" cy="1.5" r="1" fill="currentColor"/>
+              <circle cx="1.5" cy="5"   r="1" fill="currentColor"/>
+              <circle cx="4.5" cy="5"   r="1" fill="currentColor"/>
+              <circle cx="1.5" cy="8.5" r="1" fill="currentColor"/>
+              <circle cx="4.5" cy="8.5" r="1" fill="currentColor"/>
             </svg>
-          </div>
-        )}
-        <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+          )}
+        </div>
+
+        {/* Col 2: visibility — 36×36 touch target, smaller than full 44 to keep row tight */}
+        <div
+          className="flex-shrink-0 flex items-center justify-center touch-manipulation"
+          style={{ width: "36px", color: theme.text }}
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
           <TouchButton
             onClick={() => onToggleThemeVisibility(t.id)}
-            className="flex items-center justify-center transition-all"
-            style={{
-              width: "44px",
-              height: "44px",
-            }}
-            aria-label={isHidden ? `Show ${name} in palette` : `${name} visible in palette`}
-            title={isHidden ? "Show in palette" : "Visible in palette"}
+            aria-pressed={!isHidden}
+            aria-label={isHidden ? `Show ${name} in palette` : `Hide ${name} from palette`}
+            title={isHidden ? "Show in palette" : "Hide from palette"}
+            className="flex items-center justify-center touch-manipulation"
+            style={{ minWidth: "36px", minHeight: "36px" }}
           >
             <span
-              className="rounded-full transition-all"
+              className="flex items-center justify-center flex-shrink-0 transition-all duration-150"
               style={{
-                width: "7px",
-                height: "7px",
-                backgroundColor: isHidden ? "transparent" : `${theme.text}50`,
-                border: isHidden ? `1.5px solid ${theme.text}20` : "1.5px solid transparent",
+                width: "14px",
+                height: "14px",
+                borderRadius: "2px",
+                backgroundColor: isHidden ? "transparent" : theme.accent,
+                border: isHidden
+                  ? `1.5px solid color-mix(in oklch, currentColor 32%, transparent)`
+                  : `1.5px solid ${theme.accent}`,
               }}
-            />
+            >
+              {!isHidden && (
+                <svg width="9" height="7" viewBox="0 0 10 8" fill="none" aria-hidden="true">
+                  <path d="M1 4L3.5 6.5L9 1" stroke={theme.background} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+            </span>
           </TouchButton>
-          <span
-            className="w-5 h-5 rounded-full flex-shrink-0"
-            style={{
-              backgroundColor: t.accent,
-              boxShadow: dotShadow,
-            }}
-          />
         </div>
-        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+
+        {/* Col 3: single accent dot — the theme's identity at a glance */}
+        <span
+          className="rounded-full flex-shrink-0"
+          title={`${name} accent`}
+          style={{
+            width: "12px",
+            height: "12px",
+            backgroundColor: t.accent,
+            boxShadow: dotShadow,
+          }}
+        />
+
+        {/* Col 4: name — flexes to fill */}
+        <div className="flex-1 min-w-0">
           {isEditing ? (
             <input
               ref={inputRef}
@@ -492,53 +635,61 @@ const SortableThemeItem: React.FC<{
                 if (e.key === "Escape") { setIsEditing(false); }
               }}
               onClick={(e) => e.stopPropagation()}
-              className="text-sm font-medium bg-transparent border-b border-current/30 outline-none px-0 py-0 w-full"
+              onPointerDown={(e) => e.stopPropagation()}
+              className="text-[12px] bg-transparent border-b border-current/30 outline-none px-0 py-0 w-full"
               style={{ color: theme.text }}
             />
           ) : (
-            <>
-              <span
-                className="text-sm font-medium truncate"
-                onDoubleClick={(e) => { e.stopPropagation(); startEditing(); }}
-                title="Double-click to rename"
-              >
-                {name}
-              </span>
-            </>
-          )}
-          <div
-            className="flex flex-wrap flex-shrink-0 ml-auto"
-            style={{ gap: "2px", maxWidth: "52px" }}
-          >
-            {WORD_TYPE_LABELS.map(({ key }) => (
-              <span
-                key={key}
-                className="rounded-full"
-                style={{
-                  width: "7px",
-                  height: "7px",
-                  backgroundColor: t.highlight[key as keyof typeof t.highlight],
-                  boxShadow: dotShadow,
-                }}
-              />
-            ))}
-          </div>
-          {isCustom && onDelete && (
-            <span onClick={(e) => e.stopPropagation()}>
-              <TouchButton
-                onClick={() => onDelete(t.id)}
-                className="p-1.5 rounded-md opacity-40 hover:opacity-80 transition-opacity flex-shrink-0"
-                title="Delete custom theme"
-                aria-label="Delete custom theme"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="3 6 5 6 21 6" />
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                </svg>
-              </TouchButton>
+            <span
+              className="text-[12px] truncate block transition-opacity duration-150"
+              style={{
+                opacity: isHidden ? 0.32 : (isActive ? 1 : 0.78),
+                fontWeight: isActive ? 600 : 400,
+                letterSpacing: "-0.005em",
+              }}
+              onDoubleClick={(e) => { e.stopPropagation(); startEditing(); }}
+              title="Double-click to rename"
+            >
+              {name}
             </span>
           )}
         </div>
+
+        {/* Col 5: edits indicator dot — quiet signal that this preset is customized */}
+        {hasEdits && !isCustom && (
+          <span
+            className="flex-shrink-0 rounded-full"
+            title="Customized"
+            style={{
+              width: "5px",
+              height: "5px",
+              backgroundColor: theme.accent,
+              opacity: 0.6,
+            }}
+          />
+        )}
+
+        {/* Col 6: delete (custom only) */}
+        {isCustom && onDelete && (
+          <span
+            onClick={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+            className="flex-shrink-0"
+          >
+            <TouchButton
+              onClick={() => onDelete(t.id)}
+              className="flex items-center justify-center rounded opacity-30 hover:opacity-80 transition-opacity"
+              style={{ width: "20px", height: "20px" }}
+              title="Delete custom theme"
+              aria-label="Delete custom theme"
+            >
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+              </svg>
+            </TouchButton>
+          </span>
+        )}
       </div>
     </div>
   );
@@ -558,7 +709,8 @@ const ThemesTab: React.FC<{
   savedCustomThemes?: SavedCustomTheme[];
   onDeleteCustomTheme?: (id: string) => void;
   onRenameCustomTheme?: (id: string, newName: string) => void;
-}> = ({ theme, hiddenThemeIds, onToggleThemeVisibility, themeOrder, onReorderThemes, customThemeNames, onThemeRename, onSelectThemeForEditing, hasOverridesForTheme, savedCustomThemes, onDeleteCustomTheme, onRenameCustomTheme }) => {
+  activeThemeId?: string;
+}> = ({ theme, hiddenThemeIds, onToggleThemeVisibility, themeOrder, onReorderThemes, customThemeNames, onThemeRename, onSelectThemeForEditing, hasOverridesForTheme, savedCustomThemes, onDeleteCustomTheme, onRenameCustomTheme, activeThemeId }) => {
   const listRef = useRef<HTMLDivElement>(null);
 
   const orderedThemeList = useMemo(() => {
@@ -631,7 +783,7 @@ const ThemesTab: React.FC<{
       <div ref={listRef} className="max-h-[60vh] overflow-y-auto" data-testid="themes-list">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={themeIds} strategy={verticalListSortingStrategy}>
-            <div className="space-y-1">
+            <div className="space-y-0">
               {orderedThemeList.map((t) => (
                 <SortableThemeItem
                   key={t.id}
@@ -644,6 +796,7 @@ const ThemesTab: React.FC<{
                   displayName={customThemeNames?.[t.id]}
                   onRename={onThemeRename}
                   onSelectForEditing={onSelectThemeForEditing}
+                  isActive={t.id === activeThemeId}
                 />
               ))}
             </div>
@@ -655,85 +808,89 @@ const ThemesTab: React.FC<{
       {savedCustomThemes && savedCustomThemes.length > 0 && (
         <>
           <SectionLabel title="Custom Themes" theme={theme} />
-          <div className="space-y-1">
-            {savedCustomThemes.map((ct) => (
-              <div
-                key={ct.id}
-                className="flex items-center gap-2 p-3 rounded-lg hover:bg-current/5 transition-colors cursor-pointer"
-                style={{ minHeight: "44px" }}
-                onClick={() => onSelectThemeForEditing?.(ct.id)}
-              >
-                <span
-                  className="w-5 h-5 rounded-full flex-shrink-0 relative"
-                  style={{
-                    backgroundColor: ct.theme.accent,
-                    boxShadow: isDarkBackground(theme.background)
-                      ? "0 0 0 0.5px rgba(255,255,255,0.25)"
-                      : "0 0 0 0.5px rgba(0,0,0,0.15)",
-                  }}
-                >
-                  <span
-                    className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center"
-                    style={{
-                      width: "8px",
-                      height: "8px",
-                      backgroundColor: theme.background,
-                      borderRadius: "50%",
-                    }}
-                  >
-                    <svg width="5" height="5" viewBox="0 0 10 10" fill={theme.text} opacity="0.6">
-                      <path d="M5 0L6.12 3.88L10 5L6.12 6.12L5 10L3.88 6.12L0 5L3.88 3.88Z" />
-                    </svg>
-                  </span>
-                </span>
-                <span className="text-sm font-medium truncate flex-1"
-                  onDoubleClick={(e) => {
-                    e.stopPropagation();
-                    const newName = prompt("Rename theme:", ct.name);
-                    if (newName?.trim() && onRenameCustomTheme) {
-                      onRenameCustomTheme(ct.id, newName.trim());
-                    }
-                  }}
-                  title="Double-click to rename"
-                >
-                  {ct.name}
-                </span>
+          <div className="space-y-0">
+            {savedCustomThemes.map((ct) => {
+              const ctDotShadow = isDarkBackground(theme.background)
+                ? "0 0 0 0.5px rgba(255,255,255,0.25)"
+                : "0 0 0 0.5px rgba(0,0,0,0.15)";
+              const ctIsActive = ct.id === activeThemeId;
+              return (
                 <div
-                  className="flex flex-wrap flex-shrink-0 ml-auto"
-                  style={{ gap: "2px", maxWidth: "52px" }}
+                  key={ct.id}
+                  className="flex items-center gap-2 px-2 rounded-md transition-colors cursor-pointer"
+                  onClick={() => onSelectThemeForEditing?.(ct.id)}
+                  style={{
+                    backgroundColor: ctIsActive ? `${theme.accent}10` : "transparent",
+                    minHeight: "36px",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!ctIsActive) e.currentTarget.style.backgroundColor = `${theme.text}06`;
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!ctIsActive) e.currentTarget.style.backgroundColor = "transparent";
+                  }}
                 >
-                  {WORD_TYPE_LABELS.map(({ key }) => (
+                  {/* col 1: drag placeholder */}
+                  <div className="flex-shrink-0" style={{ width: "14px" }} />
+
+                  {/* col 2: star badge in the visibility column */}
+                  <div className="flex-shrink-0 flex items-center justify-center" style={{ width: "36px" }}>
                     <span
-                      key={key}
-                      className="rounded-full"
-                      style={{
-                        width: "7px",
-                        height: "7px",
-                        backgroundColor: ct.theme.highlight[key as keyof typeof ct.theme.highlight],
-                        boxShadow: isDarkBackground(theme.background)
-                          ? "0 0 0 0.5px rgba(255,255,255,0.25)"
-                          : "0 0 0 0.5px rgba(0,0,0,0.15)",
-                      }}
-                    />
-                  ))}
-                </div>
-                {onDeleteCustomTheme && (
-                  <span onClick={(e) => e.stopPropagation()}>
-                    <TouchButton
-                      onClick={() => onDeleteCustomTheme(ct.id)}
-                      className="p-1.5 rounded-md opacity-40 hover:opacity-80 transition-opacity flex-shrink-0"
-                      title="Delete custom theme"
-                      aria-label="Delete custom theme"
+                      className="inline-flex items-center justify-center"
+                      style={{ width: "14px", height: "14px" }}
                     >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="3 6 5 6 21 6" />
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                      <svg width="11" height="11" viewBox="0 0 10 10" fill={theme.accent} opacity="0.7">
+                        <path d="M5 0L6.12 3.88L10 5L6.12 6.12L5 10L3.88 6.12L0 5L3.88 3.88Z" />
                       </svg>
-                    </TouchButton>
+                    </span>
+                  </div>
+
+                  {/* col 3: accent dot */}
+                  <span
+                    className="rounded-full flex-shrink-0"
+                    style={{ width: "12px", height: "12px", backgroundColor: ct.theme.accent, boxShadow: ctDotShadow }}
+                  />
+
+                  {/* col 4: name */}
+                  <span
+                    className="text-[12px] truncate block flex-1 min-w-0"
+                    style={{
+                      opacity: ctIsActive ? 1 : 0.78,
+                      fontWeight: ctIsActive ? 600 : 400,
+                      letterSpacing: "-0.005em",
+                    }}
+                    onDoubleClick={(e) => {
+                      e.stopPropagation();
+                      const newName = prompt("Rename theme:", ct.name);
+                      if (newName?.trim() && onRenameCustomTheme) {
+                        onRenameCustomTheme(ct.id, newName.trim());
+                      }
+                    }}
+                    title="Double-click to rename"
+                  >
+                    {ct.name}
                   </span>
-                )}
-              </div>
-            ))}
+
+                  {/* col 5: delete */}
+                  {onDeleteCustomTheme && (
+                    <span onClick={(e) => e.stopPropagation()} className="flex-shrink-0">
+                      <TouchButton
+                        onClick={() => onDeleteCustomTheme(ct.id)}
+                        className="flex items-center justify-center rounded opacity-30 hover:opacity-80 transition-opacity"
+                        style={{ width: "20px", height: "20px" }}
+                        title="Delete custom theme"
+                        aria-label="Delete custom theme"
+                      >
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        </svg>
+                      </TouchButton>
+                    </span>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </>
       )}
@@ -763,6 +920,7 @@ const ActiveThemeHeader: React.FC<{
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState("");
+  const [activeColorKey, setActiveColorKey] = useState<keyof RisoTheme["highlight"] | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const displayName = customThemeNames?.[theme.id] || theme.name;
@@ -784,96 +942,164 @@ const ActiveThemeHeader: React.FC<{
     }
   };
 
+  const dotShadow = isDarkBackground(theme.background)
+    ? "0 0 0 0.5px rgba(255,255,255,0.2)"
+    : "0 0 0 0.5px rgba(0,0,0,0.12)";
+
   return (
-    <div className="px-4 py-3 flex items-center gap-3 border-b border-current/10 flex-shrink-0">
-      <div
-        className="w-10 h-10 rounded-xl flex-shrink-0 border"
-        style={{
-          backgroundColor: theme.background,
-          borderColor: `${theme.text}20`,
-        }}
-      >
-        <div className="w-full h-full rounded-xl flex items-center justify-center">
-          <span className="text-xs font-bold" style={{ color: theme.accent }}>
+    <div
+      className="flex-shrink-0 border-b"
+      style={{ borderColor: `${theme.text}10` }}
+    >
+      {/* Name row */}
+      <div className="px-4 pt-3 pb-2 flex items-center gap-3">
+        {/* Compact theme swatch: accent ring + bg fill */}
+        <span
+          className="flex-shrink-0 rounded-lg flex items-center justify-center"
+          style={{
+            width: "28px",
+            height: "28px",
+            backgroundColor: theme.background,
+            border: `1.5px solid ${theme.accent}`,
+            boxShadow: `inset 0 0 0 3px ${theme.background}`,
+            outline: `1px solid ${theme.text}15`,
+          }}
+        >
+          <span
+            className="text-[10px] font-bold leading-none"
+            style={{ color: theme.accent, letterSpacing: "-0.02em" }}
+          >
             Aa
           </span>
+        </span>
+
+        {/* Name — click to rename */}
+        <div className="flex-1 min-w-0">
+          {isEditing ? (
+            <input
+              ref={inputRef}
+              type="text"
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onBlur={commitEdit}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commitEdit();
+                if (e.key === "Escape") setIsEditing(false);
+              }}
+              maxLength={40}
+              className="text-[13px] font-semibold bg-transparent border-b border-current/30 outline-none px-0 py-0 w-full"
+              style={{ color: theme.text, letterSpacing: "-0.01em" }}
+            />
+          ) : (
+            <button
+              type="button"
+              className="text-left w-full appearance-none border-0 p-0 bg-transparent group flex items-baseline gap-1.5"
+              onClick={startEditing}
+              title="Click to rename"
+              style={{ color: theme.text }}
+            >
+              <span
+                className="text-[13px] font-semibold truncate transition-opacity group-hover:opacity-70"
+                style={{ letterSpacing: "-0.01em" }}
+              >
+                {displayName}
+              </span>
+              {isCustomTheme && (
+                <span
+                  className="text-[8px] font-semibold uppercase tracking-[0.12em] flex-shrink-0"
+                  style={{ opacity: 0.3 }}
+                >
+                  custom
+                </span>
+              )}
+            </button>
+          )}
         </div>
       </div>
-      <div className="flex-1 min-w-0">
-        {isEditing ? (
-          <input
-            ref={inputRef}
-            type="text"
-            value={editValue}
-            onChange={(e) => setEditValue(e.target.value)}
-            onBlur={commitEdit}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") commitEdit();
-              if (e.key === "Escape") setIsEditing(false);
-            }}
-            maxLength={40}
-            className="text-sm font-semibold bg-transparent border-b border-current/30 outline-none px-0 py-0 w-full"
-            style={{ color: theme.text }}
-          />
-        ) : (
-          <span
-            className="text-sm font-semibold truncate block cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={startEditing}
-            title="Click to rename"
+
+      {/* Color preview rows */}
+      <div className="px-4 pb-3 space-y-2">
+        {/* Syntax color grid */}
+        <div>
+          <p
+            className="text-[8.5px] font-semibold uppercase tracking-[0.13em] mb-1.5"
+            style={{ opacity: 0.28 }}
           >
-            {displayName}
-            {isCustomTheme && (
-              <span className="ml-1.5 text-[9px] font-medium uppercase opacity-40">custom</span>
-            )}
-          </span>
-        )}
-        <div className="mt-2 space-y-2">
-          <div>
-            <div className="text-[9px] font-semibold uppercase tracking-[0.18em] opacity-35">
-              Syntax Colors
-            </div>
-            <div className="flex flex-wrap gap-1.5 md:gap-1 mt-1">
-              {WORD_TYPE_LABELS.map(({ key, short }) => (
+            Syntax
+          </p>
+          <SyntaxColorEditGrid
+            highlight={theme.highlight}
+            shadow={dotShadow}
+            textColor={theme.text}
+            activeKey={activeColorKey}
+            onDotClick={(key) => {
+              setActiveColorKey(key === activeColorKey ? null : key);
+              onJumpToWordColor?.(key);
+            }}
+          />
+        </div>
+
+        {/* Song color dots */}
+        {rhymeColors.length > 0 && (
+          <div className="pt-1">
+            <p
+              className="text-[9px] font-semibold uppercase tracking-[0.14em] mb-2"
+              style={{ opacity: 0.32 }}
+            >
+              Song
+            </p>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+                rowGap: "4px",
+                columnGap: "2px",
+              }}
+            >
+              {rhymeColors.map((color, index) => (
                 <button
-                  key={key}
+                  key={`${color}-${index}`}
                   type="button"
-                  onClick={() => onJumpToWordColor?.(key)}
-                  className="block w-4 h-4 md:w-3 md:h-3 p-0 border-0 rounded-full appearance-none transition-transform hover:scale-125 active:scale-95"
+                  onClick={() => onJumpToRhymeColor?.(index)}
+                  className="flex items-center justify-start p-0 border-0 appearance-none rounded transition-all hover:opacity-90 active:scale-95"
                   style={{
-                    backgroundColor: theme.highlight[key],
+                    gap: "6px",
+                    background: "transparent",
                     touchAction: "manipulation",
+                    minHeight: "28px",
+                    paddingLeft: "6px",
+                    paddingRight: "4px",
                   }}
-                  title={`Jump to ${short} color`}
-                  aria-label={`Jump to ${short} color`}
-                  data-color-key={key}
-                />
+                  title={`Jump to ${RHYME_COLOR_LABELS[index] || `Color ${index + 1}`}`}
+                  aria-label={`${RHYME_COLOR_LABELS[index] || `Color ${index + 1}`}: ${color}`}
+                >
+                  <span
+                    className="rounded-full block flex-shrink-0"
+                    style={{
+                      width: "12px",
+                      height: "12px",
+                      backgroundColor: color,
+                      boxShadow: dotShadow,
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontSize: "11px",
+                      lineHeight: 1,
+                      opacity: 0.62,
+                      whiteSpace: "nowrap",
+                      letterSpacing: "-0.005em",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {RHYME_COLOR_LABELS[index] ?? `${index + 1}`}
+                  </span>
+                </button>
               ))}
             </div>
           </div>
-          {rhymeColors.length > 0 && (
-            <div>
-              <div className="text-[9px] font-semibold uppercase tracking-[0.18em] opacity-35">
-                Song Colors
-              </div>
-              <div className="flex flex-wrap gap-1.5 md:gap-1 mt-1">
-                {rhymeColors.map((color, index) => (
-                  <button
-                    key={`${color}-${index}`}
-                    type="button"
-                    onClick={() => onJumpToRhymeColor?.(index)}
-                    className="block w-4 h-4 md:w-3 md:h-3 p-0 border-0 rounded-full appearance-none transition-transform hover:scale-125 active:scale-95"
-                    style={{
-                      backgroundColor: color,
-                      touchAction: "manipulation",
-                    }}
-                    title={`Jump to ${RHYME_COLOR_LABELS[index] || `Color ${index + 1}`}`}
-                    aria-label={`Jump to ${RHYME_COLOR_LABELS[index] || `Color ${index + 1}`}`}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );
@@ -959,7 +1185,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
 
   // Count edited word colors for badge
   const editedWordCount = WORD_TYPE_LABELS.filter(({ key }) => checkCustomized(key)).length;
-  const hasBaseEdits = ["background", "text", "cursor"].some(checkCustomized);
+  const hasBaseEdits = ["background", "text", "cursor", "bookmark"].some(checkCustomized);
 
   // Shuffle handler: random hue -> harmony colors for all word types
   const handleShuffle = () => {
@@ -977,7 +1203,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
 
       {/* Panel */}
       <div
-        className="fixed w-full z-[101] flex flex-col right-0 top-[13px] bottom-[13px] max-w-full rounded-xl md:right-[21px] md:top-[21px] md:bottom-[21px] md:max-w-md md:rounded-2xl lg:right-[34px] lg:top-[34px] lg:bottom-[34px] lg:max-w-lg lg:rounded-2xl"
+        className="fixed w-full z-[101] flex flex-col right-0 top-[13px] bottom-[13px] max-w-full rounded-xl md:right-[21px] md:top-[21px] md:bottom-[21px] md:max-w-md md:rounded-2xl lg:right-[34px] lg:top-[34px] lg:bottom-[34px] lg:max-w-lg lg:rounded-2xl overflow-x-hidden"
         data-testid="theme-customizer-panel"
         style={{
           backgroundColor: theme.background,
@@ -1047,37 +1273,54 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
         </div>
 
         {/* Tab Content — scrollable */}
-        <div className="flex-1 overflow-y-auto px-4 py-1">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden min-w-0 px-4 py-1">
           <div
             key={activeTab}
-            className="animate-tab-fade-in"
+            className="animate-tab-fade-in min-w-0"
           >
           {/* Themes Tab */}
           {activeTab === "themes" && (
             <>
+              {/* Compartment 1 — theme picker (one column, drag to reorder) */}
               {onToggleThemeVisibility && (
-                <>
-                  <SectionLabel title="Base Theme" theme={theme} />
-                  <ThemesTab
-                    theme={theme}
-                    hiddenThemeIds={hiddenThemeIds}
-                    onToggleThemeVisibility={onToggleThemeVisibility}
-                    themeOrder={themeOrder}
-                    onReorderThemes={onReorderThemes}
-                    customThemeNames={customThemeNames}
-                    onThemeRename={onThemeRename}
-                    onSelectThemeForEditing={handleSelectForEditing}
-                    hasOverridesForTheme={hasOverridesForTheme}
-                    savedCustomThemes={savedCustomThemes}
-                    onDeleteCustomTheme={onDeleteCustomTheme}
-                    onRenameCustomTheme={onRenameCustomTheme}
-                  />
-                </>
+                <ThemesTab
+                  theme={theme}
+                  hiddenThemeIds={hiddenThemeIds}
+                  onToggleThemeVisibility={onToggleThemeVisibility}
+                  themeOrder={themeOrder}
+                  onReorderThemes={onReorderThemes}
+                  customThemeNames={customThemeNames}
+                  onThemeRename={onThemeRename}
+                  onSelectThemeForEditing={handleSelectForEditing}
+                  hasOverridesForTheme={hasOverridesForTheme}
+                  savedCustomThemes={savedCustomThemes}
+                  onDeleteCustomTheme={onDeleteCustomTheme}
+                  onRenameCustomTheme={onRenameCustomTheme}
+                  activeThemeId={theme.id}
+                />
               )}
 
-              {/* Editor Colors — flat, always visible */}
-              <SectionLabel title="Editor Colors" theme={theme} />
-              <div className="space-y-1 pb-2">
+              {/* Compartment 2 — Words: editor base colors + 12-cell syntax grid */}
+              <SectionLabel
+                title="Words"
+                theme={theme}
+                trailing={
+                  <TouchButton
+                    onClick={handleShuffle}
+                    className="flex items-center gap-1 text-[9px] px-1.5 py-1 rounded transition-all opacity-50 hover:opacity-90"
+                    style={{
+                      backgroundColor: `${theme.text}08`,
+                      border: `1px solid ${theme.text}12`,
+                      color: theme.text,
+                    }}
+                    title="Generate random harmony colors"
+                  >
+                    <IconShuffle size={10} />
+                    Shuffle
+                  </TouchButton>
+                }
+              />
+              <div className="space-y-0 pt-2">
                 <CompactColorRow
                   label="Background"
                   color={theme.background}
@@ -1106,233 +1349,285 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                   onSetColor={onSetColor}
                   onResetColor={onResetColor}
                 />
+                <CompactColorRow
+                  label="Bookmark"
+                  color={theme.bookmark || theme.accent}
+                  path="bookmark"
+                  bgColor={theme.background}
+                  isCustomized={checkCustomized("bookmark")}
+                  onSetColor={onSetColor}
+                  onResetColor={onResetColor}
+                />
               </div>
-
-              {/* Word Colors — flat, always visible */}
-              <SectionLabel
-                title="Word Colors"
-                theme={theme}
-                trailing={
-                  <TouchButton
-                    onClick={handleShuffle}
-                    className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-md transition-all opacity-60 hover:opacity-100"
-                    style={{
-                      backgroundColor: `${theme.text}08`,
-                      border: `1px solid ${theme.text}15`,
-                      color: theme.text,
-                    }}
-                    title="Generate random harmony colors"
-                  >
-                    <IconShuffle size={11} />
-                    Shuffle
-                  </TouchButton>
-                }
-              />
-              <div className="grid grid-cols-2 gap-x-4 gap-y-3 pb-2 pt-2">
-                {WORD_TYPE_LABELS.map(({ key, short }) => (
-                  <div
-                    key={key}
-                    id={`theme-color-${key}`}
-                    className="flex items-center gap-1.5 scroll-mt-24"
-                    style={{ minHeight: "44px" }}
-                  >
-                    <span
-                      className="w-3 h-3 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: theme.highlight[key], boxShadow: dotShadow }}
-                    />
-                    <span className="text-xs uppercase tracking-wide opacity-60 flex-shrink-0 min-w-[2.5rem]">
-                      {short}
-                    </span>
-                    <input
-                      type="color"
-                      value={theme.highlight[key]}
-                      onChange={(e) => onSetColor(key, e.target.value)}
-                      className="cursor-pointer rounded border-0 p-0 bg-transparent flex-shrink-0"
+              <div className="grid grid-cols-2 gap-x-6 gap-y-0 mt-3">
+                {WORD_TYPE_LABELS.map(({ key, label }) => {
+                  const customized = checkCustomized(key);
+                  return (
+                    <div
+                      key={key}
+                      id={`theme-color-${key}`}
+                      className="group grid items-center scroll-mt-24 transition-colors"
                       style={{
-                        minWidth: "44px",
-                        minHeight: "44px",
-                        width: "44px",
-                        height: "44px",
+                        gridTemplateColumns: "8px minmax(0, 1fr) 26px 22px",
+                        columnGap: "10px",
+                        minHeight: "36px",
                       }}
-                    />
-                  </div>
-                ))}
+                    >
+                      <span
+                        className="rounded-full"
+                        style={{
+                          width: "8px",
+                          height: "8px",
+                          backgroundColor: theme.highlight[key],
+                          boxShadow: dotShadow,
+                        }}
+                      />
+                      <span
+                        className="truncate"
+                        style={{
+                          fontSize: "13px",
+                          fontWeight: 400,
+                          letterSpacing: "-0.005em",
+                          opacity: customized ? 0.92 : 0.66,
+                        }}
+                        title={label}
+                      >
+                        {label}
+                      </span>
+                      <input
+                        type="color"
+                        value={theme.highlight[key]}
+                        onChange={(e) => onSetColor(key, e.target.value)}
+                        className="cursor-pointer border-0 p-0 bg-transparent justify-self-center"
+                        style={{ width: "22px", height: "22px", borderRadius: "999px" }}
+                        aria-label={`Pick ${label.toLowerCase()} color`}
+                      />
+                      {onResetColor ? (
+                        <TouchButton
+                          onClick={() => onResetColor(key)}
+                          disabled={!customized}
+                          className="p-1 transition-opacity justify-self-center"
+                          style={{
+                            opacity: customized ? 0.55 : 0,
+                            cursor: customized ? "pointer" : "default",
+                            pointerEvents: customized ? "auto" : "none",
+                          }}
+                          title={customized ? `Reset ${label.toLowerCase()}` : ""}
+                          aria-label={customized ? `Reset ${label}` : `${label} is using default`}
+                        >
+                          <IconReset size={11} />
+                        </TouchButton>
+                      ) : <span />}
+                    </div>
+                  );
+                })}
               </div>
 
-              {/* Song Colors — flat, always visible */}
+              {/* Compartment 3 — Songs: preset strip + per-color rows */}
               {rhymeColors && onSetRhymeColor && (
                 <>
-                  <SectionLabel title="Song Colors" theme={theme} />
-                  {/* Preset palette strip */}
-                  <div className="flex gap-2 overflow-x-auto pb-1 mb-3 pt-2">
-                    {RHYME_PRESETS.map((preset) => {
-                      const isActive = rhymeColors.every((c, i) => c.toLowerCase() === preset.colors[i]?.toLowerCase());
+                  <SectionLabel
+                    title="Songs"
+                    theme={theme}
+                    trailing={
+                      <TouchButton
+                        onClick={() => {
+                          const hue = Math.round(Math.random() * 360);
+                          const generated = generateOklchHarmony(hue, 8, theme.background);
+                          generated.forEach((color, i) => onSetRhymeColor!(i, color));
+                        }}
+                        className="flex items-center gap-1 text-[9px] px-1.5 py-1 rounded transition-all opacity-50 hover:opacity-90"
+                        style={{
+                          backgroundColor: `${theme.text}08`,
+                          border: `1px solid ${theme.text}12`,
+                          color: theme.text,
+                        }}
+                        title="Generate 8 perceptually uniform colors (OKLCH)"
+                      >
+                        <IconShuffle size={10} />
+                        Auto
+                      </TouchButton>
+                    }
+                  />
+                  {/* Preset strip — horizontal swatches in canonical order. State per card:
+                      • exact (8/8): checkmark + accent ring
+                      • drifted (≥6/8 but <8): hollow dot + "drifted" tooltip — quiet hint that
+                        you started from this preset and changed N colors
+                      • idle: dim */}
+                  {(() => {
+                    const presetMatches = RHYME_PRESETS.map((preset) => {
+                      let matches = 0;
+                      for (let i = 0; i < 8; i++) {
+                        if (rhymeColors[i]?.toLowerCase() === preset.colors[i]?.toLowerCase()) matches++;
+                      }
+                      return matches;
+                    });
+                    const maxMatches = Math.max(...presetMatches);
+                    const closestIdx = maxMatches >= 6 && maxMatches < 8 ? presetMatches.indexOf(maxMatches) : -1;
+                    return (
+                      <div className="flex gap-2 overflow-x-auto pb-2 pt-2 no-scrollbar">
+                        {RHYME_PRESETS.map((preset, presetIdx) => {
+                          const matchCount = presetMatches[presetIdx];
+                          const isActive = matchCount === 8;
+                          const isDrifted = presetIdx === closestIdx;
+                          const driftedCount = isDrifted ? 8 - matchCount : 0;
+                          return (
+                            <button
+                              key={preset.name}
+                              type="button"
+                              onClick={() => preset.colors.forEach((c, i) => onSetRhymeColor!(i, c))}
+                              className="flex-shrink-0 flex flex-col items-stretch gap-1.5 rounded-lg px-2.5 py-2 transition-all cursor-pointer hover:opacity-90 active:scale-[0.98]"
+                              style={{
+                                border: isActive
+                                  ? `1.5px solid ${theme.accent}`
+                                  : isDrifted
+                                    ? `1px dashed ${theme.accent}66`
+                                    : `1px solid ${theme.text}14`,
+                                backgroundColor: isActive
+                                  ? `${theme.accent}10`
+                                  : isDrifted
+                                    ? `${theme.accent}05`
+                                    : `${theme.text}03`,
+                                minHeight: "44px",
+                                touchAction: "manipulation",
+                              }}
+                              aria-pressed={isActive}
+                              title={
+                                isActive
+                                  ? `${preset.name} (active)`
+                                  : isDrifted
+                                    ? `${preset.name} — ${driftedCount} ${driftedCount === 1 ? "color" : "colors"} changed. Click to restore.`
+                                    : `Apply ${preset.name} palette`
+                              }
+                            >
+                              {/* Horizontal strip — all 8 colors in canonical Red→Yellow order */}
+                              <div className="flex items-center gap-[3px]">
+                                {preset.colors.slice(0, 8).map((c, i) => (
+                                  <span
+                                    key={i}
+                                    className="rounded-full block"
+                                    style={{
+                                      width: "10px",
+                                      height: "10px",
+                                      backgroundColor: c,
+                                      boxShadow: `0 0 0 0.5px ${theme.text}22`,
+                                    }}
+                                    title={RHYME_COLOR_LABELS[i]}
+                                  />
+                                ))}
+                              </div>
+                              {/* Name + active indicator */}
+                              <div className="flex items-center justify-center gap-1">
+                                {isActive && (
+                                  <svg width="9" height="9" viewBox="0 0 10 8" fill="none" aria-hidden="true">
+                                    <path
+                                      d="M1 4L3.5 6.5L9 1"
+                                      stroke={theme.accent}
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    />
+                                  </svg>
+                                )}
+                                {isDrifted && (
+                                  <span
+                                    className="rounded-full inline-block"
+                                    style={{
+                                      width: "5px",
+                                      height: "5px",
+                                      border: `1px solid ${theme.accent}`,
+                                      backgroundColor: "transparent",
+                                    }}
+                                    aria-label={`drifted from ${preset.name}`}
+                                  />
+                                )}
+                                <span
+                                  style={{
+                                    fontSize: "11px",
+                                    fontWeight: 400,
+                                    letterSpacing: "-0.005em",
+                                    color: isActive || isDrifted ? theme.accent : theme.text,
+                                    opacity: isActive ? 0.9 : isDrifted ? 0.78 : 0.5,
+                                  }}
+                                >
+                                  {preset.name}
+                                </span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-0 mt-3">
+                    {rhymeColors.map((color, index) => {
+                      const customized = isRhymeColorCustomized?.(index) ?? false;
+                      const colorLabel = RHYME_COLOR_LABELS[index] || `C${index + 1}`;
                       return (
-                        <button
-                          key={preset.name}
-                          onClick={() => {
-                            preset.colors.forEach((c, i) => onSetRhymeColor!(i, c));
-                          }}
-                          className="flex-shrink-0 rounded-lg p-2 border transition-all text-center"
+                        <div
+                          key={index}
+                          id={`rhyme-color-${index}`}
+                          className="group grid items-center scroll-mt-24 transition-colors"
                           style={{
-                            borderColor: isActive ? `${theme.accent}60` : `${theme.text}15`,
-                            backgroundColor: isActive ? `${theme.accent}15` : "transparent",
-                            minWidth: "56px",
+                            gridTemplateColumns: "8px minmax(0, 1fr) 26px 22px",
+                            columnGap: "10px",
+                            minHeight: "36px",
                           }}
                         >
-                          <div className="grid grid-cols-4 gap-0.5 mx-auto" style={{ width: "fit-content" }}>
-                            {preset.colors.map((c, i) => (
-                              <span
-                                key={i}
-                                className="rounded-full"
-                                style={{ width: "8px", height: "8px", backgroundColor: c }}
-                              />
-                            ))}
-                          </div>
                           <span
-                            className="block mt-1 font-medium"
+                            className="rounded-full"
                             style={{
-                              fontSize: "9px",
-                              letterSpacing: "0.05em",
-                              textTransform: "uppercase" as const,
-                              color: isActive ? theme.accent : theme.text,
-                              opacity: isActive ? 1 : 0.5,
+                              width: "8px",
+                              height: "8px",
+                              backgroundColor: color,
+                              boxShadow: dotShadow,
+                            }}
+                          />
+                          <span
+                            className="truncate"
+                            style={{
+                              fontSize: "13px",
+                              fontWeight: 400,
+                              letterSpacing: "-0.005em",
+                              opacity: customized ? 0.92 : 0.66,
                             }}
                           >
-                            {preset.name}
+                            {colorLabel}
                           </span>
-                        </button>
+                          <input
+                            type="color"
+                            value={color}
+                            onChange={(e) => onSetRhymeColor!(index, e.target.value)}
+                            className="cursor-pointer border-0 p-0 bg-transparent justify-self-center"
+                            style={{ width: "22px", height: "22px", borderRadius: "999px" }}
+                            aria-label={`Pick ${colorLabel.toLowerCase()} color`}
+                          />
+                          {onResetRhymeColor ? (
+                            <TouchButton
+                              onClick={() => onResetRhymeColor!(index)}
+                              disabled={!customized}
+                              className="p-1 transition-opacity justify-self-center"
+                              style={{
+                                opacity: customized ? 0.55 : 0,
+                                cursor: customized ? "pointer" : "default",
+                                pointerEvents: customized ? "auto" : "none",
+                              }}
+                              title={customized ? `Reset ${colorLabel.toLowerCase()}` : ""}
+                              aria-label={
+                                customized
+                                  ? `Reset ${colorLabel}`
+                                  : `${colorLabel} is using default`
+                              }
+                            >
+                              <IconReset size={11} />
+                            </TouchButton>
+                          ) : <span />}
+                        </div>
                       );
                     })}
                   </div>
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] opacity-40">Individual colors</span>
-                    <TouchButton
-                      onClick={() => {
-                        const hue = Math.round(Math.random() * 360);
-                        const generated = generateOklchHarmony(hue, 8, theme.background);
-                        generated.forEach((color, i) => onSetRhymeColor(i, color));
-                      }}
-                      className="text-[10px] px-2 py-1 rounded-md transition-all opacity-60 hover:opacity-100"
-                      style={{
-                        backgroundColor: `${theme.text}08`,
-                        border: `1px solid ${theme.text}15`,
-                        color: theme.text,
-                      }}
-                      title="Generate 8 perceptually uniform colors from a random hue (OKLCH)"
-                    >
-                      Auto-generate
-                    </TouchButton>
-                  </div>
-                  <div className="grid grid-cols-2 gap-x-2 gap-y-1 pb-2">
-                    {rhymeColors.map((color, index) => (
-                      <div
-                        key={index}
-                        id={`rhyme-color-${index}`}
-                        className="flex items-center gap-1.5 scroll-mt-24"
-                      >
-                        <span
-                          className="w-3 h-3 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: color, boxShadow: dotShadow }}
-                        />
-                        <span className="text-[10px] uppercase tracking-wide opacity-60 flex-shrink-0 min-w-[3rem]">
-                          {RHYME_COLOR_LABELS[index] || `C${index + 1}`}
-                        </span>
-                        <input
-                          type="color"
-                          value={color}
-                          onChange={(e) => onSetRhymeColor(index, e.target.value)}
-                          className="cursor-pointer rounded border-0 p-0 bg-transparent flex-shrink-0"
-                          style={{
-                            minWidth: "44px",
-                            minHeight: "44px",
-                            width: "44px",
-                            height: "44px",
-                          }}
-                        />
-                        {onResetRhymeColor && (
-                          <TouchButton
-                            onClick={() => onResetRhymeColor(index)}
-                            disabled={!isRhymeColorCustomized?.(index)}
-                            className={`p-1 rounded transition-all flex-shrink-0 ${
-                              isRhymeColorCustomized?.(index)
-                                ? "opacity-60 hover:opacity-100"
-                                : "opacity-20 cursor-not-allowed"
-                            }`}
-                            title={
-                              isRhymeColorCustomized?.(index)
-                                ? `Reset ${RHYME_COLOR_LABELS[index] || "color"}`
-                                : "Using default"
-                            }
-                          >
-                            <IconReset size={10} />
-                          </TouchButton>
-                        )}
-                      </div>
-                    ))}
-                  </div>
                 </>
               )}
-
-              {/* Actions */}
-              <SectionLabel title="Actions" theme={theme} />
-              <div className="space-y-2 py-3">
-                {/* Save as Custom Theme */}
-                {onSaveCustomTheme && !showSaveForm && (
-                  <TouchButton
-                    onClick={() => setShowSaveForm(true)}
-                    disabled={!hasCustomizations && !isCustomTheme}
-                    className={`w-full py-2.5 px-4 rounded-lg text-center text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
-                      hasCustomizations || isCustomTheme
-                        ? "hover:opacity-90"
-                        : "opacity-40 cursor-not-allowed"
-                    }`}
-                    style={{
-                      backgroundColor: hasCustomizations || isCustomTheme ? theme.accent : `${theme.text}10`,
-                      color: hasCustomizations || isCustomTheme ? theme.background : theme.text,
-                      minHeight: "44px",
-                    }}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                      <polyline points="17 21 17 13 7 13 7 21" />
-                      <polyline points="7 3 7 8 15 8" />
-                    </svg>
-                    Save as Custom Theme
-                  </TouchButton>
-                )}
-                {showSaveForm && onSaveCustomTheme && (
-                  <SaveThemeForm
-                    theme={theme}
-                    defaultName={`${theme.name} Custom`}
-                    onSave={(name) => {
-                      const saved = onSaveCustomTheme(name, theme, rhymeColors);
-                      setShowSaveForm(false);
-                      if (saved) {
-                        onShowToast?.(`Saved "${name}"`, "success");
-                      } else {
-                        onShowToast?.("Max 20 custom themes reached", "warning");
-                      }
-                    }}
-                    onCancel={() => setShowSaveForm(false)}
-                  />
-                )}
-
-                {/* Reset */}
-                <TouchButton
-                  onClick={onResetToPreset}
-                  disabled={!hasCustomizations}
-                  className={`w-full py-2.5 px-4 rounded-lg text-center text-sm font-medium transition-all flex items-center justify-center gap-2 ${
-                    hasCustomizations
-                      ? "bg-current/10 hover:bg-current/20"
-                      : "opacity-50 cursor-not-allowed"
-                  }`}
-                  style={{ minHeight: "44px" }}
-                >
-                  <IconReset size={16} />
-                  Reset All to Preset
-                </TouchButton>
-              </div>
             </>
           )}
 
@@ -1484,6 +1779,66 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
           )}
           </div>
         </div>
+
+        {/* Sticky actions footer — always reachable without scrolling, themes tab only */}
+        {activeTab === "themes" && (
+          <div className="flex-shrink-0 border-t border-current/10 px-4 py-3 space-y-2">
+            {/* Save as Custom Theme */}
+            {onSaveCustomTheme && !showSaveForm && (
+              <TouchButton
+                onClick={() => setShowSaveForm(true)}
+                disabled={!hasCustomizations && !isCustomTheme}
+                className={`w-full py-2.5 px-4 rounded-lg text-center text-sm font-semibold transition-all flex items-center justify-center gap-2 ${
+                  hasCustomizations || isCustomTheme
+                    ? "hover:opacity-90"
+                    : "opacity-40 cursor-not-allowed"
+                }`}
+                style={{
+                  backgroundColor: hasCustomizations || isCustomTheme ? theme.accent : `${theme.text}10`,
+                  color: hasCustomizations || isCustomTheme ? theme.background : theme.text,
+                  minHeight: "44px",
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                  <polyline points="17 21 17 13 7 13 7 21" />
+                  <polyline points="7 3 7 8 15 8" />
+                </svg>
+                Save as Custom Theme
+              </TouchButton>
+            )}
+            {showSaveForm && onSaveCustomTheme && (
+              <SaveThemeForm
+                theme={theme}
+                defaultName={`${theme.name} Custom`}
+                onSave={(name) => {
+                  const saved = onSaveCustomTheme(name, theme, rhymeColors);
+                  setShowSaveForm(false);
+                  if (saved) {
+                    onShowToast?.(`Saved "${name}"`, "success");
+                  } else {
+                    onShowToast?.("Max 20 custom themes reached", "warning");
+                  }
+                }}
+                onCancel={() => setShowSaveForm(false)}
+              />
+            )}
+            {/* Reset */}
+            <TouchButton
+              onClick={onResetToPreset}
+              disabled={!hasCustomizations}
+              className={`w-full py-2.5 px-4 rounded-lg text-center text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                hasCustomizations
+                  ? "bg-current/10 hover:bg-current/20"
+                  : "opacity-50 cursor-not-allowed"
+              }`}
+              style={{ minHeight: "44px" }}
+            >
+              <IconReset size={16} />
+              Reset All to Preset
+            </TouchButton>
+          </div>
+        )}
 
         {/* Sticky footer with build info */}
         <div className="flex-shrink-0 border-t border-current/10 px-4 py-3">

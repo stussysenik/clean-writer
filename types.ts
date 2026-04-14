@@ -97,6 +97,7 @@ export interface RisoTheme {
   cursor: string; // Blinking cursor color
   strikethrough: string; // Strikethrough text decoration
   selection: string; // Text selection background (rgba)
+  bookmark?: string; // Sidebar bookmark ribbon color (falls back to accent)
   rhymeColors?: string[]; // Per-theme OKLCH rhyme palette (8 colors)
 }
 

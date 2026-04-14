@@ -238,6 +238,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
     textareaRef: textareaRef as React.RefObject<HTMLTextAreaElement>,
     enabled: true,
     isMobile,
+    minPadding: 40,
   });
 
   // Track whether cursor is at the content frontier (end of text)
@@ -1262,7 +1263,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
       {/* Backdrop (Visual Layer) */}
       <div
         ref={backdropRef}
-        className="absolute inset-0 pt-[55px] pb-[50vh] md:pt-[55px] lg:pt-[55px] whitespace-pre-wrap break-words pointer-events-none z-0 overflow-hidden"
+        className="absolute inset-0 pt-[80px] pb-[80px] whitespace-pre-wrap break-words pointer-events-none z-0 overflow-hidden"
         style={{
           fontFamily: unstylizedMode
             ? "'Courier New', Courier, monospace"
@@ -1285,6 +1286,28 @@ const Typewriter: React.FC<TypewriterProps> = ({
             : songMode && songData
               ? renderSongHighlights()
               : renderHighlights()}
+        {/* Empty-state placeholder — rendered inline so it sits exactly where the live caret blinks.
+            Uses theme.text at low opacity, single-line nowrap, and a leading hairline to act as
+            visual companion to the textarea's blinking caret on the same character cell. */}
+        {content.length === 0 && (
+          <span
+            data-testid="empty-placeholder"
+            aria-hidden="true"
+            style={{
+              display: "inline-block",
+              whiteSpace: "nowrap",
+              pointerEvents: "none",
+              color: theme.text,
+              opacity: 0.32,
+              fontWeight: 400,
+              letterSpacing: "0.005em",
+              fontStyle: "normal",
+              transition: "opacity 200ms ease, color 300ms ease",
+            }}
+          >
+            Type here&hellip;
+          </span>
+        )}
         {/* Cursor dot — Garfield-colored dot at end of text when cursor is at frontier */}
         {cursorAtFrontier && content.length > 0 && !unstylizedMode && (
           <span
@@ -1301,46 +1324,6 @@ const Typewriter: React.FC<TypewriterProps> = ({
             }}
             data-testid="cursor-dot"
           />
-        )}
-        {/* Frontier marker — green "available" badge when cursor is mid-text */}
-        {!cursorAtFrontier && content.length > 0 && !unstylizedMode && (
-          <span
-            className="animate-frontier-in"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "5px",
-              marginLeft: "6px",
-              padding: "2px 10px 2px 8px",
-              borderRadius: "9999px",
-              backgroundColor: "rgba(34, 197, 94, 0.10)",
-              verticalAlign: "middle",
-              lineHeight: "1",
-            }}
-            data-testid="frontier-marker"
-          >
-            <span
-              className="animate-frontier-dot"
-              style={{
-                display: "inline-block",
-                width: "7px",
-                height: "7px",
-                borderRadius: "50%",
-                backgroundColor: "#22c55e",
-                flexShrink: 0,
-              }}
-            />
-            <span
-              style={{
-                fontSize: "11px",
-                fontWeight: 500,
-                color: "#22c55e",
-                letterSpacing: "0.01em",
-              }}
-            >
-              available
-            </span>
-          </span>
         )}
       </div>
 
@@ -1445,7 +1428,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
         inputMode="text"
         enterKeyHint="enter"
         autoFocus
-        className="absolute inset-0 w-full h-full pt-[55px] pb-[50vh] md:pt-[55px] lg:pt-[55px] bg-transparent resize-none border-none outline-none z-10 whitespace-pre-wrap break-words overflow-y-auto no-scrollbar selection:text-transparent"
+        className="absolute inset-0 w-full h-full pt-[80px] pb-[80px] bg-transparent resize-none border-none outline-none z-10 whitespace-pre-wrap break-words overflow-y-auto no-scrollbar selection:text-transparent placeholder:opacity-0 placeholder:text-transparent"
         style={{
           fontFamily: unstylizedMode
             ? "'Courier New', Courier, monospace"
@@ -1456,7 +1439,12 @@ const Typewriter: React.FC<TypewriterProps> = ({
           lineHeight: effectiveLineHeight,
           letterSpacing: unstylizedMode ? "0px" : effectiveLetterSpacing,
           color: "transparent",
-          caretColor: cursorAtFrontier ? "transparent" : lastWordColor,
+          // Live blinking caret — visible in every state. The Garfield dot still marks the
+          // text frontier; this caret is the *active* indicator that the editor has focus
+          // and shows where the next character will land. When empty, sits at column 0 and
+          // pulses behind the placeholder text. When at frontier with content, stacks with
+          // the dot for a "hot tip" feel. When mid-text, lives at the insertion point.
+          caretColor: content.length === 0 ? theme.cursor : lastWordColor,
           opacity: 1,
           scrollbarWidth: "none",
           paddingLeft: `${paddingLeft}px`,

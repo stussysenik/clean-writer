@@ -219,7 +219,9 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
       style={{
         bottom: "max(140px, calc(132px + env(safe-area-inset-bottom)))",
         paddingRight: "env(safe-area-inset-right)",
-        maxHeight: "calc(100dvh - 100px)",
+        // Cap at 55dvh so the top half of the screen always shows the writing surface —
+        // user can keep the panel open and still see text above it as they type.
+        maxHeight: "min(55dvh, calc(100dvh - 200px))",
       }}
     >
       <HarmonicaContainer
