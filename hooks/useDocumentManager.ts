@@ -71,14 +71,15 @@ export function useDocumentManager(): UseDocumentManagerReturn {
       id: uuid(),
       userId: "",
       title,
-      position: projects.length,
+      position: 0, // overwritten inside the functional updater below
       createdAt: now(),
       updatedAt: now(),
     };
 
     if (!supabase) {
       setProjects(prev => {
-        const updated = [...prev, project];
+        const seated = { ...project, position: prev.length };
+        const updated = [...prev, seated];
         saveLocal(PROJECTS_KEY, updated);
         return updated;
       });
@@ -99,7 +100,8 @@ export function useDocumentManager(): UseDocumentManagerReturn {
     if (data) {
       const mapped = snakeToCamelProject(data);
       setProjects(prev => {
-        const updated = [...prev, mapped];
+        const seated = { ...mapped, position: prev.length };
+        const updated = [...prev, seated];
         saveLocal(PROJECTS_KEY, updated);
         return updated;
       });
@@ -109,14 +111,16 @@ export function useDocumentManager(): UseDocumentManagerReturn {
   }, []);
 
   const createDocument = useCallback(async (projectId: string, title: string, docType: DocType): Promise<Document | null> => {
+    // Empty/whitespace projectId means "unfiled" — normalize to undefined so local state and Supabase agree.
+    const normalizedProjectId = projectId && projectId.trim().length > 0 ? projectId : undefined;
     const doc: Document = {
       id: uuid(),
-      projectId,
+      projectId: normalizedProjectId,
       userId: "",
       title,
       content: "",
       docType,
-      position: documents.filter(d => d.projectId === projectId).length,
+      position: 0, // overwritten inside the functional updater below
       wordCount: 0,
       charCount: 0,
       createdAt: now(),
@@ -124,7 +128,12 @@ export function useDocumentManager(): UseDocumentManagerReturn {
     };
 
     if (!supabase) {
-      setDocuments(prev => { const u = [...prev, doc]; saveLocal(DOCUMENTS_KEY, u); return u; });
+      setDocuments(prev => {
+        const seated = { ...doc, position: prev.filter(d => d.projectId === normalizedProjectId).length };
+        const u = [...prev, seated];
+        saveLocal(DOCUMENTS_KEY, u);
+        return u;
+      });
       return doc;
     }
 
@@ -134,7 +143,7 @@ export function useDocumentManager(): UseDocumentManagerReturn {
 
     const { data } = await supabase.from("documents").insert({
       id: doc.id,
-      project_id: projectId,
+      project_id: normalizedProjectId ?? null,
       user_id: user.id,
       title,
       doc_type: docType,
@@ -143,7 +152,12 @@ export function useDocumentManager(): UseDocumentManagerReturn {
 
     if (data) {
       const mapped = snakeToCamelDoc(data);
-      setDocuments(prev => { const u = [...prev, mapped]; saveLocal(DOCUMENTS_KEY, u); return u; });
+      setDocuments(prev => {
+        const seated = { ...mapped, position: prev.filter(d => d.projectId === normalizedProjectId).length };
+        const u = [...prev, seated];
+        saveLocal(DOCUMENTS_KEY, u);
+        return u;
+      });
       return mapped;
     }
     return null;

@@ -464,12 +464,12 @@ const App: React.FC = () => {
     [],
   );
 
-  const { lastSavedAt, save: autoSave } = useAutoSave();
   const {
     projects, documents, journalEntries,
     createProject, createDocument, createJournalEntry,
-    deleteDocument,
+    updateDocument, deleteDocument,
   } = useDocumentManager();
+  const { lastSavedAt, save: autoSave, flush: flushAutoSave } = useAutoSave({ updateDocument });
   const { recordActivity } = useWritingSession();
 
   // Saved custom themes hook
@@ -617,9 +617,9 @@ const App: React.FC = () => {
 
   // Auto-save + writing session tracking
   useEffect(() => {
-    autoSave(content, activeDocumentId ?? undefined);
+    autoSave(content, activeDocumentId ?? undefined, { wordCount, charCount: totalCharCount });
     recordActivity(wordCount);
-  }, [content, activeDocumentId, autoSave, recordActivity, wordCount]);
+  }, [content, activeDocumentId, autoSave, recordActivity, wordCount, totalCharCount]);
 
   // Compute effective highlight config when solo mode is active
   const effectiveHighlightConfig = useMemo((): HighlightConfig => {
@@ -1167,15 +1167,43 @@ const App: React.FC = () => {
         journalEntries={journalEntries}
         activeDocumentId={activeDocumentId}
         onSelectDocument={(id) => {
+          if (id === activeDocumentId) {
+            setIsSidebarOpen(false);
+            return;
+          }
+          // Save-before-switch: flush the outgoing document's content into the documents store
+          // synchronously so we never strand unsaved work behind the autosave debounce.
+          if (activeDocumentId) {
+            updateDocument(activeDocumentId, {
+              content,
+              wordCount,
+              charCount: totalCharCount,
+            });
+            flushAutoSave();
+          }
           setActiveDocumentId(id);
           const doc = documents.find(d => d.id === id);
-          if (doc) setContent(doc.content);
+          setContent(doc?.content ?? "");
           setIsSidebarOpen(false);
         }}
         onCreateProject={(title) => createProject(title)}
         onCreateDocument={(projectId, title) => createDocument(projectId, title, "standalone")}
         onCreateJournalEntry={() => createJournalEntry()}
-        onDeleteDocument={(id) => deleteDocument(id)}
+        onDeleteDocument={(id) => {
+          // Delete-active cleanup: if we're deleting the active document, pick a sensible fallback
+          // before the row disappears so the editor never displays stale content.
+          if (id === activeDocumentId) {
+            const deleted = documents.find(d => d.id === id);
+            const remaining = documents.filter(d => d.id !== id);
+            const sameProject = remaining
+              .filter(d => d.projectId === deleted?.projectId)
+              .sort((a, b) => a.position - b.position);
+            const fallback = sameProject[0] ?? remaining.sort((a, b) => a.position - b.position)[0] ?? null;
+            setActiveDocumentId(fallback?.id ?? null);
+            setContent(fallback?.content ?? "");
+          }
+          deleteDocument(id);
+        }}
         textColor={currentTheme.text}
         bgColor={currentTheme.background}
         accentColor={currentTheme.accent}
