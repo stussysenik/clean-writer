@@ -1,0 +1,14 @@
+{:deps true
+ :dependencies [[reagent "1.2.0"]]
+ :builds
+ {:app {:target :browser
+        :output-dir "cljs-out"
+        :asset-path "/cljs-out"
+        :modules {:main {:init-fn clean-writer.core/init
+                         :exports {:default clean-writer.core/app-component
+                                   :getCljsCount clean-writer.core/get-current-cljs-count
+                                   :setCljsCount clean-writer.core/set-cljs-count}}}
+        :compiler-options {:output-feature-set :es2020
+                           :closure-defines {goog.DEBUG false}}
+        :devtools {:after-start clean-writer.core/reload-hook}
+        :entries [clean-writer.core]}}}

@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Design Tokens — CSS Custom Properties */
 :root {
   /* Touch targets (WCAG 2.5.5) */

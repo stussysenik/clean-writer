@@ -18,6 +18,20 @@ import {
 } from "./constants";
 import { SHORTCUTS } from "./constants/shortcuts";
 import { countWords } from "./services/localSyntaxService";
+// Import interop functions
+import { logFromClojureScript, getCurrentTimestamp } from "./utils/cljsInterop";
+
+// Define an interface for the ClojureScript component's props
+interface ClojureScriptComponentProps {
+  logMessage: (message: string) => void;
+  getTimestamp: () => number;
+}
+// Cast the imported ClojureScript component to include the props interface
+import _ClojureScriptComponent, {
+  getCljsCount, // Import FFI functions
+  setCljsCount, // Import FFI functions
+} from "../cljs-out/main.js";
+const ClojureScriptComponent = _ClojureScriptComponent as React.FC<ClojureScriptComponentProps>;
 import {
   SyntaxAnalysis,
   SyntaxSets,
@@ -55,34 +69,7 @@ import {
   hasStrikethroughBlocks,
   removeStrikethroughBlocks,
 } from "./utils/strikethroughUtils";
-import { useFocusNavigation } from "./hooks/useFocusNavigation";
-import { initOverlapDebug } from "./utils/overlapDebug";
-import useResponsiveBreakpoint from "./hooks/useResponsiveBreakpoint";
-import { useMobileEditState } from "./hooks/useMobileEditState";
-import { oklchInterpolate } from "./utils/oklch";
-import DocumentSidebar, {
-  DOCUMENT_SIDEBAR_WIDTH,
-} from "./components/DocumentSidebar";
-import { useAutoSave } from "./hooks/useAutoSave";
-import { useDocumentManager } from "./hooks/useDocumentManager";
-import { useWritingSession } from "./hooks/useWritingSession";
-import { countChars } from "./services/textStatsService";
-
-const UTF8_DISPLAY_STORAGE_KEY = "clean_writer_utf8_display_enabled";
-const EMOJI_SHORTCODES_STORAGE_KEY = "clean_writer_emoji_shortcodes_enabled";
-const SHOW_LINE_WIDTH_SLIDER = false;
-
-const FRESH_LOAD_TEXT = `"It is the time you have wasted for your rose that makes your rose so important."
-
-"People have forgotten this truth," the fox said. "But you must not forget it. You become responsible forever for what you have tamed. You are responsible for your rose."
-
-"What is essential is invisible to the eye," the little prince repeated, so that he would be sure to remember. "It is the time you have wasted for your rose that makes your rose so important."
-
-The little prince went away, to look again at the roses. "You are not at all like my rose," he said. "As yet you are nothing. No one has tamed you, and you have tamed no one. You are like my fox when I first knew him. He was only a fox like a hundred thousand other foxes. But I have made him my friend, and now he is unique in all the world."
-
-— Antoine de Saint-Exupéry, The Little Prince`;
-
-const App: React.FC = () => {
+import { useFocusNavigation } => {
   const [content, setContent] = useState<string>(() => {
     try {
       const saved = localStorage.getItem("riso_flow_content");
@@ -1121,6 +1108,26 @@ const App: React.FC = () => {
     isMobile,
   });
 
+  // TS state for CLJS interop demo
+  const [cljsCount, setCljsCountState] = useState(0);
+
+  // Function to refresh ClojureScript count
+  const refreshCljsCount = useCallback(() => {
+    if (getCljsCount) { // Ensure the FFI function is loaded
+      setCljsCountState(getCljsCount());
+    }
+  }, [getCljsCount]); // Added getCljsCount to dependency array
+
+  // Use an effect to periodically update the TS view of CLJS state, or on initial load
+  useEffect(() => {
+    // Only set interval if getCljsCount is defined, meaning CLJS is loaded
+    if (getCljsCount) {
+      refreshCljsCount(); // Initial refresh
+      const interval = setInterval(refreshCljsCount, 1000); // Poll every second
+      return () => clearInterval(interval);
+    }
+  }, [getCljsCount, refreshCljsCount]); // Added getCljsCount and refreshCljsCount to dependency array
+
   // Sidebar toggle: Mod+Shift+B
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -1572,6 +1579,39 @@ const App: React.FC = () => {
           </div>
         )}
       </main>
+
+      {/* ClojureScript Component Demonstration */}
+      <div style={{ margin: '20px', padding: '20px', border: '2px dashed gray' }}>
+        <h3>ClojureScript Integration Demo</h3>
+        <ClojureScriptComponent
+          logMessage={logFromClojureScript}
+          getTimestamp={getCurrentTimestamp}
+        />
+
+        {/* TypeScript interacting with ClojureScript State */}
+        <div style={{ marginTop: '20px', padding: '15px', border: '1px solid lightgray', borderRadius: '5px' }}>
+          <h4>TypeScript consuming ClojureScript state</h4>
+          <p>ClojureScript Count (from TS perspective): {cljsCount}</p>
+          <button
+            onClick={() => setCljsCount(cljsCount + 1)}
+            style={{ backgroundColor: '#FFC107', color: 'white', padding: '8px 12px', border: 'none', borderRadius: '3px', cursor: 'pointer', marginRight: '10px' }}
+          >
+            Increment CLJS Count from TS
+          </button>
+          <button
+            onClick={() => setCljsCount(0)}
+            style={{ backgroundColor: '#DC3545', color: 'white', padding: '8px 12px', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
+          >
+            Reset CLJS Count from TS
+          </button>
+          <button
+            onClick={() => refreshCljsCount()}
+            style={{ backgroundColor: '#2196F3', color: 'white', padding: '8px 12px', border: 'none', borderRadius: '3px', cursor: 'pointer', marginLeft: '10px' }}
+          >
+            Refresh CLJS Count in TS
+          </button>
+        </div>
+      </div>
 
       {/* Unified Syntax Panel — hidden in plain text mode */}
       {!unstylizedMode && <UnifiedSyntaxPanel
