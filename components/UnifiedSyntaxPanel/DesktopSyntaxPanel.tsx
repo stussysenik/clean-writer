@@ -7,6 +7,7 @@ import {
   SongAnalysis,
   ColorEditTarget,
 } from "../../types";
+import { useDevLayout } from "../DevControls/context";
 import PanelBody from "./PanelBody";
 
 interface DesktopSyntaxPanelProps {
@@ -69,7 +70,8 @@ const DesktopSyntaxPanel: React.FC<DesktopSyntaxPanelProps> = ({
   codeLanguage = "javascript",
 }) => {
   const panelRef = useRef<HTMLDivElement>(null);
-  const panelWidth = "min(340px, calc(100vw - 72px))";
+  const dev = useDevLayout();
+  const panelWidth = `min(${dev.desktopPanelWidthMin}px, ${dev.desktopPanelWidthVw}vw)`;
 
   return (
     <div
@@ -89,6 +91,8 @@ const DesktopSyntaxPanel: React.FC<DesktopSyntaxPanelProps> = ({
         maxHeight: "calc(100vh - 89px - 55px)",
         overflowX: "hidden",
         overflowY: "auto",
+        right: dev.desktopPanelRight ?? undefined,
+        padding: `${dev.desktopPanelPaddingY}px ${dev.desktopPanelPaddingX}px`,
       }}
     >
       {/* Paper grain texture */}

@@ -53,9 +53,11 @@ const Toolbar: React.FC<ToolbarProps> = ({
     <footer
       className="absolute bottom-0 left-0 right-0 flex flex-col items-stretch z-50 pointer-events-none transition-opacity duration-300"
       style={{
-        padding: "8px 13px",
-        paddingBottom: "max(8px, env(safe-area-inset-bottom))",
-        opacity: dimmed ? 0.5 : 1,
+        paddingTop: "var(--dev-tb-pad-y, 8px)",
+        paddingRight: "var(--dev-tb-pad-x, 13px)",
+        paddingBottom: "max(var(--dev-tb-pad-y, 8px), env(safe-area-inset-bottom))",
+        paddingLeft: "var(--dev-tb-pad-x, 13px)",
+        opacity: dimmed ? "var(--dev-tb-dim, 0.5)" : 1,
       }}
     >
       {/* Action Buttons — horizontal scroll strip like ThemeSelector */}
@@ -86,8 +88,9 @@ const Toolbar: React.FC<ToolbarProps> = ({
         </div>
         {/* Right fade to signal more tools are scrollable */}
         <div
-          className="absolute inset-y-0 right-0 w-10 pointer-events-none"
+          className="absolute inset-y-0 right-0 pointer-events-none"
           style={{
+            width: "var(--dev-tb-fade-w, 40px)",
             background: `linear-gradient(to right, transparent, ${theme.background})`,
           }}
         />

@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useMemo } from "react";
 import { gsap } from "gsap";
 import { RisoTheme } from "../../types";
 import { HarmonicaStage } from "../../hooks/useHarmonicaDrag";
+import { useDevLayout } from "../DevControls/context";
 
 interface HarmonicaContainerProps {
   theme: RisoTheme;
@@ -17,17 +18,6 @@ interface HarmonicaContainerProps {
   };
 }
 
-// Stage dimensions
-const STAGE_DIMENSIONS: Record<
-  HarmonicaStage,
-  { width: number; height: number | "auto" }
-> = {
-  closed: { width: 56, height: 80 },
-  peek: { width: 140, height: 80 },
-  expand: { width: 140, height: 180 },
-  full: { width: 320, height: 480 },
-};
-
 const HarmonicaContainer: React.FC<HarmonicaContainerProps> = ({
   theme,
   stage,
@@ -36,9 +26,20 @@ const HarmonicaContainer: React.FC<HarmonicaContainerProps> = ({
   reducedMotion,
   children,
 }) => {
+  const dev = useDevLayout();
   const containerRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const prevStageRef = useRef<HarmonicaStage>(stage);
+
+  const STAGE_DIMENSIONS: Record<
+    HarmonicaStage,
+    { width: number; height: number | "auto" }
+  > = useMemo(() => ({
+    closed: { width: dev.hClosedW, height: dev.hClosedH },
+    peek: { width: dev.hPeekW, height: dev.hPeekH },
+    expand: { width: dev.hExpandW, height: dev.hExpandH },
+    full: { width: dev.hFullW, height: dev.hFullH },
+  }), [dev.hClosedW, dev.hClosedH, dev.hPeekW, dev.hPeekH, dev.hExpandW, dev.hExpandH, dev.hFullW, dev.hFullH]);
 
   // Calculate current dimensions based on stage and drag progress
   const dimensions = useMemo(() => {
@@ -91,7 +92,7 @@ const HarmonicaContainer: React.FC<HarmonicaContainerProps> = ({
           typeof targetDimensions.height === "number"
             ? targetDimensions.height
             : "auto",
-        duration: 0.35,
+        duration: dev.hSpringDuration / 1000,
         ease: "back.out(1.2)", // Overshoot for mechanical feel
       });
     }

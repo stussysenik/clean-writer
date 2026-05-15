@@ -22,16 +22,20 @@ const SwatchCircle = ({
   isSelected: boolean; hasEdits?: boolean; isCustom?: boolean;
   currentTheme: RisoTheme;
   onClick: () => void;
-}) => (
+}) => {
+  const dotSize = "var(--dev-ts-dot-size, 36px)";
+  return (
   <div className="relative group flex-shrink-0">
     <Tooltip content={name} position="bottom">
       <button
         onClick={onClick}
         data-theme-id={id}
-        className={`relative w-9 h-9 rounded-full transition-all duration-200 touch-manipulation ${
+        className={`relative rounded-full transition-all duration-200 touch-manipulation ${
           isSelected ? "" : "hover:scale-110 opacity-80 hover:opacity-100"
         }`}
         style={{
+          width: dotSize,
+          height: dotSize,
           backgroundColor: color,
           transform: isSelected ? "scale(1.15)" : undefined,
           outline: isSelected
@@ -61,7 +65,8 @@ const SwatchCircle = ({
       </button>
     </Tooltip>
   </div>
-);
+  );
+};
 
 const ThemeSelector: React.FC<ThemeSelectorProps> = ({
   currentTheme,
@@ -103,12 +108,11 @@ const ThemeSelector: React.FC<ThemeSelectorProps> = ({
       {/* Horizontal scroll strip — single row on all breakpoints */}
       <div
         ref={scrollRef}
-        className="flex flex-nowrap gap-3 items-center overflow-x-auto no-scrollbar"
+        className="flex flex-nowrap items-center overflow-x-auto no-scrollbar"
         style={{
           WebkitOverflowScrolling: "touch",
-          /* py-3 (12px) gives comfortable room for 1.15× scale + outline overflow;
-             px-5 (20px) matches the mask fade width so first/last swatch fades gracefully */
-          padding: "12px 20px",
+          gap: "var(--dev-ts-gap, 12px)",
+          padding: "var(--dev-ts-pad-y, 12px) var(--dev-ts-pad-x, 20px)",
         }}
       >
         {visibleThemes.map((t) => (

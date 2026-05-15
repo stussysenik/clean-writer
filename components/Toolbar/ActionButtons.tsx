@@ -92,7 +92,10 @@ const ActionButton: React.FC<ActionButtonProps> = ({
       data-testid={dataTestId}
     >
       <span className="flex items-center justify-center">{icon}</span>
-      <span className="text-[9px] uppercase tracking-wider font-medium hidden sm:block">
+      <span
+        className="uppercase tracking-wider font-medium hidden sm:block"
+        style={{ fontSize: "var(--dev-tb-label-fs, 9px)" }}
+      >
         {label}
       </span>
     </TouchButton>
@@ -149,8 +152,11 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
 
   return (
     <div
-      className="flex flex-nowrap gap-1 items-center"
-      style={{ color: unstylizedMode ? "#333333" : iconColor }}
+      className="flex flex-nowrap items-center"
+      style={{
+        color: unstylizedMode ? "#333333" : iconColor,
+        gap: "var(--dev-tb-gap, 4px)",
+      }}
     >
       {/* View modes group */}
       <ActionButton

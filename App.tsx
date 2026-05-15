@@ -67,10 +67,18 @@ import { useAutoSave } from "./hooks/useAutoSave";
 import { useDocumentManager } from "./hooks/useDocumentManager";
 import { useWritingSession } from "./hooks/useWritingSession";
 import { countChars } from "./services/textStatsService";
+import { useSelector } from "@xstate/react";
+import {
+  buildFluidFontSize,
+  buildBookmarkY,
+  buildDesktopPanelWidth,
+  useDevLayout,
+  getDevActor,
+} from "./components/DevControls/context";
+import DevControlsPanel, { DevToggle } from "./components/DevControls";
 
 const UTF8_DISPLAY_STORAGE_KEY = "clean_writer_utf8_display_enabled";
 const EMOJI_SHORTCODES_STORAGE_KEY = "clean_writer_emoji_shortcodes_enabled";
-const SHOW_LINE_WIDTH_SLIDER = false;
 
 const FRESH_LOAD_TEXT = `"It is the time you have wasted for your rose that makes your rose so important."
 
@@ -455,6 +463,25 @@ const App: React.FC = () => {
   });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
+
+  // ─── Dev Layout Workbench ───
+  const devEnabled = useSelector(getDevActor(), (snap) => snap.context.devEnabled);
+  const devOverrides = useDevLayout();
+
+  // ─── Effective layout values (dev overrides take priority when enabled) ───
+  const effectiveMaxWidth = devEnabled ? devOverrides.contentMaxWidth : maxWidth;
+  const effectiveFluidFontSize = devEnabled
+    ? buildFluidFontSize(devOverrides)
+    : fluidFontSize;
+  const effectiveLineHeight = devEnabled ? devOverrides.lineHeight : lineHeightValue;
+  const effectiveLetterSpacing = devEnabled ? devOverrides.letterSpacing : letterSpacing;
+  const effectiveBookmarkY = devEnabled
+    ? buildBookmarkY(devOverrides)
+    : "clamp(160px, 24vh, 220px)";
+  const effectiveDesktopPanelWidth = devEnabled
+    ? buildDesktopPanelWidth(devOverrides)
+    : "min(360px, 30vw)";
+
   const openSidebarUtilitySection = useCallback(
     (section: "guide" | "feedback") => {
       setIsCustomizerOpen(false);
@@ -692,9 +719,10 @@ const App: React.FC = () => {
   // Keyboard shortcuts moved to useAppHotkeys (called after all callbacks are declared)
 
   // Responsive breakpoint for desktop panel padding & shortcut overlay
-  const { isDesktop, isMobile } = useResponsiveBreakpoint();
+  const { isDesktop, isTablet, isMobile } = useResponsiveBreakpoint();
+  const effectiveSidebarWidth = devEnabled ? devOverrides.sidebarWidth : DOCUMENT_SIDEBAR_WIDTH;
   const desktopSidebarOffset =
-    isDesktop && isSidebarOpen ? DOCUMENT_SIDEBAR_WIDTH : 0;
+    isDesktop && isSidebarOpen ? effectiveSidebarWidth : 0;
 
   // Mobile edit/view state for visual distinction
   const mobileEditState = useMobileEditState(textareaRef, isMobile);
@@ -1231,7 +1259,7 @@ const App: React.FC = () => {
           title="Documents · ⌘⇧B"
           className="fixed left-0 z-[58] focus:outline-none"
           style={{
-            top: "clamp(160px, 24vh, 220px)",
+            top: effectiveBookmarkY,
             width: "20px",
             height: "58px",
             padding: 0,
@@ -1282,8 +1310,10 @@ const App: React.FC = () => {
       {/* Top fade — navbar visual zone */}
       <div
         data-overlap-ignore
-        className="absolute top-0 left-0 right-0 h-[144px] pointer-events-none z-[59]"
+        className="absolute top-0 left-0 right-0 pointer-events-none z-[59]"
         style={{
+          height: devEnabled ? devOverrides.topFadeHeight : 144,
+          ...(devEnabled && !isDesktop ? { maxWidth: devOverrides.topFadeWidth } : {}),
           background: `linear-gradient(to bottom, ${unstylizedMode ? "#FFFFFF" : currentTheme.background} 0%, ${unstylizedMode ? "#FFFFFF" : currentTheme.background}00 100%)`,
         }}
       />
@@ -1409,7 +1439,10 @@ const App: React.FC = () => {
       {/* Top Bar with Theme Selector and Settings */}
       <div
         className="absolute top-0 right-0 flex justify-between items-center p-[13px] md:p-[21px] z-[60] pointer-events-none transition-[left] duration-300 ease-in-out"
-        style={{ left: desktopSidebarOffset }}
+        style={{
+          left: desktopSidebarOffset,
+          ...(devEnabled ? { padding: isDesktop ? `${devOverrides.topBarPaddingDesktopY}px ${devOverrides.topBarPaddingDesktopX}px` : `${devOverrides.topBarPaddingY}px ${devOverrides.topBarPaddingX}px` } : {}),
+        }}
       >
         {!unstylizedMode && (
           <div className="pointer-events-auto flex items-center min-h-[44px] min-w-0 flex-1 mr-2">
@@ -1426,7 +1459,7 @@ const App: React.FC = () => {
         {unstylizedMode && <div className="flex-1" />}
         {/* Hidden when customizer open — customizer has its own close (X) button */}
         {!isCustomizerOpen && (
-          <div className="pointer-events-auto flex items-center gap-1.5 min-h-[44px]">
+          <div className="pointer-events-auto flex items-center min-h-[44px]" style={{ gap: "var(--dev-topbar-btn-gap, 6px)" }}>
             {/* Font Size A-/A+ Controls — segmented pill */}
             {!unstylizedMode && <div
               className="flex items-center gap-0 rounded-lg overflow-hidden"
@@ -1515,6 +1548,7 @@ const App: React.FC = () => {
                 <IconSettings />
               </TouchButton>
             </Tooltip>
+            <DevToggle onClick={() => getDevActor().send({ type: "TOGGLE" })} />
           </div>
         )}
       </div>
@@ -1524,7 +1558,19 @@ const App: React.FC = () => {
         className="flex-1 w-full h-full relative z-10 pt-[70px] md:pt-[80px] lg:pt-[80px] transition-all duration-300 ease-in-out"
         style={{
           paddingLeft: desktopSidebarOffset || undefined,
-          paddingRight: isDesktop && content.length > 0 ? "min(360px, 30vw)" : undefined,
+          paddingRight: isDesktop && content.length > 0 ? effectiveDesktopPanelWidth : undefined,
+          ...(devEnabled ? {
+            paddingTop: isDesktop
+              ? devOverrides.contentTopPaddingLg
+              : isTablet
+                ? devOverrides.contentTopPaddingMd
+                : devOverrides.contentTopPadding,
+            paddingBottom: devOverrides.contentBottomPadding,
+            paddingLeft: devOverrides.contentPaddingX || desktopSidebarOffset || undefined,
+            paddingRight: devOverrides.contentPaddingX
+              ? undefined  // let contentPaddingX handle it; desktop panel reserves its own offset
+              : (isDesktop && content.length > 0 ? effectiveDesktopPanelWidth : undefined),
+          } : {}),
         }}
       >
         {viewMode === "write" ? (
@@ -1534,8 +1580,8 @@ const App: React.FC = () => {
             theme={currentTheme}
             syntaxSets={syntaxSets}
             highlightConfig={effectiveHighlightConfig}
-            fontSize={fluidFontSize}
-            maxWidth={maxWidth}
+            fontSize={effectiveFluidFontSize}
+            maxWidth={effectiveMaxWidth}
             fontFamily={displayFontFamily}
             showUtfEmojiCodes={utf8DisplayEnabled}
             showEmojiShortcodes={emojiShortcodesEnabled}
@@ -1552,8 +1598,8 @@ const App: React.FC = () => {
             focusedRhymeKey={focusedRhymeKey}
             hoveredRhymeKey={hoveredRhymeKey}
             disabledRhymeKeys={disabledRhymeKeys}
-            letterSpacing={letterSpacing}
-            lineHeight={lineHeightValue}
+            letterSpacing={effectiveLetterSpacing}
+            lineHeight={effectiveLineHeight}
             focusMode={focusMode}
             focusNavState={focusNavState}
             isMobile={isMobile}
@@ -1566,7 +1612,7 @@ const App: React.FC = () => {
         ) : (
           <div
             className="mx-auto h-full relative z-10 transition-[max-width] duration-300 ease-in-out px-4 py-8 md:px-0 md:py-0"
-            style={{ maxWidth: maxWidth }}
+            style={{ maxWidth: effectiveMaxWidth }}
           >
             <MarkdownPreview content={content} theme={currentTheme} onBackToEdit={toggleViewMode} />
           </div>
@@ -1608,8 +1654,8 @@ const App: React.FC = () => {
         codeLanguage={codeLanguage}
       />}
 
-      {/* Floating Line Width Slider — centered in viewport */}
-      {viewMode === "write" && SHOW_LINE_WIDTH_SLIDER && (
+      {/* Floating Line Width Slider — now in DevControls panel */}
+      {viewMode === "write" && false && (
         <div
           className="absolute left-1/2 bottom-[21%] -translate-x-1/2 z-40 pointer-events-auto"
         >
@@ -1739,6 +1785,7 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
+      {devEnabled && <DevControlsPanel />}
     </div>
   );
 };

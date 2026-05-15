@@ -8,7 +8,7 @@ const meta: Meta<typeof ConfirmDialog> = {
   parameters: { layout: "fullscreen" },
   args: {
     isOpen: true,
-    onConfirm: () => {},
+    s: () => {},
     onCancel: () => {},
     theme: CLASSIC_THEME,
   },

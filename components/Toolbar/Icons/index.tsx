@@ -37,18 +37,24 @@ const textIconStyle: React.CSSProperties = {
   height: "20px",
 };
 
+// Shared dev-controlled icon size
+const devIconSize: React.CSSProperties = {
+  width: "var(--dev-tb-icon, 24px)",
+  height: "var(--dev-tb-icon, 24px)",
+};
+
 // Action Icons using Radix UI
-export const IconEyeOpen = () => <EyeOpenIcon width={24} height={24} />;
+export const IconEyeOpen = () => <EyeOpenIcon width={24} height={24} style={devIconSize} />;
 
-export const IconEyeClosed = () => <EyeClosedIcon width={24} height={24} />;
+export const IconEyeClosed = () => <EyeClosedIcon width={24} height={24} style={devIconSize} />;
 
-export const IconStrike = () => <StrikethroughIcon width={24} height={24} />;
+export const IconStrike = () => <StrikethroughIcon width={24} height={24} style={devIconSize} />;
 
-export const IconDownload = () => <DownloadIcon width={24} height={24} />;
+export const IconDownload = () => <DownloadIcon width={24} height={24} style={devIconSize} />;
 
-export const IconWidth = () => <WidthIcon width={24} height={24} />;
+export const IconWidth = () => <WidthIcon width={24} height={24} style={devIconSize} />;
 
-export const IconTrash = () => <TrashIcon width={24} height={24} />;
+export const IconTrash = () => <TrashIcon width={24} height={24} style={devIconSize} />;
 
 // Part of Speech Icons using text abbreviations
 // Clear, readable labels for each word type
@@ -142,6 +148,7 @@ export const IconMagicClean = () => (
   <svg
     width={24}
     height={24}
+    style={devIconSize}
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -161,19 +168,20 @@ export const IconMagicClean = () => (
   </svg>
 );
 
-export const IconSettings = () => <GearIcon width={30} height={30} />;
+export const IconSettings = () => <GearIcon width={30} height={30} style={devIconSize} />;
 
 // Info icon for legend
-export const IconInfo = () => <InfoCircledIcon width={20} height={20} />;
+export const IconInfo = () => <InfoCircledIcon width={20} height={20} style={devIconSize} />;
 
 // Sample text icon
-export const IconSample = () => <ReaderIcon width={24} height={24} />;
+export const IconSample = () => <ReaderIcon width={24} height={24} style={devIconSize} />;
 
 // Focus mode icon - crosshair/target: immediately reads as "focus"
 export const IconFocus = () => (
-  <svg
+    <svg
     width={24}
     height={24}
+    style={devIconSize}
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -195,6 +203,7 @@ export const IconPlainText = () => (
   <svg
     width={24}
     height={24}
+    style={devIconSize}
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"

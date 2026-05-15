@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { HotkeysProvider } from "@tanstack/react-hotkeys";
+import { DevControlsProvider } from "./components/DevControls/context";
 import App from "./App";
 
 const rootElement = document.getElementById("root");
@@ -12,7 +13,9 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <HotkeysProvider>
-      <App />
+      <DevControlsProvider>
+        <App />
+      </DevControlsProvider>
     </HotkeysProvider>
   </React.StrictMode>,
 );

@@ -7,6 +7,7 @@ import {
   DocType,
 } from "../../types";
 import { useResponsiveBreakpoint } from "../../hooks/useResponsiveBreakpoint";
+import { useDevLayout } from "../DevControls/context";
 import ProjectTree from "./ProjectTree";
 import JournalSection from "./JournalSection";
 import WritingLog from "./WritingLog";
@@ -72,6 +73,8 @@ const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
   sessions = [],
 }) => {
   const { isMobile } = useResponsiveBreakpoint();
+  const dev = useDevLayout();
+  const sidebarWidth = dev.sidebarWidth;
   const sidebarRef = useRef<HTMLDivElement>(null);
   const guideSectionRef = useRef<HTMLDivElement>(null);
   const feedbackSectionRef = useRef<HTMLDivElement>(null);
@@ -239,6 +242,7 @@ const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
       {renderDivider()}
 
       <div className="flex-1 overflow-y-auto overflow-x-hidden" style={{ minHeight: 0 }}>
+        <div style={{ padding: `${dev.sidebarPaddingY}px ${dev.sidebarPaddingX}px` }}>
         <div ref={guideSectionRef}>
           <GuideSection
             isExpanded={expandedUtility === "guide"}
@@ -307,7 +311,8 @@ const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
           accentColor={accentColor}
         />
       </div>
-    </>
+    </div>
+  </>
   );
 
   if (isMobile) {
@@ -329,7 +334,7 @@ const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
           data-testid="document-sidebar"
           role="complementary"
           style={{
-            width: DOCUMENT_SIDEBAR_WIDTH,
+            width: sidebarWidth,
             maxWidth: "85vw",
             transform: isOpen ? "translateX(0)" : "translateX(-100%)",
             backgroundColor: `${bgColor}F2`,
@@ -365,7 +370,7 @@ const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
         width: DOCUMENT_SIDEBAR_WIDTH,
         transform: isOpen
           ? "translateX(0)"
-          : `translateX(-${DOCUMENT_SIDEBAR_WIDTH}px)`,
+          : `translateX(-${sidebarWidth}px)`,
         backgroundColor: `${bgColor}E6`,
         backdropFilter: "blur(10px)",
         WebkitBackdropFilter: "blur(10px)",
