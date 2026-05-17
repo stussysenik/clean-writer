@@ -92,7 +92,7 @@ const EXTRAS_CONFIG = [
 
 type WordTypeKey = (typeof WORD_TYPE_CONFIG)[number]["key"];
 
-const ITEM_HEIGHT = 58;
+const ITEM_HEIGHT = 50;
 const LONG_PRESS_MS = 400;
 const ORDER_STORAGE_KEY = "clean_writer_word_type_order";
 const BREAKDOWN_COLLAPSED_KEY = "clean_writer_breakdown_collapsed";
@@ -645,7 +645,17 @@ const PanelBody: React.FC<PanelBodyProps> = ({
       {/* Code View */}
       {codeMode && (
         <div className="px-[21px] pb-[13px]">
-          <div className="flex flex-col gap-4">
+          {/* "— CODE —" header */}
+          <div
+            className="text-xs uppercase tracking-widest mb-[13px] flex items-center gap-2"
+            style={{ color: theme.text, opacity: 0.5 }}
+          >
+            <span className="flex-1 h-px" style={{ backgroundColor: `${theme.text}20` }} />
+            <span>Code</span>
+            <span className="flex-1 h-px" style={{ backgroundColor: `${theme.text}20` }} />
+          </div>
+
+          <div className="flex flex-col gap-3">
             {/* Language indicator */}
             <div
               className="rounded-lg border px-4 py-3"
@@ -663,9 +673,7 @@ const PanelBody: React.FC<PanelBodyProps> = ({
             </div>
 
             {/* Stats */}
-            <div
-              className="grid grid-cols-2 gap-3"
-            >
+            <div className="grid grid-cols-2 gap-3">
               <div
                 className="rounded-lg border px-4 py-3"
                 style={{
@@ -693,6 +701,22 @@ const PanelBody: React.FC<PanelBodyProps> = ({
                 <div className="text-2xl font-bold tabular-nums" style={{ color: theme.text }}>
                   {content.length}
                 </div>
+              </div>
+            </div>
+
+            {/* Word count row */}
+            <div
+              className="rounded-lg border px-4 py-3"
+              style={{
+                borderColor: `${theme.text}18`,
+                backgroundColor: `${theme.background}f4`,
+              }}
+            >
+              <div className="text-[10px] uppercase tracking-widest mb-1" style={{ color: theme.text, opacity: 0.5 }}>
+                Words
+              </div>
+              <div className="text-2xl font-bold tabular-nums" style={{ color: theme.text }}>
+                {wordCount}
               </div>
             </div>
           </div>
@@ -1121,7 +1145,7 @@ const PanelBody: React.FC<PanelBodyProps> = ({
                   <div
                     key={item.key}
                     data-testid={`syntax-breakdown-row-${item.key}`}
-                    className={`absolute left-0 right-0 grid grid-cols-[14px_56px_8px_minmax(0,1fr)_44px] items-center gap-x-2 px-3 rounded-lg select-none ${
+                    className={`absolute left-0 right-0 grid grid-cols-[16px_60px_8px_minmax(0,1fr)_44px] items-center gap-x-1.5 px-3 rounded-lg select-none ${
                       isBeingDragged
                         ? "z-50 cursor-grabbing"
                         : "z-10 cursor-grab"
@@ -1437,7 +1461,11 @@ const PanelBody: React.FC<PanelBodyProps> = ({
         className="px-6 py-3 text-center border-t"
         style={{ borderColor: `${theme.text}10` }}
       >
-        {songMode ? (
+        {codeMode ? (
+          <p className="text-xs opacity-40 mt-1">
+            Code syntax highlighting is active in the editor
+          </p>
+        ) : songMode ? (
           <p className="text-xs opacity-40 mt-1">
             Click a rhyme to toggle, double-click to solo
           </p>
