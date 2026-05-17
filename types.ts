@@ -134,6 +134,13 @@ export type ViewMode = "write" | "preview";
 
 export type FocusMode = "none" | "sentence" | "word" | "paragraph";
 
+export interface HiddenUISections {
+  helpButton: boolean;
+  fontControls: boolean;
+  topBar: boolean;
+  devToggle: boolean;
+}
+
 export interface TextRange {
   start: number;
   end: number;

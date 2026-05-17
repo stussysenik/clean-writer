@@ -152,6 +152,12 @@ const Typewriter: React.FC<TypewriterProps> = ({
   const effectiveLineHeight = songMode && showSyllableAnnotations ? "2.4" : String(lineHeightProp);
   const effectiveLetterSpacing = letterSpacingProp ? `${letterSpacingProp}em` : undefined;
 
+  const codeModeFontSize = useMemo(() => {
+    if (!codeMode) return fontSize;
+    if (isMobile) return "14px";
+    return fontSize;
+  }, [codeMode, isMobile, fontSize]);
+
   // Focus mode: use the focusNavState from the hook if available,
   // otherwise fall back to a simple "last unit" dimBeforeIndex for backwards compat
   const focusRange = focusNavState?.focusedRange ?? null;
@@ -171,6 +177,15 @@ const Typewriter: React.FC<TypewriterProps> = ({
         textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
       }
     }, 0);
+  }, [textareaRef]);
+
+  // Programmatic focus — ensures textarea has focus on mount so user can hot-start
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (el) {
+      const raf = requestAnimationFrame(() => el.focus());
+      return () => cancelAnimationFrame(raf);
+    }
   }, [textareaRef]);
 
   // IME composition handling for Chinese, Japanese, Korean, and other languages
@@ -1448,16 +1463,16 @@ const Typewriter: React.FC<TypewriterProps> = ({
         ref={backdropRef}
         className="absolute inset-0 pt-[80px] pb-[80px] whitespace-pre-wrap break-words pointer-events-none z-0 overflow-hidden"
         style={{
-          fontFamily: unstylizedMode
-            ? "'Courier New', Courier, monospace"
-            : codeMode
-              ? 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace'
-              : fontFamily,
-          fontSize,
-          lineHeight: effectiveLineHeight,
-          letterSpacing: unstylizedMode ? "0px" : effectiveLetterSpacing,
-          color: unstylizedMode ? "#000000" : theme.text,
-          paddingLeft: `${paddingLeft}px`,
+            fontFamily: unstylizedMode
+              ? "'Courier New', Courier, monospace"
+              : codeMode
+                ? 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace'
+                : fontFamily,
+            fontSize: codeMode ? codeModeFontSize : fontSize,
+            lineHeight: effectiveLineHeight,
+            letterSpacing: unstylizedMode ? "0px" : effectiveLetterSpacing,
+            color: "transparent",
+            paddingLeft: `${paddingLeft}px`,
           paddingRight: `${paddingRight}px`,
           transition: "padding-left 200ms ease, padding-right 200ms ease",
         }}
@@ -1551,7 +1566,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
         <div
           ref={selectionOverlayRef}
           data-testid="persisted-selection-overlay"
-          className="absolute inset-0 pt-[55px] pb-[50vh] md:pt-[55px] lg:pt-[55px] whitespace-pre-wrap break-words pointer-events-none z-[5] overflow-hidden"
+          className="absolute inset-0 pt-[80px] pb-[80px] whitespace-pre-wrap break-words pointer-events-none z-[5] overflow-hidden"
           style={{
             fontFamily: unstylizedMode
               ? "'Courier New', Courier, monospace"
@@ -1605,16 +1620,16 @@ const Typewriter: React.FC<TypewriterProps> = ({
             : codeMode
               ? 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace'
               : fontFamily,
-          fontSize,
+          fontSize: codeMode ? codeModeFontSize : fontSize,
           lineHeight: effectiveLineHeight,
           letterSpacing: unstylizedMode ? "0px" : effectiveLetterSpacing,
           color: "transparent",
-          // Live blinking caret — visible in every state. The Garfield dot still marks the
-          // text frontier; this caret is the *active* indicator that the editor has focus
-          // and shows where the next character will land. When empty, sits at column 0 and
-          // pulses behind the placeholder text. When at frontier with content, stacks with
-          // the dot for a "hot tip" feel. When mid-text, lives at the insertion point.
+          // Solid full-block caret at insertion point. When empty, uses the theme's
+          // cursor colour; otherwise picks up the last-word syntax colour. On mobile
+          // the block is slightly thicker so the cursor is easier to spot on small screens.
           caretColor: content.length === 0 ? theme.cursor : lastWordColor,
+          caret: "block",
+          // iOS Safari ignores caret-shape; we keep the block caret for all platforms.
           opacity: 1,
           scrollbarWidth: "none",
           paddingLeft: `${paddingLeft}px`,

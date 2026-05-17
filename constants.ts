@@ -132,7 +132,64 @@ function buildTheme(base: Omit<RisoTheme, "highlight" | "rhymeColors">): RisoThe
   };
 }
 
+/**
+ * ACTIVE THEMES — shown in the primary theme selector.
+ * Two themes only: Syntax (default, custom word/song palette) and Paper (clean minimal).
+ */
 export const THEMES: RisoTheme[] = [
+  // 1. Syntax — default theme with hand-picked syntax highlights + song rhyme colors
+  {
+    id: "syntax",
+    name: "Syntax",
+    text: "#1A1A1A",
+    background: "#FDFDFD",
+    accent: "#004E94",
+    cursor: "#004E94",
+    strikethrough: "#E6007A",
+    selection: "rgba(0,78,148,0.15)",
+    highlight: {
+      noun: "#140A1A",
+      pronoun: "#FF00FF",
+      verb: "#3EAD00",
+      adjective: "#FF6600",
+      adverb: "#1414FF",
+      preposition: "#E6D300",
+      conjunction: "#004E94",
+      article: "#22B14C",
+      interjection: "#FF6EFF",
+      url: "#5C0000",
+      number: "#E6007A",
+      hashtag: "#00E1D9",
+    },
+    rhymeColors: [
+      "#E53030", // Red
+      "#238BE6", // Blue
+      "#40A040", // Green
+      "#FD8A05", // Orange
+      "#8B22A0", // Purple
+      "#00A3C4", // Teal
+      "#D61A5C", // Pink
+      "#FCD116", // Yellow
+    ],
+  },
+  // 2. Paper — clean white minimal
+  buildTheme({
+    id: "paper",
+    name: "Paper",
+    text: "#1A1A1A",
+    background: "#FFFFFF",
+    accent: "#2563EB",
+    cursor: "#2563EB",
+    strikethrough: "#DC2626",
+    selection: "rgba(37,99,235,0.2)",
+  }),
+];
+
+/**
+ * ARCHIVED THEMES — preserved for reference and future restoration.
+ * Not shown in the primary selector but importable.
+ */
+export const ARCHIVED_THEMES: RisoTheme[] = [
   buildTheme({
     id: "classic",
     name: "Classic",
@@ -172,16 +229,6 @@ export const THEMES: RisoTheme[] = [
     cursor: "#8b6914",
     strikethrough: "#a65d3f",
     selection: "rgba(139,105,20,0.2)",
-  }),
-  buildTheme({
-    id: "paper",
-    name: "Paper",
-    text: "#1A1A1A",
-    background: "#FFFFFF",
-    accent: "#2563EB",
-    cursor: "#2563EB",
-    strikethrough: "#DC2626",
-    selection: "rgba(37,99,235,0.2)",
   }),
   buildTheme({
     id: "terminal",
@@ -285,17 +332,17 @@ export const THEMES: RisoTheme[] = [
   }),
 ];
 
-export const MOCK_ANALYSIS_DELAY = 1500; // ms
+export const ALL_THEMES: RisoTheme[] = [...THEMES, ...ARCHIVED_THEMES];
 
-// Song Mode: 8 rhyme highlight colors — OKLCH-uniform ocean palette (base hue 210°, L=0.55, C=0.14)
-// Kept as fallback default for custom themes without rhymeColors
+export const MOCK_ANALYSIS_DELAY = 1500;
+
 export const RHYME_COLORS = [
-  "#D85B73", // rose
-  "#F3DD3E", // yellow
-  "#34C6E3", // cyan
-  "#B08D3B", // bronze
-  "#4C7BE8", // cobalt
-  "#2EEA2B", // green
-  "#E3952E", // orange
-  "#64BCEC", // sky
+  "#D85B73",
+  "#F3DD3E",
+  "#34C6E3",
+  "#B08D3B",
+  "#4C7BE8",
+  "#2EEA2B",
+  "#E3952E",
+  "#64BCEC",
 ] as const;

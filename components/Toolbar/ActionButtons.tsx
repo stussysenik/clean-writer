@@ -93,7 +93,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({
     >
       <span className="flex items-center justify-center">{icon}</span>
       <span
-        className="uppercase tracking-wider font-medium hidden sm:block"
+        className="uppercase tracking-wider font-medium block"
         style={{ fontSize: "var(--dev-tb-label-fs, 9px)" }}
       >
         {label}

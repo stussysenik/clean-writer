@@ -26,6 +26,7 @@ import {
   toSyntaxSets,
   SongAnalysis,
   FocusMode,
+  HiddenUISections,
   ColorEditTarget,
 } from "./types";
 import QuickColorPicker from "./components/ColorPicker/QuickColorPicker";
@@ -37,6 +38,7 @@ import ConfirmDialog from "./components/ConfirmDialog";
 import Toolbar from "./components/Toolbar";
 import ThemeSelector from "./components/Toolbar/ThemeSelector";
 import ThemeCustomizer from "./components/ThemeCustomizer";
+import CommandPalette, { type CommandItem } from "./components/CommandPalette";
 import UnifiedSyntaxPanel from "./components/UnifiedSyntaxPanel";
 import Toast from "./components/Toast";
 import TouchButton from "./components/TouchButton";
@@ -48,6 +50,7 @@ import { IconSettings } from "./components/Toolbar/Icons";
 import useCustomTheme from "./hooks/useCustomTheme";
 import useCustomThemes from "./hooks/useCustomThemes";
 import useThemeVisibility from "./hooks/useThemeVisibility";
+import { useThemeHistory } from "./hooks/useThemeHistory";
 import useSelectionPersistence from "./hooks/useSelectionPersistence";
 import { getIconColor } from "./utils/contrastAwareColor";
 import {
@@ -326,7 +329,30 @@ const App: React.FC = () => {
 
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
   const [isSampleDialogOpen, setIsSampleDialogOpen] = useState(false);
+
+  const [hiddenUISections, setHiddenUISections] = useState<HiddenUISections>(() => {
+    try {
+      const saved = localStorage.getItem("clean_writer_hidden_ui");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (typeof parsed === "object" && parsed !== null) return parsed;
+      }
+      return { helpButton: true, fontControls: false, topBar: false, devToggle: true };
+    } catch {
+      return { helpButton: true, fontControls: false, topBar: false, devToggle: true };
+    }
+  });
+
+  const toggleUISection = useCallback((section: keyof HiddenUISections) => {
+    setHiddenUISections(prev => {
+      const next = { ...prev, [section]: !prev[section] };
+      try { localStorage.setItem("clean_writer_hidden_ui", JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }, []);
+
   const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [customizerInitialTab, setCustomizerInitialTab] = useState<string | null>(null);
   const [quickColorPickerState, setQuickColorPickerState] = useState<{
     target: ColorEditTarget;
@@ -711,10 +737,23 @@ const App: React.FC = () => {
     }
   }, [hasSeenSyntaxPanel]);
 
-  // Handle theme change
+  // Handle theme change with history tracking
+  const { push: pushThemeHistory, undo: undoTheme, redo: redoTheme, canUndo, canRedo } = useThemeHistory(themeId);
+
   const handleThemeChange = useCallback((id: string) => {
+    pushThemeHistory(id);
     setThemeId(id);
-  }, []);
+  }, [pushThemeHistory]);
+
+  const handleUndoTheme = useCallback(() => {
+    const prev = undoTheme();
+    if (prev) setThemeId(prev);
+  }, [undoTheme]);
+
+  const handleRedoTheme = useCallback(() => {
+    const next = redoTheme();
+    if (next) setThemeId(next);
+  }, [redoTheme]);
 
   // Keyboard shortcuts moved to useAppHotkeys (called after all callbacks are declared)
 
@@ -1045,6 +1084,7 @@ const App: React.FC = () => {
       hashtags: [],
     });
     setIsClearDialogOpen(false);
+    setTimeout(() => textareaRef.current?.focus(), 10);
   };
 
   const handleSampleTextRequest = () => {
@@ -1054,6 +1094,7 @@ const App: React.FC = () => {
   const handleConfirmSampleText = () => {
     setContent(FRESH_LOAD_TEXT);
     setIsSampleDialogOpen(false);
+    setTimeout(() => textareaRef.current?.focus(), 10);
   };
 
   const handleStrikethrough = useCallback(() => {
@@ -1160,6 +1201,56 @@ const App: React.FC = () => {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, []);
+
+  // Command Palette: Cmd+K / Cmd+Shift+K
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k" && !e.shiftKey) {
+        e.preventDefault();
+        setIsCommandPaletteOpen(prev => !prev);
+      }
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "K") {
+        e.preventDefault();
+        setIsCommandPaletteOpen(prev => !prev);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  // Command palette items — derived from current state
+  const commandItems: CommandItem[] = useMemo(() => [
+    // Theme
+    { id: "theme-syntax", label: "Switch to Syntax", shortcut: "", category: "Theme", action: () => handleThemeChange("syntax") },
+    { id: "theme-paper", label: "Switch to Paper", shortcut: "", category: "Theme", action: () => handleThemeChange("paper") },
+    // View
+    { id: "view-preview", label: "Toggle Preview", shortcut: "⌘⇧P", category: "View", action: () => setViewMode(v => v === "write" ? "preview" : "write") },
+    { id: "view-plain", label: "Toggle Plain Mode", shortcut: "⌘⇧U", category: "View", action: toggleUnstylizedMode },
+    { id: "view-focus", label: "Cycle Focus Mode", shortcut: "⌘⇧F", category: "View", action: cycleFocusMode },
+    // Editing
+    { id: "edit-strikethrough", label: "Strikethrough Selection", shortcut: "⌘⇧X", category: "Editing", action: handleStrikethroughWithFocus },
+    { id: "edit-clean", label: "Clean Struck Text", shortcut: "⌘⇧K", category: "Editing", action: () => setContent(removeStrikethroughBlocks(content)) },
+    { id: "edit-export", label: "Export Markdown", shortcut: "⌘⇧E", category: "Editing", action: handleExport },
+    { id: "edit-clear", label: "Clear Page", shortcut: "⌘⇧D", category: "Editing", action: () => setIsClearDialogOpen(true) },
+    // Font
+    ...FONT_OPTIONS.map(f => ({ id: `font-${f.id}`, label: `Font: ${f.name}`, shortcut: "", category: "Font", action: () => setFontId(f.id) })),
+    // UI
+    { id: "ui-customize", label: "Customize Theme", shortcut: "", category: "UI", action: () => { setIsCustomizerOpen(true); setIsSidebarOpen(false); } },
+    { id: "ui-sidebar", label: "Toggle Sidebar", shortcut: "⌘⇧B", category: "UI", action: () => setIsSidebarOpen(prev => !prev) },
+    { id: "ui-shortcuts", label: "Show Keyboard Shortcuts", shortcut: "", category: "UI", action: () => openSidebarUtilitySection("guide") },
+    { id: "ui-sample", label: "Load Sample Text", shortcut: "", category: "UI", action: () => setIsSampleDialogOpen(true) },
+    // UI Visibility
+    { id: "ui-hide-help", label: hiddenUISections.helpButton ? "Show Help Button" : "Hide Help Button", shortcut: "", category: "UI", action: () => toggleUISection("helpButton") },
+    { id: "ui-hide-font", label: hiddenUISections.fontControls ? "Show Font Controls" : "Hide Font Controls", shortcut: "", category: "UI", action: () => toggleUISection("fontControls") },
+    { id: "ui-hide-topbar", label: hiddenUISections.topBar ? "Show Top Bar" : "Hide Top Bar", shortcut: "", category: "UI", action: () => toggleUISection("topBar") },
+    { id: "ui-hide-dev", label: hiddenUISections.devToggle ? "Show Dev Toggle" : "Hide Dev Toggle", shortcut: "", category: "UI", action: () => toggleUISection("devToggle") },
+    // Theme history
+    { id: "theme-undo", label: "Undo Theme", shortcut: "", category: "Theme", action: handleUndoTheme, keywords: ["undo", "revert", "previous", "back"] },
+    { id: "theme-redo", label: "Redo Theme", shortcut: "", category: "Theme", action: handleRedoTheme, keywords: ["redo", "forward", "next"] },
+    // Dev (hidden by default, toggled via cmd+k)
+    { id: "dev-toggle", label: devEnabled ? "Dev Controls: OFF" : "Dev Controls: ON", shortcut: "", category: "Dev", action: () => getDevActor().send({ type: "TOGGLE" }) },
+    { id: "dev-overlap", label: "Overlap Debug", shortcut: "⌘⇧⌥O", category: "Dev", keywords: ["overlap", "debug", "visual"], action: () => { const e = new KeyboardEvent("keydown", { metaKey: true, shiftKey: true, altKey: true, code: "KeyO" }); window.dispatchEvent(e); } },
+  ], [handleThemeChange, setViewMode, toggleUnstylizedMode, cycleFocusMode, handleStrikethroughWithFocus, handleExport, setFontId, content, openSidebarUtilitySection, devEnabled, hiddenUISections, toggleUISection, handleUndoTheme, handleRedoTheme]);
 
   // Capture-phase listener for arrow keys in focus mode (must fire before textarea)
   useEffect(() => {
@@ -1437,6 +1528,7 @@ const App: React.FC = () => {
       />
 
       {/* Top Bar with Theme Selector and Settings */}
+      {!hiddenUISections.topBar && (
       <div
         className="absolute top-0 right-0 flex justify-between items-center p-[13px] md:p-[21px] z-[60] pointer-events-none transition-[left] duration-300 ease-in-out"
         style={{
@@ -1461,7 +1553,7 @@ const App: React.FC = () => {
         {!isCustomizerOpen && (
           <div className="pointer-events-auto flex items-center min-h-[44px]" style={{ gap: "var(--dev-topbar-btn-gap, 6px)" }}>
             {/* Font Size A-/A+ Controls — segmented pill */}
-            {!unstylizedMode && <div
+            {!hiddenUISections.fontControls && !unstylizedMode && <div
               className="flex items-center gap-0 rounded-lg overflow-hidden"
               style={{
                 backgroundColor: `${currentTheme.background}80`,
@@ -1506,7 +1598,7 @@ const App: React.FC = () => {
                 A+
               </TouchButton>
             </div>}
-            <Tooltip content="Help & Shortcuts" position="bottom">
+            {!hiddenUISections.helpButton && <Tooltip content="Help & Shortcuts" position="bottom">
               <TouchButton
                 onClick={() => openSidebarUtilitySection("guide")}
                 className="p-1.5 rounded-xl hover:bg-current/5 transition-all duration-200"
@@ -1530,7 +1622,7 @@ const App: React.FC = () => {
                   <line x1="12" y1="17" x2="12.01" y2="17" />
                 </svg>
               </TouchButton>
-            </Tooltip>
+            </Tooltip>}
             <Tooltip content={`Build ${BUILD_NUMBER} · ${BUILD_HASH}`} position="bottom">
               <TouchButton
                 onClick={() => {
@@ -1548,10 +1640,11 @@ const App: React.FC = () => {
                 <IconSettings />
               </TouchButton>
             </Tooltip>
-            <DevToggle onClick={() => getDevActor().send({ type: "TOGGLE" })} />
+            {!hiddenUISections.devToggle && <DevToggle onClick={() => getDevActor().send({ type: "TOGGLE" })} />}
           </div>
         )}
       </div>
+      )}
 
       {/* Main Area */}
       <main
@@ -1786,6 +1879,12 @@ const App: React.FC = () => {
         </div>
       )}
       {devEnabled && <DevControlsPanel />}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        commands={commandItems}
+        theme={currentTheme}
+      />
     </div>
   );
 };

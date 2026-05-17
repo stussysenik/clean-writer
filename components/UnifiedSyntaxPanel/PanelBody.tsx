@@ -564,7 +564,7 @@ const PanelBody: React.FC<PanelBodyProps> = ({
           </div>
           <div
             className={`flex min-w-0 ${
-              useInlineHeader ? "items-center gap-2 flex-shrink" : "flex-col items-end gap-4 flex-shrink-0"
+              useInlineHeader ? "items-center gap-2 flex-shrink-0" : "flex-col items-end gap-4 flex-shrink-0"
             }`}
           >
             {(showSongModeToggle || showCodeModeToggle) && (

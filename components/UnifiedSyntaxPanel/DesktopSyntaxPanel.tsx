@@ -88,7 +88,7 @@ const DesktopSyntaxPanel: React.FC<DesktopSyntaxPanelProps> = ({
         opacity: 1,
         width: panelWidth,
         minWidth: "320px",
-        maxHeight: "calc(100vh - 89px - 55px)",
+        maxHeight: "calc(100vh - 34px - 55px)",
         overflowX: "hidden",
         overflowY: "auto",
         right: dev.desktopPanelRight ?? undefined,

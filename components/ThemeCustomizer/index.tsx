@@ -1207,7 +1207,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
 
       {/* Panel */}
       <div
-        className="fixed w-full z-[101] flex flex-col right-0 top-[13px] bottom-[13px] max-w-full rounded-xl md:right-[21px] md:top-[21px] md:bottom-[21px] md:max-w-md md:rounded-2xl lg:right-[34px] lg:top-[34px] lg:bottom-[34px] lg:max-w-lg lg:rounded-2xl overflow-x-hidden"
+        className="fixed w-full z-[101] flex flex-col right-0 top-[13px] bottom-[13px] max-w-full rounded-xl md:right-[21px] md:top-[21px] md:bottom-[21px] md:max-w-md md:rounded-2xl lg:right-[34px] lg:top-[34px] lg:bottom-[34px] lg:max-w-lg lg:rounded-2xl"
         data-testid="theme-customizer-panel"
         style={{
           backgroundColor: theme.background,
@@ -1277,7 +1277,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
         </div>
 
         {/* Tab Content — scrollable */}
-        <div className="flex-1 overflow-y-auto overflow-x-hidden min-w-0 px-4 py-1">
+        <div className="flex-1 overflow-y-auto min-w-0 px-4 py-1">
           <div
             key={activeTab}
             className="animate-tab-fade-in min-w-0"
@@ -1363,7 +1363,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                   onResetColor={onResetColor}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-x-6 gap-y-0 mt-3">
+              <div className="grid grid-cols-2 gap-x-3 gap-y-0 mt-3">
                 {WORD_TYPE_LABELS.map(({ key, label }) => {
                   const customized = checkCustomized(key);
                   return (
@@ -1372,16 +1372,16 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                       id={`theme-color-${key}`}
                       className="group grid items-center scroll-mt-24 transition-colors"
                       style={{
-                        gridTemplateColumns: "8px minmax(0, 1fr) 26px 22px",
-                        columnGap: "10px",
-                        minHeight: "36px",
+                        gridTemplateColumns: "6px minmax(0, 1fr) 22px",
+                        columnGap: "6px",
+                        minHeight: "32px",
                       }}
                     >
                       <span
                         className="rounded-full"
                         style={{
-                          width: "8px",
-                          height: "8px",
+                          width: "6px",
+                          height: "6px",
                           backgroundColor: theme.highlight[key],
                           boxShadow: dotShadow,
                         }}
@@ -1389,7 +1389,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                       <span
                         className="truncate"
                         style={{
-                          fontSize: "13px",
+                          fontSize: "11px",
                           fontWeight: 400,
                           letterSpacing: "-0.005em",
                           opacity: customized ? 0.92 : 0.66,
@@ -1403,25 +1403,9 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                         value={theme.highlight[key]}
                         onChange={(e) => onSetColor(key, e.target.value)}
                         className="cursor-pointer border-0 p-0 bg-transparent justify-self-center"
-                        style={{ width: "22px", height: "22px", borderRadius: "999px" }}
+                        style={{ width: "20px", height: "20px", borderRadius: "999px" }}
                         aria-label={`Pick ${label.toLowerCase()} color`}
                       />
-                      {onResetColor ? (
-                        <TouchButton
-                          onClick={() => onResetColor(key)}
-                          disabled={!customized}
-                          className="p-1 transition-opacity justify-self-center"
-                          style={{
-                            opacity: customized ? 0.55 : 0,
-                            cursor: customized ? "pointer" : "default",
-                            pointerEvents: customized ? "auto" : "none",
-                          }}
-                          title={customized ? `Reset ${label.toLowerCase()}` : ""}
-                          aria-label={customized ? `Reset ${label}` : `${label} is using default`}
-                        >
-                          <IconReset size={11} />
-                        </TouchButton>
-                      ) : <span />}
                     </div>
                   );
                 })}
