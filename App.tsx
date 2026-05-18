@@ -506,7 +506,7 @@ const App: React.FC = () => {
     : "clamp(160px, 24vh, 220px)";
   const effectiveDesktopPanelWidth = devEnabled
     ? buildDesktopPanelWidth(devOverrides)
-    : "min(360px, 30vw)";
+    : "min(500px, 40vw)";
 
   const openSidebarUtilitySection = useCallback(
     (section: "guide" | "feedback") => {
@@ -1648,7 +1648,7 @@ const App: React.FC = () => {
 
       {/* Main Area */}
       <main
-        className="flex-1 w-full h-full relative z-10 pt-[70px] md:pt-[80px] lg:pt-[80px] transition-all duration-300 ease-in-out"
+        className="flex-1 w-full h-full relative z-10 pt-[80px] transition-all duration-300 ease-in-out"
         style={{
           paddingLeft: desktopSidebarOffset || undefined,
           paddingRight: isDesktop && content.length > 0 ? effectiveDesktopPanelWidth : undefined,

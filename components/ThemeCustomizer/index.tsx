@@ -304,11 +304,14 @@ const CompactColorRow: React.FC<{
           type="color"
           value={color}
           onChange={(e) => onSetColor(path, e.target.value)}
-          className="cursor-pointer border-0 p-0 bg-transparent flex-shrink-0"
+          className="cursor-pointer border-0 p-0 bg-transparent flex-shrink-0 appearance-none [-webkit-appearance:none]"
           style={{
             width: "26px",
             height: "26px",
             borderRadius: "999px",
+            border: "none",
+            outline: "none",
+            padding: 0,
           }}
           aria-label={`Pick ${label.toLowerCase()} color`}
         />
@@ -1402,8 +1405,8 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                         type="color"
                         value={theme.highlight[key]}
                         onChange={(e) => onSetColor(key, e.target.value)}
-                        className="cursor-pointer border-0 p-0 bg-transparent justify-self-center"
-                        style={{ width: "20px", height: "20px", borderRadius: "999px" }}
+                        className="cursor-pointer border-0 p-0 bg-transparent justify-self-center appearance-none [-webkit-appearance:none]"
+                        style={{ width: "20px", height: "20px", borderRadius: "999px", border: "none", outline: "none", padding: 0 }}
                         aria-label={`Pick ${label.toLowerCase()} color`}
                       />
                     </div>
@@ -1469,7 +1472,7 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                                 border: isActive
                                   ? `1.5px solid ${theme.accent}`
                                   : isDrifted
-                                    ? `1px dashed ${theme.accent}66`
+                                    ? `1px solid ${theme.accent}40`
                                     : `1px solid ${theme.text}14`,
                                 backgroundColor: isActive
                                   ? `${theme.accent}10`
@@ -1586,8 +1589,8 @@ const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({
                             type="color"
                             value={color}
                             onChange={(e) => onSetRhymeColor!(index, e.target.value)}
-                            className="cursor-pointer border-0 p-0 bg-transparent justify-self-center"
-                            style={{ width: "22px", height: "22px", borderRadius: "999px" }}
+                            className="cursor-pointer border-0 p-0 bg-transparent justify-self-center appearance-none [-webkit-appearance:none]"
+                            style={{ width: "22px", height: "22px", borderRadius: "999px", border: "none", outline: "none", padding: 0 }}
                             aria-label={`Pick ${colorLabel.toLowerCase()} color`}
                           />
                           {onResetRhymeColor ? (

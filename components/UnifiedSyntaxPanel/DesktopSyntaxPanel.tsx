@@ -77,7 +77,7 @@ const DesktopSyntaxPanel: React.FC<DesktopSyntaxPanelProps> = ({
     <div
       ref={panelRef}
       data-testid="desktop-syntax-panel"
-      className="fixed right-[21px] bottom-[21px] lg:right-[34px] lg:bottom-[34px] z-50 rounded-2xl overflow-hidden no-scrollbar"
+      className="fixed right-0 z-50 rounded-2xl overflow-hidden no-scrollbar"
       style={{
         // Solid theme background — design context: no glassmorphism. The panel sits
         // beside the writing column (App reserves right padding when content exists),
@@ -88,7 +88,8 @@ const DesktopSyntaxPanel: React.FC<DesktopSyntaxPanelProps> = ({
         opacity: 1,
         width: panelWidth,
         minWidth: "320px",
-        maxHeight: "calc(100vh - 34px - 55px)",
+        bottom: "max(48px, calc(44px + env(safe-area-inset-bottom)))",
+        maxHeight: "calc(100vh - 48px - 80px)",
         overflowX: "hidden",
         overflowY: "auto",
         right: dev.desktopPanelRight ?? undefined,

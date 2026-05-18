@@ -219,9 +219,8 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
       style={{
         bottom: "max(140px, calc(132px + env(safe-area-inset-bottom)))",
         paddingRight: "env(safe-area-inset-right)",
-        // Allow 85dvh so virtually the full panel is visible on mobile;
-        // still leaves a sliver of writing surface visible at the top.
         maxHeight: "min(85dvh, calc(100dvh - 80px))",
+        left: harmonicaState.stage === "full" ? "0.5rem" : undefined,
       }}
     >
       <HarmonicaContainer

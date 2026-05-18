@@ -1528,7 +1528,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
       {/* Last-focused-word overlay — visible when in sentence/paragraph mode */}
       {!isMobile && focusNavState && focusNavState.mode !== "word" && focusNavState.mode !== "none" && focusNavState.lastFocusedWordRange && (
         <div
-          className="absolute inset-0 pt-[55px] pb-[50vh] md:pt-[55px] lg:pt-[55px] whitespace-pre-wrap break-words pointer-events-none z-[3] overflow-hidden"
+          className="absolute inset-0 pt-[80px] pb-[80px] whitespace-pre-wrap break-words pointer-events-none z-[3] overflow-hidden"
           style={{
             fontFamily: unstylizedMode
               ? "'Courier New', Courier, monospace"

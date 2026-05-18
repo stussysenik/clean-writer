@@ -121,14 +121,22 @@ const HarmonicaContainer: React.FC<HarmonicaContainerProps> = ({
       ref={containerRef}
       className="relative overflow-hidden rounded-l-2xl"
       style={{
-        width: isDragging ? dimensions.width : STAGE_DIMENSIONS[stage].width,
-        height: isDragging
-          ? typeof dimensions.height === "number"
-            ? dimensions.height
-            : "auto"
-          : typeof STAGE_DIMENSIONS[stage].height === "number"
-            ? STAGE_DIMENSIONS[stage].height
-            : "auto",
+        width:
+          stage === "full" && !isDragging
+            ? "100%"
+            : isDragging
+              ? dimensions.width
+              : STAGE_DIMENSIONS[stage].width,
+        height:
+          stage === "full" && !isDragging
+            ? "min(85dvh, calc(100dvh - 80px))"
+            : isDragging
+              ? typeof dimensions.height === "number"
+                ? dimensions.height
+                : "auto"
+              : typeof STAGE_DIMENSIONS[stage].height === "number"
+                ? STAGE_DIMENSIONS[stage].height
+                : "auto",
         // Glassmorphism
         backgroundColor:
           stage === "closed" ? "transparent" : `${theme.background}E6`,
@@ -204,14 +212,14 @@ const HarmonicaContainer: React.FC<HarmonicaContainerProps> = ({
           {children.expand}
         </div>
 
-        {/* Full content — onPointerDown prevents focus steal from textarea */}
+        {/* Full content — leave room for the always-visible corner tab */}
         <div
           data-testid="mobile-panel-scroll-region"
           className="absolute transition-opacity duration-200"
           onPointerDown={(e) => e.preventDefault()}
           style={{
             left: 0,
-            right: 0,
+            right: stage === "full" ? 36 : STAGE_DIMENSIONS.closed.width,
             top: 0,
             bottom: 0,
             opacity: showFull ? 1 : 0,

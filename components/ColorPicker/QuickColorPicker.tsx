@@ -173,8 +173,8 @@ const QuickColorPicker: React.FC<QuickColorPickerProps> = ({
             type="color"
             value={currentColor}
             onChange={(e) => handleColorChange(e.target.value)}
-            className="w-8 h-8 cursor-pointer rounded border-0 p-0 bg-transparent flex-shrink-0"
-            style={{ minWidth: "32px", minHeight: "32px" }}
+            className="w-8 h-8 cursor-pointer rounded border-0 p-0 bg-transparent flex-shrink-0 appearance-none [-webkit-appearance:none]"
+            style={{ minWidth: "32px", minHeight: "32px", border: "none", outline: "none", padding: 0 }}
           />
           <HexInput value={currentColor} onChange={handleColorChange} />
         </div>

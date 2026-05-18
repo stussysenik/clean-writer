@@ -40,10 +40,13 @@ const ColorPicker: React.FC<ColorPickerProps> = ({
             type="color"
             value={color}
             onChange={(e) => onChange(e.target.value)}
-            className="w-11 h-11 cursor-pointer rounded-md border-0 p-0 bg-transparent"
+            className="w-11 h-11 cursor-pointer rounded-md border-0 p-0 bg-transparent appearance-none [-webkit-appearance:none]"
             style={{
               minWidth: "44px",
               minHeight: "44px",
+              border: "none",
+              outline: "none",
+              padding: 0,
             }}
           />
         </div>

@@ -571,7 +571,7 @@ const PanelBody: React.FC<PanelBodyProps> = ({
               <div
                 className={`grid items-center gap-0.5 rounded-full border p-1 ${
                   showCodeModeToggle ? "grid-cols-3" : "grid-cols-2"
-                } ${useInlineHeader ? "w-auto max-w-[280px]" : "w-full max-w-[240px]"}`}
+                } ${useInlineHeader ? "w-auto max-w-[280px]" : "w-full max-w-[280px]"}`}
                 data-testid="panel-mode-switch"
                 style={{
                   backgroundColor: `${theme.text}08`,
@@ -1145,7 +1145,7 @@ const PanelBody: React.FC<PanelBodyProps> = ({
                   <div
                     key={item.key}
                     data-testid={`syntax-breakdown-row-${item.key}`}
-                    className={`absolute left-0 right-0 grid grid-cols-[16px_60px_8px_minmax(0,1fr)_44px] items-center gap-x-1.5 px-3 rounded-lg select-none ${
+                    className={`absolute left-0 right-0 grid grid-cols-[14px_60px_6px_minmax(0,1fr)_44px] items-center gap-x-1 px-3 rounded-lg select-none ${
                       isBeingDragged
                         ? "z-50 cursor-grabbing"
                         : "z-10 cursor-grab"
@@ -1298,7 +1298,7 @@ const PanelBody: React.FC<PanelBodyProps> = ({
               <div className="mt-3 flex flex-col gap-2 px-3">
                 {markdownCounts.headingWordCount > 0 && (
                   <div
-                    className="grid grid-cols-[14px_64px_12px_minmax(0,1fr)] items-center gap-x-3"
+                    className="grid grid-cols-[14px_56px_6px_minmax(0,1fr)] items-center gap-x-1.5"
                     style={{ height: 40 }}
                     data-testid="markdown-headings-row"
                   >
@@ -1326,7 +1326,7 @@ const PanelBody: React.FC<PanelBodyProps> = ({
                 )}
                 {markdownCounts.todoCount > 0 && (
                   <div
-                    className="grid grid-cols-[14px_64px_12px_minmax(0,1fr)] items-center gap-x-3"
+                    className="grid grid-cols-[14px_56px_6px_minmax(0,1fr)] items-center gap-x-1.5"
                     style={{ height: 40 }}
                     data-testid="markdown-todos-row"
                   >

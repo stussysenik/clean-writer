@@ -122,8 +122,14 @@ const CornerFoldTab: React.FC<CornerFoldTabProps> = ({
         ${showPulse ? "animate-pulse" : ""}
       `}
       style={{
-        // Size of the corner tab
-        width: harmonicaMode ? "56px" : isOpen ? "36px" : "56px",
+        // Size of the corner tab — narrower when panel is fully open
+        width: harmonicaMode
+          ? stage === "full"
+            ? "36px"
+            : "56px"
+          : isOpen
+            ? "36px"
+            : "56px",
         height: "80px",
         // Move tab left when panel opens (so it stays attached to panel edge)
         marginRight: harmonicaMode ? "0" : isOpen ? "-2px" : "0",
