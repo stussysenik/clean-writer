@@ -418,6 +418,7 @@ const DevControlsPanel: React.FC = () => {
   const setOverrides = useDevOverridesSetter();
   const actorRef = useDevActor();
   const [attention, setAttention] = useState<{ label: string; value: number; unit: string } | null>(null);
+  const [activeCategory, setActiveCategory] = useState<CategoryId>("spacing");
   const [copied, setCopied] = useState(false);
   const attentionTimer = useRef<ReturnType<typeof setTimeout>>(null);
   const highlightCleanup = useRef<(() => void) | null>(null);
@@ -464,13 +465,14 @@ const DevControlsPanel: React.FC = () => {
     <>
 
       <div
-        className="fixed right-2 top-2 bottom-2 w-[260px] z-[170] pointer-events-auto rounded-xl flex flex-col overflow-hidden"
+        className="fixed z-[170] pointer-events-auto rounded-xl flex flex-col overflow-hidden right-2 bottom-2 md:top-2 top-[20vh] w-[calc(100vw-16px)] md:w-[260px]"
         style={{
           fontFamily: "system-ui, sans-serif",
           backgroundColor: C.bg,
           color: C.text,
           border: `1px solid ${C.border}`,
           boxShadow: C.shadow,
+          paddingBottom: "env(safe-area-inset-bottom)",
         }}
       >
         {/* Attention Number */}
@@ -490,20 +492,34 @@ const DevControlsPanel: React.FC = () => {
             style={{ backgroundColor: C.sliderTrack, color: C.textMuted, opacity: 0.5 }} title="Close">×</button>
         </div>
 
-        {/* Sliders */}
-        <div className="flex-1 overflow-y-auto px-1 py-1" style={{ overscrollBehavior: "contain" }}>
+        {/* Category Tabs (Horizontal Scroll) */}
+        <div className="flex overflow-x-auto no-scrollbar shrink-0 px-2 py-2 gap-1.5" style={{ borderBottom: `1px solid ${C.border}` }}>
           {CATEGORIES.map((cat) => (
-            <SliderGroup
+            <button
               key={cat.id}
-              id={cat.id}
-              label={cat.label}
-              sliders={SLIDERS[cat.id]}
-              values={overrides}
-              onChange={handleSliderChange}
-              onSliderFocus={handleSliderFocus}
-              onSliderBlur={handleSliderBlur}
-            />
+              onClick={() => setActiveCategory(cat.id)}
+              className="px-2.5 py-1 rounded-full whitespace-nowrap text-[11px] font-semibold transition-colors"
+              style={{
+                backgroundColor: activeCategory === cat.id ? C.text : "transparent",
+                color: activeCategory === cat.id ? C.bg : C.textMuted,
+              }}
+            >
+              {cat.label}
+            </button>
           ))}
+        </div>
+
+        {/* Sliders */}
+        <div className="flex-1 overflow-y-auto px-1 py-2" style={{ overscrollBehavior: "contain" }}>
+          <SliderGroup
+            id={activeCategory}
+            label={CATEGORIES.find(c => c.id === activeCategory)?.label || ""}
+            sliders={SLIDERS[activeCategory]}
+            values={overrides}
+            onChange={handleSliderChange}
+            onSliderFocus={handleSliderFocus}
+            onSliderBlur={handleSliderBlur}
+          />
         </div>
 
         {/* Footer */}
