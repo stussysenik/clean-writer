@@ -594,7 +594,6 @@ const DevControlsPanel: React.FC = () => {
   const actorRef = useDevActor();
   const [showJson, setShowJson] = useState(false);
   const [showRuler, setShowRuler] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
   const [attention, setAttention] = useState<{ label: string; value: number; unit: string } | null>(null);
   const attentionTimer = useRef<ReturnType<typeof setTimeout>>(null);
   const highlightCleanup = useRef<(() => void) | null>(null);
@@ -673,20 +672,6 @@ const DevControlsPanel: React.FC = () => {
     actorRef?.send({ type: "RESET_ALL" });
   }, [actorRef]);
 
-  if (collapsed) {
-    return (
-      <div className="fixed right-2 top-16 z-[170] pointer-events-auto" style={{ fontFamily: "system-ui, sans-serif" }}>
-        <button
-          onClick={() => setCollapsed(false)}
-          className="px-2 py-1 rounded-md text-[10px] uppercase tracking-wider font-semibold transition-opacity"
-          style={{ backgroundColor: C.bg, color: C.accent, border: `1px solid ${C.border}`, boxShadow: C.shadow }}
-        >
-          DEV
-        </button>
-      </div>
-    );
-  }
-
   return (
     <>
       <RulerOverlay active={showRuler} />
@@ -725,8 +710,8 @@ const DevControlsPanel: React.FC = () => {
             style={{ backgroundColor: C.sliderTrack, color: C.textMuted, opacity: 0.5 }} title="View/export JSON">{ }</button>
           <button onClick={handleExport} className="text-[10px] px-1.5 py-0.5 rounded transition-opacity hover:opacity-100"
             style={{ backgroundColor: C.sliderTrack, color: C.textMuted, opacity: 0.5 }} title="Dump to console.log">◫</button>
-          <button onClick={() => setCollapsed(true)} className="text-[10px] px-1.5 py-0.5 rounded transition-opacity hover:opacity-100"
-            style={{ backgroundColor: C.sliderTrack, color: C.textMuted, opacity: 0.5 }} title="Collapse">×</button>
+          <button onClick={() => actorRef?.send({ type: "TOGGLE" })} className="text-[10px] px-1.5 py-0.5 rounded transition-opacity hover:opacity-100"
+            style={{ backgroundColor: C.sliderTrack, color: C.textMuted, opacity: 0.5 }} title="Close">×</button>
         </div>
 
         {/* Sliders */}
