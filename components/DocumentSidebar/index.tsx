@@ -47,6 +47,7 @@ interface DocumentSidebarProps {
   requestedUtilitySection?: UtilitySection;
   onUtilitySectionHandled?: () => void;
   sessions?: WritingSession[];
+  isOverlayMode?: boolean;
 }
 
 const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
@@ -71,6 +72,7 @@ const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
   requestedUtilitySection = null,
   onUtilitySectionHandled,
   sessions = [],
+  isOverlayMode = false,
 }) => {
   const { isMobile } = useResponsiveBreakpoint();
   const dev = useDevLayout();
@@ -82,7 +84,7 @@ const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
   const [creationMode, setCreationMode] = useState<CreationMode | null>(null);
 
   useEffect(() => {
-    if (!isMobile || !isOpen) return;
+    if (!isOverlayMode || !isOpen) return;
 
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -95,7 +97,7 @@ const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isMobile, isOpen, onClose]);
+  }, [isOverlayMode, isOpen, onClose]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -315,7 +317,7 @@ const DocumentSidebar: React.FC<DocumentSidebarProps> = ({
   </>
   );
 
-  if (isMobile) {
+  if (isOverlayMode) {
     return (
       <>
         <div

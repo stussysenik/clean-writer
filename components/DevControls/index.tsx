@@ -9,13 +9,6 @@ import {
   buildBookmarkY,
   buildDesktopPanelWidth,
 } from "./context";
-import {
-  getNamedGoldenSteps,
-  DERIVED_KEYS,
-  CUSTOM_DERIVED_KEYS,
-  computeDerivedValue,
-  computeCustomDerived,
-} from "../../constants/spacing";
 import { useSelector } from "@xstate/react";
 
 // ─── Light-mode design tokens ────────────────────────────────────────────────
@@ -143,8 +136,7 @@ type CategoryId =
   | "syntax-panel"
   | "harmonica"
   | "toolbar"
-  | "theme-selector"
-  | "breakpoints";
+  | "theme-selector";
 
 const CATEGORIES: { id: CategoryId; label: string }[] = [
   { id: "spacing", label: "Spacing" },
@@ -154,7 +146,6 @@ const CATEGORIES: { id: CategoryId; label: string }[] = [
   { id: "harmonica", label: "Harmonica" },
   { id: "toolbar", label: "Toolbar" },
   { id: "theme-selector", label: "Theme Selector" },
-  { id: "breakpoints", label: "Breakpoints" },
 ];
 
 const SLIDERS: Record<CategoryId, SliderDef[]> = {
@@ -225,10 +216,6 @@ const SLIDERS: Record<CategoryId, SliderDef[]> = {
     { key: "themeSelectorPaddingY", label: "Pad Y", min: 4, max: 24, step: 2, unit: "px", desc: "Vertical padding of theme row" },
     { key: "topBarButtonGap", label: "Btn Gap", min: 2, max: 16, step: 2, unit: "px", desc: "Gap between top bar buttons" },
   ],
-  breakpoints: [
-    { key: "breakpoint1", label: "BP1 (tablet)", min: 480, max: 1024, step: 16, unit: "px", desc: "First breakpoint threshold" },
-    { key: "breakpoint2", label: "BP2 (desktop)", min: 768, max: 1440, step: 16, unit: "px", desc: "Second breakpoint threshold" },
-  ],
 };
 
 // ─── Attention Number (big value display on slider interaction) ──────────────
@@ -267,49 +254,24 @@ const AttentionValue: React.FC<{
 
 // ─── Slider Row ──────────────────────────────────────────────────────────────
 
-function isDerivableKey(k: string): boolean {
-  return DERIVED_KEYS.has(k) || CUSTOM_DERIVED_KEYS.has(k);
-}
 
-function getDerivedValue(key: string, base: number): number | null {
-  if (DERIVED_KEYS.has(key)) return computeDerivedValue(key, base);
-  if (CUSTOM_DERIVED_KEYS.has(key)) return computeCustomDerived(key, base);
-  return null;
-}
 
 const SliderRow: React.FC<{
   def: SliderDef;
   value: number;
   defaultValue: number;
   onChange: (v: number) => void;
-  onReset: (() => void) | null;
-  derivedValue: number | null;
-  isOverridden: boolean;
   onFocus: (label: string, val: number, unit: string) => void;
   onBlur: () => void;
-}> = ({ def, value, defaultValue, onChange, onReset, derivedValue, isOverridden, onFocus, onBlur }) => {
+}> = ({ def, value, defaultValue, onChange, onFocus, onBlur }) => {
   const fillPercent = ((value - def.min) / (def.max - def.min)) * 100;
   const formatted = Number.isInteger(value) ? String(value) : value.toFixed(2);
   const isDirty = value !== defaultValue;
-  const isDerived = derivedValue !== null;
-  const matchesDerived = isDerived && value === derivedValue;
 
   return (
     <div className="mb-2.5" title={def.desc}>
       <div className="flex justify-between items-baseline mb-1">
         <span className="text-[11px] truncate mr-2 flex items-center gap-1" style={{ color: C.textMuted }}>
-          {isOverridden && (
-            <span className="inline-flex items-center justify-center w-[14px] h-[14px] rounded-full text-[8px] font-bold leading-none shrink-0"
-              style={{ backgroundColor: C.accentBg, color: C.accent }}
-              title="Overridden — value set manually, not derived from base"
-            >⟐</span>
-          )}
-          {matchesDerived && !isOverridden && (
-            <span className="inline-flex items-center justify-center w-[14px] h-[14px] rounded-full text-[8px] font-bold leading-none shrink-0"
-              style={{ backgroundColor: "#D4C5A9", color: "#8B7355" }}
-              title="Derived from base unit via golden ratio"
-            >φ</span>
-          )}
           {def.label}
         </span>
         <span className="tabular-nums font-mono font-semibold shrink-0 text-sm flex items-center gap-1" style={{ color: C.text }}>
@@ -317,45 +279,24 @@ const SliderRow: React.FC<{
           <span className="text-[10px] font-normal" style={{ color: C.textMuted }}>
             {def.unit}
           </span>
-          {onReset && isOverridden && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onReset();
-              }}
-              className="w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold leading-none transition-all"
-              style={{
-                opacity: 0.55,
-                color: C.accent,
-                backgroundColor: C.accentBg,
-              }}
-              title="Reset to derived value"
-              aria-label={`Reset ${def.label} to derived`}
-            >
-              ↺
-            </button>
-          )}
-          {!onReset && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onChange(defaultValue);
-              }}
-              className="w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold leading-none transition-all"
-              style={{
-                opacity: isDirty ? 0.35 : 0,
-                pointerEvents: isDirty ? "auto" : "none",
-                color: C.accent,
-                backgroundColor: C.accentBg,
-              }}
-              title={`Reset to default: ${defaultValue}${def.unit}`}
-              aria-label={`Reset ${def.label} to default`}
-            >
-              ↺
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onChange(defaultValue);
+            }}
+            className="w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold leading-none transition-all"
+            style={{
+              opacity: isDirty ? 0.35 : 0,
+              pointerEvents: isDirty ? "auto" : "none",
+              color: C.accent,
+              backgroundColor: C.accentBg,
+            }}
+            title={`Reset to default: ${defaultValue}${def.unit}`}
+            aria-label={`Reset ${def.label} to default`}
+          >
+            ↺
+          </button>
         </span>
       </div>
       <input
@@ -386,12 +327,10 @@ const SliderGroup: React.FC<{
   label: string;
   sliders: SliderDef[];
   values: DevOverrides;
-  overriddenKeys: Set<string>;
   onChange: (key: keyof DevOverrides, v: number) => void;
-  onResetKey: (key: keyof DevOverrides) => void;
   onSliderFocus: (label: string, val: number, unit: string) => void;
   onSliderBlur: () => void;
-}> = ({ id, label, sliders, values, overriddenKeys, onChange, onResetKey, onSliderFocus, onSliderBlur }) => {
+}> = ({ id, label, sliders, values, onChange, onSliderFocus, onSliderBlur }) => {
   const [open, setOpen] = useState(true);
   const base = values.baseSpacing;
   return (
@@ -421,9 +360,6 @@ const SliderGroup: React.FC<{
         <div className="px-2 pt-1 pb-1">
           {sliders.map((def) => {
             const key = def.key;
-            const derivable = isDerivableKey(key);
-            const derivedValue = derivable ? getDerivedValue(key, base) : null;
-            const isOverridden = derivable && overriddenKeys.has(key);
             return (
               <SliderRow
                 key={key}
@@ -431,9 +367,6 @@ const SliderGroup: React.FC<{
                 value={values[key] as number}
                 defaultValue={DEFAULT_OVERRIDES[key] as number}
                 onChange={(v) => onChange(key, v)}
-                onReset={derivable ? () => onResetKey(key) : null}
-                derivedValue={derivedValue}
-                isOverridden={isOverridden}
                 onFocus={onSliderFocus}
                 onBlur={onSliderBlur}
               />
@@ -446,117 +379,9 @@ const SliderGroup: React.FC<{
 };
 
 // ─── Derived Readout ─────────────────────────────────────────────────────────
+// (Removed derived readout as requested by user)
 
-const DerivedReadout: React.FC<{ o: DevOverrides }> = ({ o }) => {
-  const { xs, sm, md, lg, xl, xxl, xxxl } = getNamedGoldenSteps(o.baseSpacing);
-  return (
-    <div className="px-2 py-2" style={{ borderTop: `1px solid ${C.border}` }}>
-      <span className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: C.textMuted, opacity: 0.5 }}>
-        Golden Scale (φ = 1.618)
-      </span>
-      <div className="mt-1.5 space-y-0.5">
-        {[
-          ["xs", xs, 0],
-          ["sm", sm, 1],
-          ["md", md, 2],
-          ["lg", lg, 3],
-          ["xl", xl, 4],
-          ["xxl", xxl, 5],
-          ["xxxl", xxxl, 6],
-        ].map(([label, val, pwr]) => (
-          <div key={label} className="flex justify-between text-[10px]">
-            <span style={{ color: C.textMuted, opacity: 0.5 }}>
-              {label} (φ<sup>{pwr}</sup>)
-            </span>
-            <span className="font-mono tabular-nums" style={{ color: C.text, opacity: 0.7 }}>
-              {val}px
-            </span>
-          </div>
-        ))}
-      </div>
-      <div className="mt-2 pt-2" style={{ borderTop: `1px solid ${C.border}50` }}>
-        <span className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: C.textMuted, opacity: 0.5 }}>
-          Builders
-        </span>
-        <div className="mt-1 space-y-0.5">
-          {[
-            ["Font Size", buildFluidFontSize(o)],
-            ["Bookmark Y", buildBookmarkY(o)],
-            ["Desktop Panel", buildDesktopPanelWidth(o)],
-            ["Breakpoints", `${o.breakpoint1} / ${o.breakpoint2}`],
-          ].map(([label, val]) => (
-            <div key={label} className="flex justify-between text-[10px]">
-              <span style={{ color: C.textMuted, opacity: 0.5 }}>{label}</span>
-              <span className="font-mono truncate ml-2 max-w-[150px]" style={{ color: C.text, opacity: 0.7 }}>
-                {val}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
 
-// ─── JSON Preview Modal ──────────────────────────────────────────────────────
-
-const JsonPreview: React.FC<{
-  overrides: DevOverrides;
-  onClose: () => void;
-}> = ({ overrides, onClose }) => {
-  const json = JSON.stringify(overrides, null, 2);
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(json).catch(() => {});
-  }, [json]);
-  return (
-    <div
-      className="fixed inset-0 z-[210] flex items-center justify-center"
-      style={{ backgroundColor: "rgba(0,0,0,0.3)" }}
-      onClick={onClose}
-    >
-      <div
-        className="rounded-xl p-4 max-w-lg w-[90vw] max-h-[80vh] flex flex-col"
-        style={{
-          backgroundColor: C.bg,
-          border: `1px solid ${C.border}`,
-          color: C.text,
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs uppercase tracking-widest" style={{ color: C.textMuted }}>
-            Layout JSON
-          </span>
-          <div className="flex gap-2">
-            <button
-              onClick={handleCopy}
-              className="text-[10px] px-2 py-1 rounded-md transition-opacity"
-              style={{ backgroundColor: C.accentBg, color: C.accent }}
-            >
-              Copy
-            </button>
-            <button
-              onClick={onClose}
-              className="text-[10px] px-2 py-1 rounded-md transition-opacity"
-              style={{ backgroundColor: C.sliderTrack, color: C.textMuted }}
-            >
-              Close
-            </button>
-          </div>
-        </div>
-        <pre
-          className="text-[11px] overflow-auto flex-1 rounded-md p-3 font-mono"
-          style={{ backgroundColor: C.paper, maxHeight: "60vh", color: C.text }}
-        >
-          {json}
-        </pre>
-        <p className="text-[10px] mt-2" style={{ color: C.textMuted, opacity: 0.5 }}>
-          Copy this JSON, paste it back via Import, or hand to dev.
-        </p>
-      </div>
-    </div>
-  );
-};
 
 // ─── Ruler Overlay ───────────────────────────────────────────────────────────
 
@@ -592,12 +417,10 @@ const DevControlsPanel: React.FC = () => {
   const overrides = useDevLayout();
   const setOverrides = useDevOverridesSetter();
   const actorRef = useDevActor();
-  const [showJson, setShowJson] = useState(false);
-  const [showRuler, setShowRuler] = useState(false);
   const [attention, setAttention] = useState<{ label: string; value: number; unit: string } | null>(null);
+  const [copied, setCopied] = useState(false);
   const attentionTimer = useRef<ReturnType<typeof setTimeout>>(null);
   const highlightCleanup = useRef<(() => void) | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSliderChange = useCallback(
     (key: keyof DevOverrides, value: number) => {
@@ -608,15 +431,7 @@ const DevControlsPanel: React.FC = () => {
     [setOverrides],
   );
 
-  const handleResetKey = useCallback(
-    (key: keyof DevOverrides) => {
-      actorRef?.send({ type: "RESET_KEY", key });
-    },
-    [actorRef],
-  );
 
-  // Read overridden keys from machine for slider status indicators
-  const overriddenKeys = useSelector(actorRef!, (snap) => snap.context.overriddenKeys);
 
   const handleSliderFocus = useCallback((label: string, value: number, unit: string) => {
     if (attentionTimer.current) clearTimeout(attentionTimer.current);
@@ -633,40 +448,13 @@ const DevControlsPanel: React.FC = () => {
   }, []);
 
   const handleExport = useCallback(() => {
-    console.log(
-      "%c[DevControls] Layout Overrides%c\n%cCopy this JSON ↓%c",
-      "font-weight:bold;font-size:14px;color:#B45309;",
-      "",
-      "color:#78716C;font-size:11px;",
-      "",
-      "\n",
-      JSON.stringify(overrides, null, 2),
-    );
-    console.log(overrides);
+    navigator.clipboard.writeText(JSON.stringify(overrides, null, 2))
+      .then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      })
+      .catch(() => {});
   }, [overrides]);
-
-  const handleImport = useCallback(() => {
-    fileInputRef.current?.click();
-  }, []);
-
-  const handleFileLoad = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const parsed = JSON.parse(reader.result as string);
-          actorRef?.send({ type: "IMPORT", overrides: parsed });
-        } catch {
-          console.warn("[DevControls] Invalid JSON file");
-        }
-      };
-      reader.readAsText(file);
-      e.target.value = "";
-    },
-    [actorRef],
-  );
 
   const handleReset = useCallback(() => {
     actorRef?.send({ type: "RESET_ALL" });
@@ -674,9 +462,6 @@ const DevControlsPanel: React.FC = () => {
 
   return (
     <>
-      <RulerOverlay active={showRuler} />
-      <input ref={fileInputRef} type="file" accept=".json" className="hidden" onChange={handleFileLoad} />
-      {showJson && <JsonPreview overrides={overrides} onClose={() => setShowJson(false)} />}
 
       <div
         className="fixed right-2 top-2 bottom-2 w-[260px] z-[170] pointer-events-auto rounded-xl flex flex-col overflow-hidden"
@@ -701,15 +486,6 @@ const DevControlsPanel: React.FC = () => {
           <span className="text-[10px] uppercase tracking-[0.2em] font-semibold flex-1" style={{ color: C.textMuted, opacity: 0.6 }}>
             Layout Workbench
           </span>
-          <button onClick={() => setShowRuler((p) => !p)} className="text-[10px] px-1.5 py-0.5 rounded transition-opacity hover:opacity-100"
-            style={{ backgroundColor: showRuler ? C.accentBg : C.sliderTrack, color: showRuler ? C.accent : C.textMuted, opacity: showRuler ? 1 : 0.5 }}
-            title="Toggle ruler crosshair">⊞</button>
-          <button onClick={handleImport} className="text-[10px] px-1.5 py-0.5 rounded transition-opacity hover:opacity-100"
-            style={{ backgroundColor: C.sliderTrack, color: C.textMuted, opacity: 0.5 }} title="Import JSON">↓</button>
-          <button onClick={() => setShowJson(true)} className="text-[10px] px-1.5 py-0.5 rounded transition-opacity hover:opacity-100"
-            style={{ backgroundColor: C.sliderTrack, color: C.textMuted, opacity: 0.5 }} title="View/export JSON">{ }</button>
-          <button onClick={handleExport} className="text-[10px] px-1.5 py-0.5 rounded transition-opacity hover:opacity-100"
-            style={{ backgroundColor: C.sliderTrack, color: C.textMuted, opacity: 0.5 }} title="Dump to console.log">◫</button>
           <button onClick={() => actorRef?.send({ type: "TOGGLE" })} className="text-[10px] px-1.5 py-0.5 rounded transition-opacity hover:opacity-100"
             style={{ backgroundColor: C.sliderTrack, color: C.textMuted, opacity: 0.5 }} title="Close">×</button>
         </div>
@@ -723,25 +499,22 @@ const DevControlsPanel: React.FC = () => {
               label={cat.label}
               sliders={SLIDERS[cat.id]}
               values={overrides}
-              overriddenKeys={overriddenKeys}
               onChange={handleSliderChange}
-              onResetKey={handleResetKey}
               onSliderFocus={handleSliderFocus}
               onSliderBlur={handleSliderBlur}
             />
           ))}
-          <DerivedReadout o={overrides} />
         </div>
 
         {/* Footer */}
         <div className="px-3 py-2 shrink-0 flex items-center gap-2" style={{ borderTop: `1px solid ${C.border}` }}>
           <button onClick={handleReset} className="text-[10px] px-2 py-1 rounded-md transition-colors flex-1"
             style={{ backgroundColor: C.sliderTrack, color: C.textMuted }}>
-            Reset to Defaults
+            Reset
           </button>
-          <button onClick={handleExport} className="text-[10px] px-2 py-1 rounded-md transition-colors"
+          <button onClick={handleExport} className="text-[10px] px-2 py-1 rounded-md transition-colors flex-1"
             style={{ backgroundColor: C.accentBg, color: C.accent }}>
-            console.log
+            {copied ? "Copied!" : "Export JSON"}
           </button>
         </div>
       </div>

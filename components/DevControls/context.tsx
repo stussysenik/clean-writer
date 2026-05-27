@@ -4,12 +4,6 @@ import { createActor } from "xstate";
 import { useSelector } from "@xstate/react";
 import type { Actor } from "xstate";
 import {
-  DERIVED_KEYS,
-  CUSTOM_DERIVED_KEYS,
-  computeDerivedValue,
-  computeCustomDerived,
-  getNamedGoldenSteps,
-  GOLDEN_SCALE,
 } from "../../constants/spacing";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -76,9 +70,6 @@ export interface DevOverrides {
   themeSelectorPaddingY: number;
   themeDotSize: number;
   topBarButtonGap: number;
-  // Breakpoints
-  breakpoint1: number;
-  breakpoint2: number;
 }
 
 // ─── Defaults ────────────────────────────────────────────────────────────────
@@ -96,7 +87,7 @@ export const DEFAULT_OVERRIDES: DevOverrides = {
   contentTopPaddingLg: 80,
   contentBottomPadding: 55,
   contentPaddingX: 13,
-  contentMaxWidth: 800,
+  contentMaxWidth: 640,
   fontSizeClampMin: 18,
   fontSizeClampMax: 24,
   fontSizeClampVw: 1.1,
@@ -137,8 +128,6 @@ export const DEFAULT_OVERRIDES: DevOverrides = {
   themeSelectorPaddingY: 12,
   themeDotSize: 36,
   topBarButtonGap: 6,
-  breakpoint1: 768,
-  breakpoint2: 1024,
 };
 
 // ─── Serialization ───────────────────────────────────────────────────────────
@@ -166,9 +155,9 @@ export function saveDevOverrides(o: DevOverrides): void {
 
 interface DevMachineContext {
   devEnabled: boolean;
+  panelOpen: boolean;
   baseSpacing: number;
   overrides: DevOverrides;
-  overriddenKeys: Set<string>;
 }
 
 type DevMachineEvent =
@@ -178,26 +167,8 @@ type DevMachineEvent =
   | { type: "RESET_ALL" }
   | { type: "TOGGLE" }
   | { type: "IMPORT"; overrides: DevOverrides }
-  | { type: "LOAD"; overrides: DevOverrides; overriddenKeys?: string[] };
+  | { type: "LOAD"; overrides: DevOverrides };
 
-function isDerivableKey(key: string): boolean {
-  return DERIVED_KEYS.has(key) || CUSTOM_DERIVED_KEYS.has(key);
-}
-
-function rebaseOverrides(base: number, prev: DevOverrides, overridden: Set<string>): DevOverrides {
-  const next = { ...prev, baseSpacing: base };
-  for (const key of DERIVED_KEYS) {
-    if (!overridden.has(key)) {
-      (next as unknown as Record<string, number>)[key] = computeDerivedValue(key, base);
-    }
-  }
-  for (const key of CUSTOM_DERIVED_KEYS) {
-    if (!overridden.has(key)) {
-      (next as unknown as Record<string, number>)[key] = computeCustomDerived(key, base);
-    }
-  }
-  return next;
-}
 
 const devMachine = createMachine({
   types: {} as {
@@ -207,22 +178,21 @@ const devMachine = createMachine({
   },
   id: "devControls",
   context: ({ input }) => ({
-    devEnabled: false,
+    devEnabled: true,
+    panelOpen: false,
     baseSpacing: input.initial.baseSpacing,
     overrides: { ...input.initial },
-    overriddenKeys: new Set<string>(),
   }),
   on: {
     TOGGLE: {
       actions: assign({
-        devEnabled: ({ context }) => !context.devEnabled,
+        panelOpen: ({ context }) => !context.panelOpen,
       }),
     },
     SET_BASE: {
       actions: assign({
-        overrides: ({ context, event }) =>
-          rebaseOverrides(event.value, context.overrides, context.overriddenKeys),
         baseSpacing: ({ event }) => event.value,
+        overrides: ({ context, event }) => ({ ...context.overrides, baseSpacing: event.value }),
       }),
     },
     SET_OVERRIDE: {
@@ -232,12 +202,6 @@ const devMachine = createMachine({
           (next as unknown as Record<string, number>)[event.key] = event.value;
           return next;
         },
-        overriddenKeys: ({ context, event }) => {
-          if (!isDerivableKey(event.key)) return context.overriddenKeys;
-          const next = new Set(context.overriddenKeys);
-          next.add(event.key);
-          return next;
-        },
       }),
     },
     RESET_KEY: {
@@ -245,21 +209,8 @@ const devMachine = createMachine({
         overrides: ({ context, event }) => {
           const key = event.key;
           const next = { ...context.overrides };
-          if (isDerivableKey(key)) {
-            (next as unknown as Record<string, number>)[key] =
-              DERIVED_KEYS.has(key)
-                ? computeDerivedValue(key, context.baseSpacing)
-                : computeCustomDerived(key, context.baseSpacing);
-          } else {
-            (next as unknown as Record<string, number>)[key] =
-              (DEFAULT_OVERRIDES as unknown as Record<string, number>)[key];
-          }
-          return next;
-        },
-        overriddenKeys: ({ context, event }) => {
-          if (!isDerivableKey(event.key)) return context.overriddenKeys;
-          const next = new Set(context.overriddenKeys);
-          next.delete(event.key);
+          (next as unknown as Record<string, number>)[key] =
+            (DEFAULT_OVERRIDES as unknown as Record<string, number>)[key];
           return next;
         },
       }),
@@ -268,7 +219,6 @@ const devMachine = createMachine({
       actions: assign({
         baseSpacing: DEFAULT_OVERRIDES.baseSpacing,
         overrides: { ...DEFAULT_OVERRIDES },
-        overriddenKeys: () => new Set<string>(),
       }),
     },
     IMPORT: {
@@ -276,13 +226,6 @@ const devMachine = createMachine({
         overrides: ({ event }) => ({ ...DEFAULT_OVERRIDES, ...event.overrides }),
         baseSpacing: ({ context, event }) =>
           event.overrides.baseSpacing ?? context.baseSpacing,
-        overriddenKeys: ({ event }) => {
-          const keys = new Set<string>();
-          for (const k of Object.keys(event.overrides)) {
-            if (isDerivableKey(k)) keys.add(k);
-          }
-          return keys;
-        },
       }),
     },
     LOAD: {
@@ -290,8 +233,6 @@ const devMachine = createMachine({
         overrides: ({ event }) => ({ ...DEFAULT_OVERRIDES, ...event.overrides }),
         baseSpacing: ({ event }) =>
           event.overrides.baseSpacing ?? DEFAULT_OVERRIDES.baseSpacing,
-        overriddenKeys: ({ event }) =>
-          new Set(event.overriddenKeys ?? []),
       }),
     },
   },
@@ -398,8 +339,6 @@ const CSS_VAR_MAP: [keyof DevOverrides, string, string][] = [
   ["themeSelectorPaddingY", "--dev-ts-pad-y", "px"],
   ["themeDotSize", "--dev-ts-dot-size", "px"],
   ["topBarButtonGap", "--dev-topbar-btn-gap", "px"],
-  ["breakpoint1", "--dev-bp1", "px"],
-  ["breakpoint2", "--dev-bp2", "px"],
 ];
 
 function syncCSSVars(o: DevOverrides): void {
@@ -412,15 +351,6 @@ function syncCSSVars(o: DevOverrides): void {
   root.style.setProperty("--dev-fluid-font-size", buildFluidFontSize(o));
   root.style.setProperty("--dev-bookmark-y", buildBookmarkY(o));
   root.style.setProperty("--dev-desktop-panel-width", buildDesktopPanelWidth(o));
-  // Golden ratio scale — the base unit actually drives these now
-  const { xs, sm, md, lg, xl, xxl, xxxl } = getNamedGoldenSteps(o.baseSpacing);
-  root.style.setProperty("--space-xs", `${xs}px`);
-  root.style.setProperty("--space-sm", `${sm}px`);
-  root.style.setProperty("--space-md", `${md}px`);
-  root.style.setProperty("--space-lg", `${lg}px`);
-  root.style.setProperty("--space-xl", `${xl}px`);
-  root.style.setProperty("--space-xxl", `${xxl}px`);
-  root.style.setProperty("--space-xxxl", `${xxxl}px`);
 }
 
 function clearCSSVars(): void {
@@ -431,14 +361,6 @@ function clearCSSVars(): void {
   root.style.removeProperty("--dev-fluid-font-size");
   root.style.removeProperty("--dev-bookmark-y");
   root.style.removeProperty("--dev-desktop-panel-width");
-  // Restore static golden scale values (remove inline overrides so :root in index.css takes over)
-  root.style.removeProperty("--space-xs");
-  root.style.removeProperty("--space-sm");
-  root.style.removeProperty("--space-md");
-  root.style.removeProperty("--space-lg");
-  root.style.removeProperty("--space-xl");
-  root.style.removeProperty("--space-xxl");
-  root.style.removeProperty("--space-xxxl");
 }
 
 // ─── React Context ───────────────────────────────────────────────────────────
@@ -527,11 +449,4 @@ export function useDevReset(): () => void {
 export function useDevActor(): DevActor | null {
   const ctx = useContext(DevContext);
   return ctx?.actorRef ?? getDevActor();
-}
-
-/** Whether a key is currently manually overridden (not derived from base). */
-export function useIsKeyOverridden(key: keyof DevOverrides): boolean {
-  const ctx = useContext(DevContext);
-  const actorRef = ctx?.actorRef ?? getDevActor();
-  return useSelector(actorRef, (snap) => snap?.context?.overriddenKeys?.has(key) ?? false);
 }

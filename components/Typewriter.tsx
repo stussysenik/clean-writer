@@ -8,7 +8,7 @@ import React, {
 import { RisoTheme, SyntaxSets, HighlightConfig, SongAnalysis, FocusMode, FocusNavState } from "../types";
 import { useIMEComposition } from "../hooks/useIMEComposition";
 import { useTypewriterScroll } from "../hooks/useTypewriterScroll";
-import { useDynamicPadding } from "../hooks/useDynamicPadding";
+
 import {
   isHashtagToken,
   isNumberToken,
@@ -252,12 +252,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
     }
   }, [content, codeMode, codeLanguage, shikiReady, highlightCode, theme.background]);
 
-  const { paddingLeft, paddingRight, recalculatePadding } = useDynamicPadding({
-    textareaRef: textareaRef as React.RefObject<HTMLTextAreaElement>,
-    enabled: true,
-    isMobile,
-    minPadding: 40,
-  });
+
 
   // Track whether cursor is at the content frontier (end of text)
   const [cursorAtFrontier, setCursorAtFrontier] = useState(true);
@@ -283,10 +278,9 @@ const Typewriter: React.FC<TypewriterProps> = ({
   useEffect(() => {
     const timer = setTimeout(() => {
       scrollToSweetSpot();
-      recalculatePadding();
     }, 16);
     return () => clearTimeout(timer);
-  }, [content, scrollToSweetSpot, recalculatePadding]);
+  }, [content, scrollToSweetSpot]);
 
   // Garfield cursor: Calculate the color for the last word typed
   const lastWordColor = useMemo(() => {
@@ -1461,7 +1455,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
       {/* Backdrop (Visual Layer) */}
       <div
         ref={backdropRef}
-        className="absolute inset-0 pt-[80px] pb-[80px] whitespace-pre-wrap break-words pointer-events-none z-0 overflow-hidden"
+        className="absolute inset-0 pt-[80px] whitespace-pre-wrap break-words pointer-events-none z-0 overflow-hidden"
         style={{
             fontFamily: unstylizedMode
               ? "'Courier New', Courier, monospace"
@@ -1472,9 +1466,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
             lineHeight: effectiveLineHeight,
             letterSpacing: unstylizedMode ? "0px" : effectiveLetterSpacing,
             color: unstylizedMode ? "#000000" : theme.text,
-            paddingLeft: `${paddingLeft}px`,
-          paddingRight: `${paddingRight}px`,
-          transition: "padding-left 200ms ease, padding-right 200ms ease",
+            paddingBottom: isMobile ? "50vh" : "120px",
         }}
       >
         {unstylizedMode
@@ -1528,7 +1520,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
       {/* Last-focused-word overlay — visible when in sentence/paragraph mode */}
       {!isMobile && focusNavState && focusNavState.mode !== "word" && focusNavState.mode !== "none" && focusNavState.lastFocusedWordRange && (
         <div
-          className="absolute inset-0 pt-[80px] pb-[80px] whitespace-pre-wrap break-words pointer-events-none z-[3] overflow-hidden"
+          className="absolute inset-0 pt-[80px] whitespace-pre-wrap break-words pointer-events-none z-[3] overflow-hidden"
           style={{
             fontFamily: unstylizedMode
               ? "'Courier New', Courier, monospace"
@@ -1539,9 +1531,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
             lineHeight: effectiveLineHeight,
             letterSpacing: unstylizedMode ? "0px" : effectiveLetterSpacing,
             color: unstylizedMode ? "#000000" : theme.text,
-            paddingLeft: `${paddingLeft}px`,
-            paddingRight: `${paddingRight}px`,
-            transition: "padding-left 200ms ease, padding-right 200ms ease",
+            paddingBottom: isMobile ? "50vh" : "120px",
           }}
         >
           <span>{content.slice(0, focusNavState.lastFocusedWordRange.start)}</span>
@@ -1566,7 +1556,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
         <div
           ref={selectionOverlayRef}
           data-testid="persisted-selection-overlay"
-          className="absolute inset-0 pt-[80px] pb-[80px] whitespace-pre-wrap break-words pointer-events-none z-[5] overflow-hidden"
+          className="absolute inset-0 pt-[80px] whitespace-pre-wrap break-words pointer-events-none z-[5] overflow-hidden"
           style={{
             fontFamily: unstylizedMode
               ? "'Courier New', Courier, monospace"
@@ -1577,8 +1567,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
             lineHeight: effectiveLineHeight,
             letterSpacing: unstylizedMode ? "0px" : effectiveLetterSpacing,
             color: unstylizedMode ? "#000000" : theme.text,
-            paddingLeft: `${paddingLeft}px`,
-            paddingRight: `${paddingRight}px`,
+            paddingBottom: isMobile ? "50vh" : "120px",
             transition: "padding-left 200ms ease, padding-right 200ms ease",
           }}
         >
@@ -1613,7 +1602,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
         inputMode="text"
         enterKeyHint="enter"
         autoFocus
-        className="absolute inset-0 w-full h-full pt-[80px] pb-[80px] bg-transparent resize-none border-none outline-none z-10 whitespace-pre-wrap break-words overflow-y-auto no-scrollbar selection:text-transparent placeholder:opacity-0 placeholder:text-transparent"
+        className="absolute inset-0 w-full h-full pt-[80px] bg-transparent resize-none border-none outline-none z-10 whitespace-pre-wrap break-words overflow-y-auto no-scrollbar selection:text-transparent placeholder:opacity-0 placeholder:text-transparent"
         style={{
           fontFamily: unstylizedMode
             ? "'Courier New', Courier, monospace"
@@ -1632,9 +1621,7 @@ const Typewriter: React.FC<TypewriterProps> = ({
           // iOS Safari ignores caret-shape; we keep the block caret for all platforms.
           opacity: 1,
           scrollbarWidth: "none",
-          paddingLeft: `${paddingLeft}px`,
-          paddingRight: `${paddingRight}px`,
-          transition: "padding-left 200ms ease, padding-right 200ms ease",
+          paddingBottom: isMobile ? "50vh" : "120px",
           msOverflowStyle: "none",
           WebkitTouchCallout: "none",
         }}

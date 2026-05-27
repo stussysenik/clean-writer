@@ -51,6 +51,7 @@ interface UnifiedSyntaxPanelProps {
   codeMode?: boolean;
   onToggleCodeMode?: () => void;
   codeLanguage?: string;
+  isOverlayMode?: boolean;
 }
 
 const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
@@ -82,6 +83,7 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
   codeMode = false,
   onToggleCodeMode,
   codeLanguage = "javascript",
+  isOverlayMode = false,
 }) => {
   const wordCount = countWords(content);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -174,7 +176,7 @@ const UnifiedSyntaxPanel: React.FC<UnifiedSyntaxPanelProps> = ({
   if (wordCount === 0) return null;
 
   // Desktop: Always visible, left-positioned panel
-  if (isDesktop) {
+  if (isDesktop && !isOverlayMode) {
     return (
       <div ref={transitionRef}>
         <DesktopSyntaxPanel

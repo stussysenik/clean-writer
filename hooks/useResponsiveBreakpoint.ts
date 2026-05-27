@@ -8,10 +8,11 @@ export function useResponsiveBreakpoint(): {
   isDesktop: boolean;
   isTablet: boolean;
   isMobile: boolean;
+  width: number;
 } {
   const dev = useDevLayout();
-  const tabletBp = dev.breakpoint1;
-  const desktopBp = dev.breakpoint2;
+  const tabletBp = 768;
+  const desktopBp = 1024;
 
   const [width, setWidth] = useState(() => {
     if (typeof window === "undefined") return 0;
@@ -32,12 +33,12 @@ export function useResponsiveBreakpoint(): {
     if (width >= tabletBp) return "tablet";
     return "mobile";
   }, [width, tabletBp, desktopBp]);
-
   return {
     screenSize,
     isDesktop: screenSize === "desktop",
     isTablet: screenSize === "tablet",
     isMobile: screenSize === "mobile",
+    width,
   };
 }
 

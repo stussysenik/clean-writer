@@ -491,8 +491,9 @@ const App: React.FC = () => {
   const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
 
   // ─── Dev Layout Workbench ───
-  const devEnabled = useSelector(getDevActor(), (snap) => snap.context.devEnabled);
-  const devOverrides = useDevLayout();
+  const devEnabled = useSelector(getDevActor(), (s) => s.context.devEnabled);
+  const panelOpen = useSelector(getDevActor(), (s) => s.context.panelOpen);
+  const devOverrides = useSelector(getDevActor(), (s) => s.context.overrides);
 
   // ─── Effective layout values (dev overrides take priority when enabled) ───
   const effectiveMaxWidth = devEnabled ? devOverrides.contentMaxWidth : maxWidth;
@@ -758,10 +759,20 @@ const App: React.FC = () => {
   // Keyboard shortcuts moved to useAppHotkeys (called after all callbacks are declared)
 
   // Responsive breakpoint for desktop panel padding & shortcut overlay
-  const { isDesktop, isTablet, isMobile } = useResponsiveBreakpoint();
+  const { isDesktop, isTablet, isMobile, width } = useResponsiveBreakpoint();
   const effectiveSidebarWidth = devEnabled ? devOverrides.sidebarWidth : DOCUMENT_SIDEBAR_WIDTH;
-  const desktopSidebarOffset =
-    isDesktop && isSidebarOpen ? effectiveSidebarWidth : 0;
+  
+  // Calculate if the main content area would overlap or squish the typewriter
+  const numericDesktopPanelWidth = devEnabled ? devOverrides.desktopPanelWidthMin : 380;
+  const hasContentForPanel = content.length > 0;
+  const totalReservedWidth = effectiveSidebarWidth + (hasContentForPanel ? numericDesktopPanelWidth : 0);
+  
+  // Force overlay if there's not enough room for the text column + sidebars
+  const isOverlapping = width < Number(devOverrides.contentMaxWidth || 640) + totalReservedWidth + (devEnabled ? devOverrides.contentPaddingX * 2 : 0);
+  const isOverlayMode = !isDesktop || isOverlapping;
+
+  const desktopSidebarOffset = (!isOverlayMode && isSidebarOpen) ? effectiveSidebarWidth : 0;
+  const desktopPanelOffset = (!isOverlayMode && hasContentForPanel && !unstylizedMode) ? effectiveDesktopPanelWidth : 0;
 
   // Mobile edit/view state for visual distinction
   const mobileEditState = useMobileEditState(textareaRef, isMobile);
@@ -1650,8 +1661,10 @@ const App: React.FC = () => {
       <main
         className="flex-1 w-full h-full relative z-10 pt-[80px] transition-all duration-300 ease-in-out"
         style={{
-          paddingLeft: desktopSidebarOffset || undefined,
-          paddingRight: isDesktop && content.length > 0 ? effectiveDesktopPanelWidth : undefined,
+          paddingLeft: (desktopSidebarOffset || 0) + (devEnabled ? devOverrides.contentPaddingX : 0) || undefined,
+          paddingRight: desktopPanelOffset 
+            ? `calc(${desktopPanelOffset} + ${devEnabled ? devOverrides.contentPaddingX : 0}px)`
+            : (devEnabled && devOverrides.contentPaddingX ? devOverrides.contentPaddingX : undefined),
           ...(devEnabled ? {
             paddingTop: isDesktop
               ? devOverrides.contentTopPaddingLg
@@ -1659,10 +1672,6 @@ const App: React.FC = () => {
                 ? devOverrides.contentTopPaddingMd
                 : devOverrides.contentTopPadding,
             paddingBottom: devOverrides.contentBottomPadding,
-            paddingLeft: devOverrides.contentPaddingX || desktopSidebarOffset || undefined,
-            paddingRight: devOverrides.contentPaddingX
-              ? undefined  // let contentPaddingX handle it; desktop panel reserves its own offset
-              : (isDesktop && content.length > 0 ? effectiveDesktopPanelWidth : undefined),
           } : {}),
         }}
       >
@@ -1727,6 +1736,7 @@ const App: React.FC = () => {
         onCategoryHover={setHoveredCategory}
         songMode={songMode}
         onToggleSongMode={() => setSongMode((prev) => !prev)}
+        isOverlayMode={isOverlayMode}
         songData={songData}
         rhymeColors={effectiveRhymeColors}
         showSyllableAnnotations={showSyllableAnnotations}
@@ -1878,7 +1888,7 @@ const App: React.FC = () => {
           </div>
         </div>
       )}
-      {devEnabled && <DevControlsPanel />}
+      {panelOpen && <DevControlsPanel />}
       <CommandPalette
         isOpen={isCommandPaletteOpen}
         onClose={() => setIsCommandPaletteOpen(false)}
