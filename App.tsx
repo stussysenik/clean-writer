@@ -203,7 +203,7 @@ const App: React.FC = () => {
       const saved = localStorage.getItem("clean_writer_font_size_offset");
       if (saved !== null) {
         const val = parseInt(saved, 10);
-        if (!isNaN(val) && val >= -6 && val <= 12) return val;
+        if (!isNaN(val) && val >= -8 && val <= 8) return val;
       }
       return 0;
     } catch {
@@ -266,7 +266,7 @@ const App: React.FC = () => {
     : `calc(clamp(18px, 10px + 1.1vw, 24px) + ${fontSizeOffset}px)`;
 
   const handleFontSizeChange = useCallback((offset: number) => {
-    const clamped = Math.max(-6, Math.min(12, offset));
+    const clamped = Math.max(-8, Math.min(8, offset));
     setFontSizeOffset(clamped);
   }, []);
 
@@ -510,7 +510,7 @@ const App: React.FC = () => {
   // ─── Effective layout values (dev overrides take priority when enabled) ───
   const effectiveMaxWidth = devEnabled ? devOverrides.contentMaxWidth : maxWidth;
   const effectiveFluidFontSize = devEnabled
-    ? buildFluidFontSize(devOverrides)
+    ? buildFluidFontSize({ ...devOverrides, fontSizeOffset })
     : fluidFontSize;
   const effectiveLineHeight = devEnabled ? devOverrides.lineHeight : lineHeightValue;
   const effectiveLetterSpacing = devEnabled ? devOverrides.letterSpacing : letterSpacing;
@@ -1585,10 +1585,10 @@ const App: React.FC = () => {
               }}
             >
               <TouchButton
-                onClick={() => handleFontSizeChange(fontSizeOffset - 2)}
-                disabled={fontSizeOffset <= -6}
+                onClick={() => handleFontSizeChange(fontSizeOffset - 1)}
+                disabled={fontSizeOffset <= -8}
                 className={`px-1.5 py-0.5 text-xs font-bold transition-all ${
-                  fontSizeOffset <= -6 ? "opacity-25 cursor-not-allowed" : "opacity-60 hover:opacity-100 hover:bg-current/5"
+                  fontSizeOffset <= -8 ? "opacity-25 cursor-not-allowed" : "opacity-60 hover:opacity-100 hover:bg-current/5"
                 }`}
                 style={{ color: currentTheme.text }}
                 aria-label="Decrease font size"
@@ -1609,10 +1609,10 @@ const App: React.FC = () => {
                 {fontSizeOffset === 0 ? "0" : fontSizeOffset > 0 ? `+${fontSizeOffset}` : `${fontSizeOffset}`}
               </TouchButton>
               <TouchButton
-                onClick={() => handleFontSizeChange(fontSizeOffset + 2)}
-                disabled={fontSizeOffset >= 12}
+                onClick={() => handleFontSizeChange(fontSizeOffset + 1)}
+                disabled={fontSizeOffset >= 8}
                 className={`px-1.5 py-0.5 text-xs font-bold transition-all ${
-                  fontSizeOffset >= 12 ? "opacity-25 cursor-not-allowed" : "opacity-60 hover:opacity-100 hover:bg-current/5"
+                  fontSizeOffset >= 8 ? "opacity-25 cursor-not-allowed" : "opacity-60 hover:opacity-100 hover:bg-current/5"
                 }`}
                 style={{ color: currentTheme.text }}
                 aria-label="Increase font size"
