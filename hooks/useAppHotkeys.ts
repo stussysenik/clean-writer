@@ -44,15 +44,15 @@ export function useAppHotkeys({
   useHotkey("9", () => toggleHighlight(WORD_TYPE_KEYS[8]));
 
   // Cmd/Ctrl+Shift shortcuts — each checks for user overrides
-  useHotkey(getEffectiveHotkey("Mod+Shift+X", "strikethrough"), () => handleStrikethroughWithFocus());
-  useHotkey(getEffectiveHotkey("Mod+Shift+K", "clean"), () => handleCleanStrikethroughs());
-  useHotkey(getEffectiveHotkey("Mod+Shift+P", "preview"), () =>
+  useHotkey(getEffectiveHotkey("Mod+2", "strikethrough"), () => handleStrikethroughWithFocus(), { preventDefault: true });
+  useHotkey(getEffectiveHotkey("Mod+3", "clean"), () => handleCleanStrikethroughs(), { preventDefault: true });
+  useHotkey(getEffectiveHotkey("Mod+0", "preview"), () =>
     setViewMode((v) => (v === "write" ? "preview" : "write")),
-  );
-  useHotkey(getEffectiveHotkey("Mod+Shift+E", "export"), () => handleExport());
-  useHotkey(getEffectiveHotkey("Mod+Shift+D", "delete-all"), () => handleClearRequest());
-  useHotkey(getEffectiveHotkey("Mod+Shift+F", "focus-cycle"), () => cycleFocusMode());
-  useHotkey(getEffectiveHotkey("Mod+Shift+U", "plain-mode"), () => toggleUnstylizedMode());
+  { preventDefault: true });
+  useHotkey(getEffectiveHotkey("Mod+5", "export"), () => handleExport(), { preventDefault: true });
+  useHotkey(getEffectiveHotkey("Mod+6", "delete-all"), () => handleClearRequest(), { preventDefault: true });
+  useHotkey(getEffectiveHotkey("Mod+4", "focus-cycle"), () => cycleFocusMode(), { preventDefault: true });
+  useHotkey(getEffectiveHotkey("Mod+1", "plain-mode"), () => toggleUnstylizedMode(), { preventDefault: true });
 
   // Tab hold — preventDefault stops default tab behavior, useKeyHold tracks state
   // ignoreInputs: false so Tab overlay works even when textarea is focused

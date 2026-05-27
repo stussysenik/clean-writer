@@ -147,7 +147,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   const mod = useMemo(() => {
     if (isMobile) return null;
     const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
-    return isMac ? "\u2318\u21E7" : "Ctrl+Shift+";
+    return isMac ? "\u2318" : "Ctrl+";
   }, [isMobile]);
 
   return (
@@ -164,10 +164,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         icon={viewMode === "write" ? <IconEyeOpen /> : <IconEyeClosed />}
         label={viewMode === "write" ? "Preview" : "Edit"}
         tooltip={viewMode === "write" ? "Preview markdown" : "Back to editing"}
-        shortcut={mod ? `${mod}P` : undefined}
-        ariaLabel={
-          viewMode === "write" ? "Preview markdown" : "Switch to edit mode"
-        }
+        shortcut={mod ? `${mod}0` : undefined}
+        ariaLabel={viewMode === "write" ? "Preview markdown" : "Switch to edit mode"}
       />
 
       <ActionButton
@@ -176,7 +174,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         icon={<IconPlainText />}
         label="Plain"
         tooltip={unstylizedMode ? "Exit plain text mode" : "Plain text mode — monospace, no colors"}
-        shortcut={mod ? `${mod}U` : undefined}
+        shortcut={mod ? `${mod}1` : undefined}
         ariaLabel={unstylizedMode ? "Exit plain text mode" : "Enter plain text mode"}
         className={unstylizedMode ? "!opacity-100" : ""}
         style={unstylizedMode ? { color: theme.accent } : undefined}
@@ -193,7 +191,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         icon={<IconStrike />}
         label="Strike"
         tooltip="Apply strikethrough to selected text"
-        shortcut={mod ? `${mod}X` : undefined}
+        shortcut={mod ? `${mod}2` : undefined}
         ariaLabel="Strikethrough selected text"
         data-testid="strikethrough-btn"
       />
@@ -204,7 +202,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         icon={<IconMagicClean />}
         label="Clean"
         tooltip="Remove all ~~...~~ segments"
-        shortcut={mod ? `${mod}K` : undefined}
+        shortcut={mod ? `${mod}3` : undefined}
         ariaLabel="Remove all struck text segments"
         data-testid="clean-strikethroughs-btn"
       />
@@ -217,7 +215,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         icon={<IconFocus />}
         label={FOCUS_MODE_LABELS[focusMode]}
         tooltip={focusMode === "none" ? "Focus mode (click to cycle)" : `Focus: ${focusMode} — ←/→ navigate, ↑/↓ change level`}
-        shortcut={mod ? `${mod}F` : undefined}
+        shortcut={mod ? `${mod}4` : undefined}
         ariaLabel="Cycle focus mode"
         className={focusMode !== "none" ? "!opacity-100" : ""}
         style={focusMode !== "none" ? { color: theme.accent } : undefined}
@@ -243,7 +241,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         icon={<IconDownload />}
         label="Export"
         tooltip="Download as markdown file"
-        shortcut={mod ? `${mod}E` : undefined}
+        shortcut={mod ? `${mod}5` : undefined}
         ariaLabel="Export markdown file"
       />
 
@@ -262,6 +260,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         icon={<IconTrash />}
         label="Clear"
         tooltip="Clear all content"
+        shortcut={mod ? `${mod}6` : undefined}
         ariaLabel="Clear all content"
         className="hover:text-red-500"
       />

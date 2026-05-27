@@ -488,6 +488,18 @@ const App: React.FC = () => {
     try { return localStorage.getItem("clean_writer_char_counts") === "true"; } catch { return false; }
   });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSyntaxPanelOpen, setIsSyntaxPanelOpen] = useState(() => {
+    try {
+      const stored = localStorage.getItem("clean_writer_syntax_panel_open");
+      if (stored !== null) return JSON.parse(stored);
+    } catch (e) {}
+    return false; // Default to closed as per "secondary utility"
+  });
+
+  useEffect(() => {
+    localStorage.setItem("clean_writer_syntax_panel_open", JSON.stringify(isSyntaxPanelOpen));
+  }, [isSyntaxPanelOpen]);
+
   const [activeDocumentId, setActiveDocumentId] = useState<string | null>(null);
 
   // ─── Dev Layout Workbench ───
@@ -772,7 +784,7 @@ const App: React.FC = () => {
   const isOverlayMode = !isDesktop || isOverlapping;
 
   const desktopSidebarOffset = (!isOverlayMode && isSidebarOpen) ? effectiveSidebarWidth : 0;
-  const desktopPanelOffset = (!isOverlayMode && hasContentForPanel && !unstylizedMode) ? effectiveDesktopPanelWidth : 0;
+  const desktopPanelOffset = (!isOverlayMode && hasContentForPanel && !unstylizedMode && isSyntaxPanelOpen) ? effectiveDesktopPanelWidth : 0;
 
   // Mobile edit/view state for visual distinction
   const mobileEditState = useMobileEditState(textareaRef, isMobile);
@@ -1737,6 +1749,8 @@ const App: React.FC = () => {
         songMode={songMode}
         onToggleSongMode={() => setSongMode((prev) => !prev)}
         isOverlayMode={isOverlayMode}
+        isOpen={isSyntaxPanelOpen}
+        onToggle={() => setIsSyntaxPanelOpen(p => !p)}
         songData={songData}
         rhymeColors={effectiveRhymeColors}
         showSyllableAnnotations={showSyllableAnnotations}

@@ -9,6 +9,7 @@ import {
 } from "../../types";
 import { useDevLayout } from "../DevControls/context";
 import PanelBody from "./PanelBody";
+import CornerFoldTab from "./CornerFoldTab";
 
 interface DesktopSyntaxPanelProps {
   theme: RisoTheme;
@@ -36,8 +37,10 @@ interface DesktopSyntaxPanelProps {
   onEditColor?: (target: ColorEditTarget) => void;
   onQuickEditColor?: (target: ColorEditTarget, anchorEl: HTMLElement) => void;
   codeMode?: boolean;
-  onToggleCodeMode?: () => void;
   codeLanguage?: string;
+  isOpen?: boolean;
+  onToggle?: () => void;
+  isOverlayMode?: boolean;
 }
 
 const DesktopSyntaxPanel: React.FC<DesktopSyntaxPanelProps> = ({
@@ -68,87 +71,109 @@ const DesktopSyntaxPanel: React.FC<DesktopSyntaxPanelProps> = ({
   codeMode = false,
   onToggleCodeMode,
   codeLanguage = "javascript",
+  isOpen = true,
+  onToggle,
+  isOverlayMode = false,
 }) => {
   const panelRef = useRef<HTMLDivElement>(null);
   const dev = useDevLayout();
-  const panelWidth = `min(${dev.desktopPanelWidthMin}px, ${dev.desktopPanelWidthVw}vw)`;
+  const panelWidth = isOverlayMode ? "calc(100vw - 16px)" : `min(${dev.desktopPanelWidthMin}px, ${dev.desktopPanelWidthVw}vw)`;
+  const panelMaxWidth = isOverlayMode ? "480px" : undefined;
 
   return (
     <div
       ref={panelRef}
       data-testid="desktop-syntax-panel"
-      className="fixed right-0 z-50 rounded-2xl overflow-hidden no-scrollbar"
+      className="fixed z-50 flex items-end transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
       style={{
-        // Solid theme background — design context: no glassmorphism. The panel sits
-        // beside the writing column (App reserves right padding when content exists),
-        // so it never needs to read through the surface behind it.
-        backgroundColor: theme.background,
-        border: `1px solid ${theme.text}14`,
-        boxShadow: `0 1px 2px ${theme.text}0a, 0 8px 24px ${theme.text}0c`,
-        opacity: 1,
-        width: panelWidth,
-        minWidth: "320px",
+        transform: isOpen ? "translateX(0)" : "translateX(100%)",
+        right: isOverlayMode ? "0px" : (dev.desktopPanelRight ?? undefined),
         bottom: "max(48px, calc(44px + env(safe-area-inset-bottom)))",
-        maxHeight: "calc(100vh - 48px - 80px)",
-        overflowX: "hidden",
-        overflowY: "auto",
-        right: dev.desktopPanelRight ?? undefined,
-        padding: `${dev.desktopPanelPaddingY}px ${dev.desktopPanelPaddingX}px`,
       }}
     >
-      {/* Paper grain texture */}
-      <div
-        data-overlap-ignore
-        className="absolute inset-0 pointer-events-none opacity-15 mix-blend-multiply rounded-2xl"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='paperNoise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23paperNoise)' opacity='0.08'/%3E%3C/svg%3E")`,
-        }}
-      />
+      {/* Tab hanging off the left side */}
+      <div className="relative">
+        <CornerFoldTab
+          theme={theme}
+          wordCount={wordCount}
+          isOpen={isOpen}
+          hasSeenPanel={true}
+          onClick={onToggle || (() => {})}
+        />
+      </div>
 
-      {/* Glass highlight at top edge */}
       <div
-        data-overlap-ignore
-        className="absolute left-0 right-0 top-0 h-px pointer-events-none"
+        className="rounded-l-2xl overflow-hidden no-scrollbar relative"
         style={{
-          background: `linear-gradient(to right,
-            transparent 0%,
-            ${theme.text}20 20%,
-            ${theme.text}20 80%,
-            transparent 100%)`,
+          // Solid theme background — design context: no glassmorphism.
+          backgroundColor: theme.background,
+          border: `1px solid ${theme.text}14`,
+          borderRight: "none",
+          boxShadow: `0 1px 2px ${theme.text}0a, 0 8px 24px ${theme.text}0c`,
+          width: panelWidth,
+          maxWidth: panelMaxWidth,
+          minWidth: "320px",
+          height: isOverlayMode ? "min(85dvh, calc(100dvh - 80px))" : undefined,
+          maxHeight: "calc(100vh - 48px - 80px)",
+          overflowX: "hidden",
+          overflowY: "auto",
+          padding: `${dev.desktopPanelPaddingY}px ${dev.desktopPanelPaddingX}px`,
         }}
-      />
+      >
+        {/* Paper grain texture */}
+        <div
+          data-overlap-ignore
+          className="absolute inset-0 pointer-events-none opacity-15 mix-blend-multiply"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='paperNoise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23paperNoise)' opacity='0.08'/%3E%3C/svg%3E")`,
+          }}
+        />
 
-      {/* Content */}
-      <PanelBody
-        theme={theme}
-        wordCount={wordCount}
-        content={content}
-        syntaxSets={syntaxSets}
-        syntaxData={syntaxData}
-        highlightConfig={highlightConfig}
-        onToggleHighlight={onToggleHighlight}
-        soloMode={soloMode}
-        onSoloToggle={onSoloToggle}
-        isOpen={true}
-        onCategoryHover={onCategoryHover}
-        songMode={songMode}
-        onToggleSongMode={onToggleSongMode}
-        songData={songData}
-        rhymeColors={rhymeColors}
-        showSyllableAnnotations={showSyllableAnnotations}
-        onToggleSyllableAnnotations={onToggleSyllableAnnotations}
-        focusedRhymeKey={focusedRhymeKey}
-        onFocusRhymeKey={onFocusRhymeKey}
-        hoveredRhymeKey={hoveredRhymeKey}
-        onHoverRhymeKey={onHoverRhymeKey}
-        disabledRhymeKeys={disabledRhymeKeys}
-        onToggleRhymeKey={onToggleRhymeKey}
-        onEditColor={onEditColor}
-        onQuickEditColor={onQuickEditColor}
-        codeMode={codeMode}
-        onToggleCodeMode={onToggleCodeMode}
-        codeLanguage={codeLanguage}
-      />
+        {/* Glass highlight at top edge */}
+        <div
+          data-overlap-ignore
+          className="absolute left-0 right-0 top-0 h-px pointer-events-none"
+          style={{
+            background: `linear-gradient(to right,
+              transparent 0%,
+              ${theme.text}20 20%,
+              ${theme.text}20 80%,
+              transparent 100%)`,
+          }}
+        />
+
+        {/* Content */}
+        <PanelBody
+          theme={theme}
+          wordCount={wordCount}
+          content={content}
+          syntaxSets={syntaxSets}
+          syntaxData={syntaxData}
+          highlightConfig={highlightConfig}
+          onToggleHighlight={onToggleHighlight}
+          soloMode={soloMode}
+          onSoloToggle={onSoloToggle}
+          isOpen={isOpen}
+          onCategoryHover={onCategoryHover}
+          songMode={songMode}
+          onToggleSongMode={onToggleSongMode}
+          songData={songData}
+          rhymeColors={rhymeColors}
+          showSyllableAnnotations={showSyllableAnnotations}
+          onToggleSyllableAnnotations={onToggleSyllableAnnotations}
+          focusedRhymeKey={focusedRhymeKey}
+          onFocusRhymeKey={onFocusRhymeKey}
+          hoveredRhymeKey={hoveredRhymeKey}
+          onHoverRhymeKey={onHoverRhymeKey}
+          disabledRhymeKeys={disabledRhymeKeys}
+          onToggleRhymeKey={onToggleRhymeKey}
+          onEditColor={onEditColor}
+          onQuickEditColor={onQuickEditColor}
+          codeMode={codeMode}
+          onToggleCodeMode={onToggleCodeMode}
+          codeLanguage={codeLanguage}
+        />
+      </div>
     </div>
   );
 };
